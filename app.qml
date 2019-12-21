@@ -23,6 +23,14 @@ Item {
             }
         }
     }
+    MidiOut {
+        id: midi_out1
+        port: "midi_out1"
+    }
+    MidiOut {
+        id: midi_out2
+        port: "midi_out2"
+    }
 
     DSM.StateMachine {
         id: stateMachine
@@ -55,6 +63,20 @@ Item {
         focus: true
         signal keyA
         signal keyF
+        signal keyJ
+        signal keyL
+        property int which_port: 0
+
+        Timer {
+            id: timer
+        }
+        function delay(delayTime, cb) {
+            timer.interval = delayTime;
+            timer.repeat = false;
+            timer.triggered.connect(cb);
+            timer.start();
+        }
+
         Keys.onPressed: {
             if (event.key == Qt.Key_A ) {
                 console.log("KeyA");
@@ -63,6 +85,27 @@ Item {
             else if (event.key == Qt.Key_F ) {
                 console.log("KeyF");
                 stack.keyF();
+            }
+            else if (event.key == Qt.Key_J ) {
+                console.log("KeyJ");
+                if (which_port == 0) {
+                    midi_out1.note_on(1, 60, 64);
+                    delay(500, function(){
+                        midi_out1.note_off(1, 60);
+                    });
+                }
+                if (which_port == 1) {
+                    midi_out2.note_on(1, 60, 64);
+                    delay(500, function(){
+                        midi_out2.note_off(1, 60);
+                    });
+                }
+                stack.keyJ();
+            }
+            else if (event.key == Qt.Key_L ) {
+                which_port = 1 - which_port;
+                console.log("KeyL, which_port = " + which_port);
+                stack.keyL();
             }
         }
 
