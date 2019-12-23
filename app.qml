@@ -24,12 +24,8 @@ Item {
         }
     }
     MidiOut {
-        id: midi_out1
-        port: "midi_out1"
-    }
-    MidiOut {
-        id: midi_out2
-        port: "midi_out2"
+        id: midi_out
+        ports: ["midi_out1", "midi_out2"]
     }
 
     DSM.StateMachine {
@@ -40,7 +36,7 @@ Item {
             id: s0
             DSM.SignalTransition {
                 targetState: s1
-                signal: stack.keyF
+                signal: stack.switchToFilterEnvelope
             }
             onEntered: { stack.currentIndex = 0; }
         }
@@ -48,7 +44,7 @@ Item {
             id: s1
             DSM.SignalTransition {
                 targetState: s0
-                signal: stack.keyA
+                signal: stack.switchToAmplitudeEnvelope
             }
             onEntered: { stack.currentIndex = 1; }
         }
@@ -61,8 +57,8 @@ Item {
         currentIndex: 0
 
         focus: true
-        signal keyA
-        signal keyF
+        signal switchToAmplitudeEnvelope
+        signal switchToFilterEnvelope
         signal keyJ
         signal keyL
         property int which_port: 0
@@ -80,26 +76,18 @@ Item {
         Keys.onPressed: {
             if (event.key == Qt.Key_A ) {
                 console.log("KeyA");
-                stack.keyA();
+                stack.switchToAmplitudeEnvelope();
             }
             else if (event.key == Qt.Key_F ) {
                 console.log("KeyF");
-                stack.keyF();
+                stack.switchToFilterEnvelope();
             }
             else if (event.key == Qt.Key_J ) {
                 console.log("KeyJ");
-                if (which_port == 0) {
-                    midi_out1.note_on(1, 60, 64);
-                    delay(500, function(){
-                        midi_out1.note_off(1, 60);
-                    });
-                }
-                if (which_port == 1) {
-                    midi_out2.note_on(1, 60, 64);
-                    delay(500, function(){
-                        midi_out2.note_off(1, 60);
-                    });
-                }
+                midi_out.note_on(which_port, 1, 60, 64);
+                delay(500, function(){
+                    midi_out.note_off(which_port, 1, 60);
+                });
                 stack.keyJ();
             }
             else if (event.key == Qt.Key_L ) {

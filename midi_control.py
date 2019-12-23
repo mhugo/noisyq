@@ -31,36 +31,37 @@ class MidiIn (QQuickItem):
 
     dataReceived = pyqtSignal([list, float], arguments=["data", "timestamp"])
 
-class MidiOut (QQuickItem):
+class MultipleMidiOut (QQuickItem):
     def __init__(self, parent = None):
         QQuickItem.__init__(self, parent)
 
-        self.__port = None
-        print("ctor")
+        self.__ports = []
+        self.__midi_outs = []
 
-    def _on_msg(self, event, data=None):
-        msg, ts = event
-        self.dataReceived.emit(msg, ts)
+    def getPorts(self):
+        return self.__ports
+    def setPorts(self, ports):
+        self.__ports = []
+        self.__midi_outs = []
+        for client_name in ports:
+            midi_out, port = open_midioutput(api=rtmidi.API_UNIX_JACK, use_virtual=True, client_name=client_name)
+            self.__midi_outs.append(midi_out)
+            self.__ports.append(port)
 
-    def getPort(self):
-        return self.__port
-    def setPort(self, port):
-        self.__port = port
-        self.__midi_out, self.__port = open_midioutput(api=rtmidi.API_UNIX_JACK, use_virtual=True, client_name=self.__port)
+    @pyqtSlot(int, int, int, int)
+    def note_on(self, port_number, channel, note, velocity):
+        self.__midi_outs[port_number].send_message([0x90+channel, note, velocity])
 
     @pyqtSlot(int, int, int)
-    def note_on(self, channel, note, velocity):
-        self.__midi_out.send_message([0x90+channel, note, velocity])
+    def note_off(self, port_number, channel, note):
+        self.__midi_outs[port_number].send_message([0x80+channel, note, 0])
 
-    @pyqtSlot(int, int)
-    def note_off(self, channel, note):
-        self.__midi_out.send_message([0x80+channel, note, 0])
-    port = pyqtProperty(str, getPort, setPort)
+    ports = pyqtProperty(list, getPorts, setPorts)
 
 app = QApplication(sys.argv)
 
 qmlRegisterType(MidiIn, 'Midi', 1, 0, 'MidiIn')
-qmlRegisterType(MidiOut, 'Midi', 1, 0, 'MidiOut')
+qmlRegisterType(MultipleMidiOut, 'Midi', 1, 0, 'MidiOut')
 
 view = QQuickView()
 view.setResizeMode(QQuickView.SizeRootObjectToView)
