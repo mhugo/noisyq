@@ -27,7 +27,14 @@ Item {
         id: midi_out
         ports: ["midi_out1", "midi_out2"]
     }
+    JALVOut {
+        id: jalv
+        Component.onCompleted : {
+            setInstance("http://tytel.org/helm", "Helm1");
+        }
+    }
 
+    /*
     DSM.StateMachine {
         id: stateMachine
         initialState: s0
@@ -49,7 +56,7 @@ Item {
             onEntered: { stack.currentIndex = 1; }
         }
         onFinished: Qt.quit()
-    }    
+    } */   
 
     StackLayout {
         id: stack
@@ -76,11 +83,17 @@ Item {
         Keys.onPressed: {
             if (event.key == Qt.Key_A ) {
                 console.log("KeyA");
-                stack.switchToAmplitudeEnvelope();
+                //stack.switchToAmplitudeEnvelope();
+                stack.currentIndex = 0;
             }
             else if (event.key == Qt.Key_F ) {
                 console.log("KeyF");
-                stack.switchToFilterEnvelope();
+                //stack.switchToFilterEnvelope();
+                stack.currentIndex = 1;
+            }
+            else if (event.key == Qt.Key_W ) {
+                console.log("KeyW");
+                stack.currentIndex = 2;
             }
             else if (event.key == Qt.Key_J ) {
                 console.log("KeyJ");
@@ -105,6 +118,41 @@ Item {
         Envelope {
             id: filterEnvelope
             title: "Filter Envelope"
+        }
+
+        RowLayout {
+            EnumKnob {
+                text: "W"
+                enums: ["sin",
+                        "triangle",
+                        "square",
+                        "saw up",
+                        "saw down",
+                        "3 step",
+                        "4 step",
+                        "8 step",
+                        "3 pyramid",
+                        "5 pyramid",
+                        "9 pyramid"]
+
+                onValueChanged : {
+                    console.log("changed to " + value + " " + value + " on " + parent.which_port);
+                    // send as channel 1, CC 1
+                    midi_out.cc(parent.which_port, 0, 1, ~~(value*127));
+                    // send to jalv control
+                    jalv.setControl("osc_1_waveform", value);
+                }
+            }
+            IntKnob {
+                displayed_from: -48.0
+                displayed_to: 48.0
+                displayed_default: 0.0
+                onValueChanged : {
+                    console.log("changed to " + value + " " + ~~(value) + " on " + stack.which_port);
+                    // send as channel 1, CC 2
+                    midi_out.cc(stack.which_port, 0, 2, ~~(value*127));
+                }
+            }
         }
     }
 }

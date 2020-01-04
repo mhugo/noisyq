@@ -7,6 +7,8 @@ from PyQt5.QtQml import qmlRegisterType
 from rtmidi.midiutil import open_midiinput, open_midioutput
 import rtmidi
 
+from jalv_wrapper import JALVInstance
+
 import sys
 import os
 
@@ -56,12 +58,33 @@ class MultipleMidiOut (QQuickItem):
     def note_off(self, port_number, channel, note):
         self.__midi_outs[port_number].send_message([0x80+channel, note, 0])
 
+    @pyqtSlot(int, int, int, int)
+    def cc(self, port_number, channel, cc, value):
+        self.__midi_outs[port_number].send_message([0xB0+channel, cc, value])
+        
     ports = pyqtProperty(list, getPorts, setPorts)
+
+class JALVOut (QQuickItem):
+    def __init__(self, parent = None):
+        QQuickItem.__init__(self, parent)
+
+        self.__instance = None
+
+    @pyqtSlot(str, str)
+    def setInstance(self, uri, name):
+        self.__instance = JALVInstance(uri, name)
+
+    @pyqtSlot(str, float)
+    def setControl(self, control_name, value):
+        if not self.__instance:
+            return
+        self.__instance.set_control(control_name, value)
 
 app = QApplication(sys.argv)
 
 qmlRegisterType(MidiIn, 'Midi', 1, 0, 'MidiIn')
 qmlRegisterType(MultipleMidiOut, 'Midi', 1, 0, 'MidiOut')
+qmlRegisterType(JALVOut, 'Midi', 1, 0, 'JALVOut')
 
 view = QQuickView()
 view.setResizeMode(QQuickView.SizeRootObjectToView)
