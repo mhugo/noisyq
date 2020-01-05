@@ -144,6 +144,8 @@ Item {
                 }
             }
             IntKnob {
+                text: "T"
+                units: "semitones"
                 displayed_from: -48.0
                 displayed_to: 48.0
                 displayed_default: 0.0
@@ -151,6 +153,17 @@ Item {
                     console.log("changed to " + value + " " + ~~(value) + " on " + stack.which_port);
                     // send as channel 1, CC 2
                     midi_out.cc(stack.which_port, 0, 2, Math.round(value*127));
+                }
+            }
+            Knob {
+                text: "t"
+                units: "cents"
+                from: -100.0
+                to: 100.0
+                onValueChanged : {
+                    console.log("changed to " + value + " " + ~~(value) + " on " + stack.which_port);
+                    // send as channel 1, CC 3
+                    midi_out.cc(stack.which_port, 0, 3, Math.round((value+100.0)/200.0*127));
                 }
             }
         }
