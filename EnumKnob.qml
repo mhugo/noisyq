@@ -31,10 +31,16 @@ ColumnLayout {
         Layout.maximumHeight: 64
         snapMode: Dial.SnapAlways
         stepSize: 1
-        onValueChanged: {
+        function updateDisplay() {
             parent.displayed_enum_index = value;
             parent.displayed_enum = parent.enums[parent.displayed_enum_index];
-            parent.value = value / to * (parent.to - parent.from) + parent.from;
+            parent.value = value / to * (parent.to - parent.from) + parent.from;            
+        }
+        onValueChanged: {
+            updateDisplay();
+        }
+        Component.onCompleted : {
+            updateDisplay();
         }
         Text {
             text: parent.parent.text
