@@ -27,12 +27,12 @@ Item {
         id: midi_out
         ports: ["midi_out1", "midi_out2"]
     }
-    JALVOut {
+    /*JALVOut {
         id: jalv
         Component.onCompleted : {
             setInstance("http://tytel.org/helm", "Helm1");
         }
-    }
+    }*/
 
     /*
     DSM.StateMachine {
@@ -138,9 +138,9 @@ Item {
                 onValueChanged : {
                     console.log("changed to " + value + " " + value + " on " + parent.which_port);
                     // send as channel 1, CC 1
-                    midi_out.cc(parent.which_port, 0, 1, ~~(value*127));
+                    midi_out.cc(parent.which_port, 0, 1, Math.round(value*127));
                     // send to jalv control
-                    jalv.setControl("osc_1_waveform", value);
+                    //jalv.setControl("osc_1_waveform", value);
                 }
             }
             IntKnob {
@@ -150,7 +150,7 @@ Item {
                 onValueChanged : {
                     console.log("changed to " + value + " " + ~~(value) + " on " + stack.which_port);
                     // send as channel 1, CC 2
-                    midi_out.cc(stack.which_port, 0, 2, ~~(value*127));
+                    midi_out.cc(stack.which_port, 0, 2, Math.round(value*127));
                 }
             }
         }
