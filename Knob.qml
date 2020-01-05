@@ -4,6 +4,7 @@ import QtQuick.Layouts 1.11
 
 ColumnLayout {
     property string text
+    property string units
     property real value
     property real from : 0
     property real to : 16
@@ -24,7 +25,7 @@ ColumnLayout {
         }
     }
     Text {
-        text: dial.value.toFixed(1)
+        text: dial.value.toFixed(2) + " " + parent.units
         horizontalAlignment: Text.AlignHCenter
         verticalAlignment: Text.AlignVCenter
     }

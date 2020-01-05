@@ -7,6 +7,7 @@ import QtQuick.Layouts 1.11
 
 ColumnLayout {
     property string text
+    property string units
     // internal value
     property real value
 
@@ -47,7 +48,7 @@ ColumnLayout {
         }
     }
     Text {
-        text: parent.displayed_value
+        text: parent.displayed_value + " " + parent.units
         horizontalAlignment: Text.AlignHCenter
         verticalAlignment: Text.AlignVCenter
     }
