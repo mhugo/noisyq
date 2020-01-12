@@ -8,6 +8,7 @@ import QtQml.StateMachine 1.0 as DSM
 import Midi 1.0
 
 Item {
+    id: main
     width: 600
     height: 600
 
@@ -64,6 +65,17 @@ Item {
         signal keyL
         property int which_port: 0
 
+        // switch to a given item by its id
+        function switchTo(item) {
+            for (var idx=0; idx < children.length; idx++) {
+                let child = children[idx];
+                if (item === child) {
+                    currentIndex = idx;
+                    break;
+                }
+            }
+        }
+
         Timer {
             id: timer
         }
@@ -77,17 +89,15 @@ Item {
         Keys.onPressed: {
             if (event.key == Qt.Key_A ) {
                 console.log("KeyA");
-                //stack.switchToAmplitudeEnvelope();
-                stack.currentIndex = 0;
+                stack.switchTo(ampEnvelope);
             }
             else if (event.key == Qt.Key_F ) {
                 console.log("KeyF");
-                //stack.switchToFilterEnvelope();
-                stack.currentIndex = 1;
+                stack.switchTo(filterEnvelope);
             }
             else if (event.key == Qt.Key_W ) {
                 console.log("KeyW");
-                stack.currentIndex = 2;
+                stack.switchTo(osc1Panel);
             }
             else if (event.key == Qt.Key_J ) {
                 console.log("KeyJ");
@@ -115,6 +125,7 @@ Item {
         }
 
         RowLayout {
+            id: osc1Panel
             EnumKnob {
                 text: "W"
                 enums: ["sin",
@@ -139,8 +150,6 @@ Item {
                 Component.onCompleted : {
                     value = jalv.getControl("osc_1_waveform");
                     console.log("enums.length " + enums.length + " value " + value);
-                    self.dial.value = Math.round(value * (enums.length - 1));
-                    self.dial.updateDisplay();
                     console.log("EnumKnob onCompleted, value = " + value);
                 }
             }
