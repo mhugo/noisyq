@@ -25,6 +25,8 @@ class JALVInstance:
         self.__in_master, in_slave = pty.openpty()        
         self.__process = subprocess.Popen(["jalv", "-n", jack_name, "-b", "1", lv2_name], stdout=out_slave, stdin=in_slave)
 
+        self.__controls = {}
+
         self.read_until_prompt()
 
     def read_controls(self):
@@ -36,6 +38,8 @@ class JALVInstance:
         for x in raw_controls.decode("utf8").split("\r\n")[:-1]:
             k,v = x.split(" = ")
             controls[k] = float(v)
+
+        self.__controls = dict(controls)
         return controls
 
     def read_presets(self):
@@ -52,9 +56,14 @@ class JALVInstance:
         return presets
 
     def set_control(self, k, v):
-        print("#set_control {} = {}".format(k,v))
         os.write(self.__in_master, bytes("{} = {}\n".format(k, v), "utf8"))
         self.read_until_prompt()
+
+    def get_control(self, k):
+        if not self.__controls:
+            self.read_controls()
+        print(self.__controls.get(k, None))
+        return self.__controls.get(k, None)
 
     def read_until_prompt(self):
         return self.read_until_dead_or(b"> ")

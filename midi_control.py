@@ -64,7 +64,7 @@ class MultipleMidiOut (QQuickItem):
         
     ports = pyqtProperty(list, getPorts, setPorts)
 
-class JALVOut (QQuickItem):
+class JALVWrapper (QQuickItem):
     def __init__(self, parent = None):
         QQuickItem.__init__(self, parent)
 
@@ -80,11 +80,19 @@ class JALVOut (QQuickItem):
             return
         self.__instance.set_control(control_name, value)
 
+    @pyqtSlot(str, result=float)
+    def getControl(self, control_name):
+        if not self.__instance:
+            return None
+        v = self.__instance.get_control(control_name)
+        print("**", v)
+        return v
+
 app = QApplication(sys.argv)
 
 qmlRegisterType(MidiIn, 'Midi', 1, 0, 'MidiIn')
 qmlRegisterType(MultipleMidiOut, 'Midi', 1, 0, 'MidiOut')
-qmlRegisterType(JALVOut, 'Midi', 1, 0, 'JALVOut')
+qmlRegisterType(JALVWrapper, 'Midi', 1, 0, 'JALVWrapper')
 
 view = QQuickView()
 view.setResizeMode(QQuickView.SizeRootObjectToView)
