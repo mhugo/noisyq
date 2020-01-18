@@ -16,10 +16,20 @@ Item {
     Item {
         id: keycode
         property int k_escape : 9
-        property int a : 24
-        property int f : 41
-        property int j : 44
-        property int w : 52
+        property int k_a : 24
+        property int k_z : 25
+        property int k_f : 41
+        property int k_j : 44
+        property int k_w : 52
+        property int k_x : 53
+        property int k_c : 54
+        property int k_v : 55
+        property int k_b : 56
+        property int k_n : 57
+        property int k_comma : 58
+        property int k_semi_colon : 59
+        property int k_colon : 60
+        property int k_exclamation : 61
     }
 
     MidiIn {
@@ -47,6 +57,7 @@ Item {
         focus: true
 
         signal keyPressed(int code, int key)
+        signal keyReleased(int code, int key)
 
         // switch to a given item by its id
         function switchTo(item) {
@@ -59,19 +70,14 @@ Item {
             }
         }
 
-        Timer {
-            id: timer
-        }
-        function delay(delayTime, cb) {
-            timer.interval = delayTime;
-            timer.repeat = false;
-            timer.triggered.connect(cb);
-            timer.start();
-        }
-
         Keys.onPressed: {
-            console.log("scan code " + event.nativeScanCode);
-            keyPressed(event.nativeScanCode, event.key);
+            if (! event.isAutoRepeat) {
+                console.log("scan code " + event.nativeScanCode);
+                keyPressed(event.nativeScanCode, event.key);
+            }
+        }
+        Keys.onReleased: {
+            keyReleased(event.nativeScanCode, event.key);
         }
 
         Envelope {
@@ -146,26 +152,46 @@ Item {
         }
     }
 
+        Timer {
+            id: timer
+        }
+        function delay(delayTime, cb) {
+            timer.interval = delayTime;
+            timer.repeat = false;
+            timer.triggered.connect(cb);
+            timer.start();
+        }
+
     Connections {
         target: stack
+
         onKeyPressed: {
             if (code == keycode.k_escape) {
                 Qt.quit();
             }
-            if (code == keycode.a) {
+            if (code == keycode.k_a) {
                 stack.switchTo(ampEnvelope);
             }
-            else if (code == keycode.f) {
+            else if (code == keycode.k_f) {
                 stack.switchTo(filterEnvelope);
             }
-            else if (code == keycode.w) {
+            else if (code == keycode.k_z) {
                 stack.switchTo(osc1Panel);
             }
-            else if (code == keycode.j) {
-                midi_out.note_on(which_port, 1, 60, 64);
+            else if ((code >= keycode.k_w) && (code <= keycode.k_exclamation)) {
+                // 69 : A4
+                let note = code - keycode.k_w + 69
+                midi_out.note_on(0, 1, note, 64);
                 delay(500, function(){
-                    midi_out.note_off(which_port, 1, 60);
+                    midi_out.note_off(0, 1, note);
                 });                
+            }
+        }
+        onKeyReleased: {
+            if ((code >= keycode.k_w) && (code <= keycode.k_exclamation)) {
+                // 69 : A4
+                let note = code - keycode.k_w + 69
+                midi_out.note_off(0, 1, note);
             }
         }
     }
