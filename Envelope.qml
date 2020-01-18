@@ -7,13 +7,34 @@ ColumnLayout {
     property string title
     id: adsr
 
+    property real attack
+    property real sustain
+    property real decay
+    property real release
+
+    onAttackChanged : {
+        updateGraph();
+        attackKnob.value = attack;
+    }
+    onSustainChanged : {
+        updateGraph();
+        sustainKnob.value = sustain;
+    }
+    onDecayChanged : {
+        updateGraph();
+        decayKnob.value = decay;
+    }
+    onReleaseChanged : {
+        updateGraph();
+        releaseKnob.value = release;
+    }
+
     function updateGraph() {
         lineSeries.clear();
         lineSeries.append(0, 0);
-        lineSeries.append(attackKnob.value/16.0, 1);
-        lineSeries.append(attackKnob.value/16.0 + decayKnob.value/16.0, sustainKnob.value);
-        lineSeries.append(2.0, sustainKnob.value);
-        lineSeries.append(2.0+releaseKnob.value/16.0, 0);
+        lineSeries.append(attack/16.0, 1);
+        lineSeries.append(attack/16.0 + decay/16.0, sustain);
+        lineSeries.append(attack/16.0 + decay/16.0 + release/16.0, 0);
         chartView.axes[0].gridVisible = false;
         chartView.axes[0].max = 3.0;
         chartView.axes[0].min = 0.0;
@@ -47,7 +68,7 @@ ColumnLayout {
             id: attackKnob
             text: "A"
             onValueChanged: {
-                adsr.updateGraph();
+                adsr.attack = value;
             }
         }
         Item { Layout.fillWidth: true }
@@ -55,7 +76,7 @@ ColumnLayout {
             id: decayKnob
             text: "D"
             onValueChanged: {
-                adsr.updateGraph();
+                adsr.decay = value;
             }
         }
         Item { Layout.fillWidth: true }
@@ -65,7 +86,7 @@ ColumnLayout {
             id: sustainKnob
             text: "S"
             onValueChanged: {
-                adsr.updateGraph();
+                adsr.sustain = value;
             }
         }
         Item { Layout.fillWidth: true }
@@ -73,7 +94,7 @@ ColumnLayout {
             id: releaseKnob
             text: "R"
             onValueChanged: {
-                adsr.updateGraph();
+                adsr.release = value;
             }
         }
         Item { Layout.fillWidth: true }

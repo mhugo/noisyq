@@ -6,6 +6,9 @@ ColumnLayout {
     property string text
     property string units
     property real value
+    onValueChanged: {
+        dial.value = value;
+    }
     property real from : 0
     property real to : 16
     Dial {

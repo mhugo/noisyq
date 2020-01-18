@@ -77,12 +77,37 @@ Item {
             }
         }
         Keys.onReleased: {
-            keyReleased(event.nativeScanCode, event.key);
+            if (! event.isAutoRepeat) {
+                keyReleased(event.nativeScanCode, event.key);
+            }
         }
 
         Envelope {
             id: ampEnvelope
             title: "Amplitude Envelope"
+
+            onAttackChanged : {
+                jalv.setControl("amp_attack", attack / 16.0);
+            }
+            onDecayChanged : {
+                jalv.setControl("amp_decay", decay / 16.0);
+            }
+            onSustainChanged : {
+                jalv.setControl("amp_sustain", sustain);
+            }
+            onReleaseChanged : {
+                jalv.setControl("amp_release", release / 16.0);
+            }
+            Component.onCompleted : {
+                attack = jalv.getControl("amp_attack") * 16.0;
+                decay = jalv.getControl("amp_decay") * 16.0;
+                sustain = jalv.getControl("amp_sustain");
+                release = jalv.getControl("amp_release") * 16.0;
+                console.log("init attack = " + attack);
+                console.log("init decay = " + decay);
+                console.log("init sustain = " + sustain);
+                console.log("init release = " + release);
+            }
         }
 
         Envelope {
@@ -152,16 +177,6 @@ Item {
         }
     }
 
-        Timer {
-            id: timer
-        }
-        function delay(delayTime, cb) {
-            timer.interval = delayTime;
-            timer.repeat = false;
-            timer.triggered.connect(cb);
-            timer.start();
-        }
-
     Connections {
         target: stack
 
@@ -182,12 +197,10 @@ Item {
                 // 69 : A4
                 let note = code - keycode.k_w + 69
                 midi_out.note_on(0, 1, note, 64);
-                delay(500, function(){
-                    midi_out.note_off(0, 1, note);
-                });                
             }
         }
         onKeyReleased: {
+            console.log("on released", code);
             if ((code >= keycode.k_w) && (code <= keycode.k_exclamation)) {
                 // 69 : A4
                 let note = code - keycode.k_w + 69
