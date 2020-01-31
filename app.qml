@@ -1,3 +1,11 @@
+/*
+TODO
+- map more controls
+- route midi keyboard notes events to midi in of each instance
+- find how to configure midi in control changes binding
+- add a basic sequencer
+- allow us to have 8 voices with either a sampler (samplv1) or a synth (helm)
+*/
 import QtQuick 2.0
 import QtCharts 2.0
 import QtQuick.Controls 2.4
@@ -117,6 +125,7 @@ Item {
             for (var idx=0; idx < children.length; idx++) {
                 let child = children[idx];
                 if (item === child) {
+                    console.log("switchTo", idx);
                     currentIndex = idx;
                     break;
                 }
@@ -147,14 +156,25 @@ Item {
             }
         }
 
-        Envelope {
+        ColumnLayout {
             id: filterEnvelope
-            title: "Filter Envelope"
-            Component.onCompleted : {
-                lv2Binding.set(this, "attackChanged", "attack", "helm1", "fil_attack", 0.0, 16.0, 0.0, 1.0);
-                lv2Binding.set(this, "decayChanged", "decay", "helm1", "fil_decay", 0.0, 16.0, 0.0, 1.0);
-                lv2Binding.set(this, "sustainChanged", "sustain", "helm1", "fil_sustain", 0.0, 1.0, 0.0, 1.0);
-                lv2Binding.set(this, "releaseChanged", "release", "helm1", "fil_release", 0.0, 16.0, 0.0, 1.0);
+            Switch {
+                id: filterEnabled
+                checked: false
+                text: "Enable filter"
+                Component.onCompleted : {
+                    lv2Binding.set(this, "checkedChanged", "checked", "helm1", "filter_on", 0.0, 1.0, 0.0, 1.0);
+                }
+            }
+            Envelope {
+                enabled: filterEnabled.checked
+                title: "Filter Envelope"
+                Component.onCompleted : {
+                    lv2Binding.set(this, "attackChanged", "attack", "helm1", "fil_attack", 0.0, 16.0, 0.0, 1.0);
+                    lv2Binding.set(this, "decayChanged", "decay", "helm1", "fil_decay", 0.0, 16.0, 0.0, 1.0);
+                    lv2Binding.set(this, "sustainChanged", "sustain", "helm1", "fil_sustain", 0.0, 1.0, 0.0, 1.0);
+                    lv2Binding.set(this, "releaseChanged", "release", "helm1", "fil_release", 0.0, 16.0, 0.0, 1.0);
+                }
             }
         }
 
