@@ -56,6 +56,7 @@ class JALVInstance:
         return presets
 
     def set_control(self, k, v):
+        print("set_control", k, v)
         os.write(self.__in_master, bytes("{} = {}\n".format(k, v), "utf8"))
         self.read_until_prompt()
 

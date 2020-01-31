@@ -139,33 +139,23 @@ Item {
             id: ampEnvelope
             title: "Amplitude Envelope"
 
-            onAttackChanged : {
-                jalv.setControl("amp_attack", attack / 16.0);
-            }
-            onDecayChanged : {
-                jalv.setControl("amp_decay", decay / 16.0);
-            }
-            onSustainChanged : {
-                jalv.setControl("amp_sustain", sustain);
-            }
-            onReleaseChanged : {
-                jalv.setControl("amp_release", release / 16.0);
-            }
             Component.onCompleted : {
-                attack = jalv.getControl("amp_attack") * 16.0;
-                decay = jalv.getControl("amp_decay") * 16.0;
-                sustain = jalv.getControl("amp_sustain");
-                release = jalv.getControl("amp_release") * 16.0;
-                console.log("init attack = " + attack);
-                console.log("init decay = " + decay);
-                console.log("init sustain = " + sustain);
-                console.log("init release = " + release);
+                lv2Binding.set(this, "attackChanged", "attack", "helm1", "amp_attack", 0.0, 16.0, 0.0, 1.0);
+                lv2Binding.set(this, "decayChanged", "decay", "helm1", "amp_decay", 0.0, 16.0, 0.0, 1.0);
+                lv2Binding.set(this, "sustainChanged", "sustain", "helm1", "amp_sustain", 0.0, 1.0, 0.0, 1.0);
+                lv2Binding.set(this, "releaseChanged", "release", "helm1", "amp_release", 0.0, 16.0, 0.0, 1.0);
             }
         }
 
         Envelope {
             id: filterEnvelope
             title: "Filter Envelope"
+            Component.onCompleted : {
+                lv2Binding.set(this, "attackChanged", "attack", "helm1", "fil_attack", 0.0, 16.0, 0.0, 1.0);
+                lv2Binding.set(this, "decayChanged", "decay", "helm1", "fil_decay", 0.0, 16.0, 0.0, 1.0);
+                lv2Binding.set(this, "sustainChanged", "sustain", "helm1", "fil_sustain", 0.0, 1.0, 0.0, 1.0);
+                lv2Binding.set(this, "releaseChanged", "release", "helm1", "fil_release", 0.0, 16.0, 0.0, 1.0);
+            }
         }
 
         RowLayout {
@@ -184,17 +174,8 @@ Item {
                         "5 pyramid",
                         "9 pyramid"]
 
-                onValueChanged : {
-                    console.log("changed to " + value + " " + value);
-                    // send as channel 1, CC 1
-                    midi_out.cc(0, 0, 1, Math.round(value*127));
-                    // send to jalv control
-                    jalv.setControl("osc_1_waveform", value);
-                }
                 Component.onCompleted : {
-                    value = jalv.getControl("osc_1_waveform");
-                    console.log("enums.length " + enums.length + " value " + value);
-                    console.log("EnumKnob onCompleted, value = " + value);
+                    lv2Binding.set(this, "valueChanged", "value", "helm1", "osc_1_waveform", 0.0, 1.0, 0.0, 1.0);
                 }
             }
             IntKnob {
@@ -203,10 +184,8 @@ Item {
                 displayed_from: -48.0
                 displayed_to: 48.0
                 displayed_default: 0.0
-                onValueChanged : {
-                    console.log("changed to " + value + " " + ~~(value));
-                    // send as channel 1, CC 2
-                    midi_out.cc(0, 0, 2, Math.round(value*127));
+                Component.onCompleted : {
+                    lv2Binding.set(this, "valueChanged", "value", "helm1", "osc_1_transpose", 0.0, 1.0, 0.0, 1.0);
                 }
             }
             Knob {
@@ -214,19 +193,10 @@ Item {
                 units: "cents"
                 from: -100.0
                 to: 100.0
-                onValueChanged : {
-                    console.log("changed to " + value + " " + ~~(value));
-                    // send as channel 1, CC 3
-                    midi_out.cc(0, 0, 3, Math.round((value+100.0)/200.0*127));
+                Component.onCompleted : {
+                    lv2Binding.set(this, "valueChanged", "value", "helm1", "osc_1_transpose", from, to, 0.0, 1.0);
                 }
             }
-        }
-    }
-    JALVWrapper {
-        id: jalv
-        Component.onCompleted : {
-            setInstance("http://tytel.org/helm", "Helm1");
-            console.log("jalv oncompleted")
         }
     }
 
@@ -261,4 +231,5 @@ Item {
             }
         }
     }
+
 }

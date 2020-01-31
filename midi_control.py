@@ -1,8 +1,8 @@
-from PyQt5.QtCore import QUrl, pyqtSignal, pyqtProperty, pyqtSlot
+from PyQt5.QtCore import QUrl, pyqtSignal, pyqtProperty, pyqtSlot, QObject
 from PyQt5.QtWidgets import QApplication
 from PyQt5.QtQuick import QQuickItem, QQuickView
 
-from PyQt5.QtQml import qmlRegisterType
+from PyQt5.QtQml import qmlRegisterType, QQmlEngine, QQmlComponent
 
 from rtmidi.midiutil import open_midiinput, open_midioutput
 import rtmidi
@@ -64,9 +64,10 @@ class MultipleMidiOut (QQuickItem):
         
     ports = pyqtProperty(list, getPorts, setPorts)
 
-class JALVWrapper (QQuickItem):
+class JALVWrapper (QObject):
     def __init__(self, parent = None):
-        QQuickItem.__init__(self, parent)
+        print("JALVWrapper ctor")
+        QObject.__init__(self, parent)
 
         self.__instance = None
 
@@ -85,27 +86,101 @@ class JALVWrapper (QQuickItem):
         if not self.__instance:
             return None
         v = self.__instance.get_control(control_name)
-        print("**", v)
         return v
 
+class JALVLV2Binding(QObject):
+    def __init__(self, parent=None):
+        print("JALVLV2Binding")
+        QObject.__init__(self, parent)
+
+        self.__instances = {
+            "helm1" : JALVInstance("http://tytel.org/helm", "helm1"),
+            "helm2" : JALVInstance("http://tytel.org/helm", "helm2")
+        }
+
+    @pyqtSlot(QObject, str, str, str, str, float, float, float, float)
+    def set(self, obj, obj_signal_name, obj_property_name, lv2_instance_name, lv2_parameter_name,
+            obj_min_value, obj_max_value, lv2_min_value, lv2_max_value):
+        """Install a binding between a widget and an LV2 parameter.
+
+        Thanks to this function, it is possible to bind a widget internal state value to an LV2 parameter.
+
+        When called, it will first sets the object's internal state to the current value of the LV2 parameter.
+
+        Then a callback is installed to synchronize the LV2 parameter value with the object's internal value.
+
+        The object's internal value is represented by:
+        - a property that represents the current value
+        - a signal that is triggered when the object's internal state changes
+
+        Parameters
+        ==========
+        obj: QObject
+          The object (usually a widget) to bind
+        obj_signal_name: str
+          Name of the object' signal that updates the internal value change (e.g. "valueChanged")
+        obj_property_name: str
+          Name of the object's property that stored the internal value
+        lv2_instance_name: str
+          Name of the JALV instance
+        lv2_parameter_name: str
+          Name of the LV2 parameter to bind
+        obj_min_value: float
+          Minimum value of the object's internal state
+        obj_max_value: float
+          Maximum value of the object's internal state
+        lv2_min_value: float
+          Minimum value of the LV2 parameter
+        lv2_max_value: float
+          Maximum value of the LV2 parameter
+        """
+        instance = self.__instances.get(lv2_instance_name)
+        if instance is None:
+            print("Instance not found: {}".format(lv2_instance_name))
+            return
+        # Get the current parameter value
+        # and modify the corresponding property
+        current_value = instance.get_control(lv2_parameter_name)
+        print("{} = {}".format(lv2_parameter_name, current_value))
+        obj.setProperty(obj_property_name, current_value)
+
+        # The signal is given by name. Since a signal is represented as an attribute,
+        # We call getattr to get the corresponding signal object
+        try:
+            sig = getattr(obj, obj_signal_name)
+        except AttributeError:
+            print("Signal not found: {}".format(obj_signal_name))
+            return
+
+        sig.connect(lambda :
+                    instance.set_control(lv2_parameter_name,
+                                         (obj.property(obj_property_name) - obj_min_value)
+                                         / (obj_max_value - obj_min_value)
+                                         * (lv2_max_value - lv2_min_value)
+                                         + lv2_min_value)
+        )
+
+    
 app = QApplication(sys.argv)
 
-qmlRegisterType(MidiIn, 'Midi', 1, 0, 'MidiIn')
-qmlRegisterType(MultipleMidiOut, 'Midi', 1, 0, 'MidiOut')
-qmlRegisterType(JALVWrapper, 'Midi', 1, 0, 'JALVWrapper')
+print(qmlRegisterType(MidiIn, 'Midi', 1, 0, 'MidiIn'))
+print(qmlRegisterType(MultipleMidiOut, 'Midi', 1, 0, 'MidiOut'))
+#print(qmlRegisterType(JALVWrapperAttachedProperties))
+#print(qmlRegisterType(JALVWrapper, 'Midi', 1, 0, 'JALVWrapper',
+#                      attachedProperties=JALVWrapperAttachedProperties))
 
-view = QQuickView()
-view.setResizeMode(QQuickView.SizeRootObjectToView)
+engine = QQmlEngine()
+
+component = QQmlComponent(engine)
 
 current_path = os.path.abspath(os.path.dirname(__file__))
 qml_file = os.path.join(current_path, 'app.qml')
+
+lv2_binding = JALVLV2Binding()
+view = QQuickView()
+view.setResizeMode(QQuickView.SizeRootObjectToView)
+view.engine().rootContext().setContextProperty("lv2Binding", lv2_binding)
 view.setSource(QUrl.fromLocalFile(qml_file))
-
-if view.status() == QQuickView.Error:
-
-    sys.exit(-1)
-
 view.show()
 res = app.exec_()
-del view
 sys.exit(res)
