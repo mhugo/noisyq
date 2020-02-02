@@ -120,10 +120,6 @@ Item {
             }
         }
     }
-    MidiOut {
-        id: midi_out
-        ports: ["midi_out1", "midi_out2"]
-    }
 
     ColumnLayout {
 
@@ -136,12 +132,20 @@ Item {
 
             HelmControls {
                 id: helm1
-                lv2InstanceName: "helm1"
+                lv2InstanceName: "Helm 1"
+                MidiOut {
+                    id: midi_out1
+                    ports: ["midi_out1"]
+                }
             }
 
             HelmControls {
                 id: helm2
-                lv2InstanceName: "helm2"
+                lv2InstanceName: "Helm 2"
+                MidiOut {
+                    id: midi_out2
+                    ports: ["midi_out2"]
+                }
             }
         }
     }
@@ -170,7 +174,9 @@ Item {
             else if ((code >= keycode.k_row3_1) && (code <= keycode.k_row3_10)) {
                 // 69 : A4
                 let note = code - keycode.k_row3_1 + 69
-                midi_out.note_on(0, 1, note, 64);
+                let currentVoice = voiceStack.children[voiceStack.currentIndex];
+                let currentVoiceMidiOut = currentVoice.children[currentVoice.children.length-1];
+                currentVoiceMidiOut.note_on(0, 1, note, 64);
             }
         }
         onKeyReleased: {
@@ -178,7 +184,9 @@ Item {
             if ((code >= keycode.k_row3_1) && (code <= keycode.k_row3_10)) {
                 // 69 : A4
                 let note = code - keycode.k_row3_1 + 69
-                midi_out.note_off(0, 1, note);
+                let currentVoice = voiceStack.children[voiceStack.currentIndex];
+                let currentVoiceMidiOut = currentVoice.children[currentVoice.children.length-1];
+                currentVoiceMidiOut.note_off(0, 1, note);
             }
         }
     }

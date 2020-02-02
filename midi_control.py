@@ -94,8 +94,8 @@ class JALVLV2Binding(QObject):
         QObject.__init__(self, parent)
 
         self.__instances = {
-            "helm1" : JALVInstance("http://tytel.org/helm", "helm1"),
-            "helm2" : JALVInstance("http://tytel.org/helm", "helm2")
+            "Helm 1" : JALVInstance("http://tytel.org/helm", "Helm 1"),
+            "Helm 2" : JALVInstance("http://tytel.org/helm", "Helm 2")
         }
 
     @pyqtSlot(QObject, str, str, str, str, float, float, float, float)
