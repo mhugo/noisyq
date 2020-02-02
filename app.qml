@@ -93,6 +93,22 @@ Item {
         property int k_row3_10 : 61
     }
 
+    signal keyPressed(int code, int key)
+    signal keyReleased(int code, int key)
+    focus: true
+        
+    Keys.onPressed: {
+        if (! event.isAutoRepeat) {
+            console.log("scan code " + event.nativeScanCode);
+            keyPressed(event.nativeScanCode, event.key);
+        }
+    }
+    Keys.onReleased: {
+        if (! event.isAutoRepeat) {
+            keyReleased(event.nativeScanCode, event.key);
+        }
+    }
+
     MidiIn {
         id: midi_in
         port: Qt.application.arguments[1] || ""
@@ -109,132 +125,47 @@ Item {
         ports: ["midi_out1", "midi_out2"]
     }
 
-    StackLayout {
-        id: stack
-        anchors.fill:parent
-        currentIndex: 0
+    ColumnLayout {
 
-        // grab keyboard events
-        focus: true
-
-        signal keyPressed(int code, int key)
-        signal keyReleased(int code, int key)
-
-        // switch to a given item by its id
-        function switchTo(item) {
-            for (var idx=0; idx < children.length; idx++) {
-                let child = children[idx];
-                if (item === child) {
-                    console.log("switchTo", idx);
-                    currentIndex = idx;
-                    break;
-                }
-            }
+        Text {
+            text: "Current voice " + (voiceStack.currentIndex + 1)
         }
+    
+        StackLayout {
+            id: voiceStack
 
-        Keys.onPressed: {
-            if (! event.isAutoRepeat) {
-                console.log("scan code " + event.nativeScanCode);
-                keyPressed(event.nativeScanCode, event.key);
+            HelmControls {
+                id: helm1
+                lv2InstanceName: "helm1"
             }
-        }
-        Keys.onReleased: {
-            if (! event.isAutoRepeat) {
-                keyReleased(event.nativeScanCode, event.key);
-            }
-        }
 
-        Envelope {
-            id: ampEnvelope
-            title: "Amplitude Envelope"
-
-            Component.onCompleted : {
-                lv2Binding.set(this, "attackChanged", "attack", "helm1", "amp_attack", 0.0, 16.0, 0.0, 1.0);
-                lv2Binding.set(this, "decayChanged", "decay", "helm1", "amp_decay", 0.0, 16.0, 0.0, 1.0);
-                lv2Binding.set(this, "sustainChanged", "sustain", "helm1", "amp_sustain", 0.0, 1.0, 0.0, 1.0);
-                lv2Binding.set(this, "releaseChanged", "release", "helm1", "amp_release", 0.0, 16.0, 0.0, 1.0);
-            }
-        }
-
-        ColumnLayout {
-            id: filterEnvelope
-            Switch {
-                id: filterEnabled
-                checked: false
-                text: "Enable filter"
-                Component.onCompleted : {
-                    lv2Binding.set(this, "checkedChanged", "checked", "helm1", "filter_on", 0.0, 1.0, 0.0, 1.0);
-                }
-            }
-            Envelope {
-                enabled: filterEnabled.checked
-                title: "Filter Envelope"
-                Component.onCompleted : {
-                    lv2Binding.set(this, "attackChanged", "attack", "helm1", "fil_attack", 0.0, 16.0, 0.0, 1.0);
-                    lv2Binding.set(this, "decayChanged", "decay", "helm1", "fil_decay", 0.0, 16.0, 0.0, 1.0);
-                    lv2Binding.set(this, "sustainChanged", "sustain", "helm1", "fil_sustain", 0.0, 1.0, 0.0, 1.0);
-                    lv2Binding.set(this, "releaseChanged", "release", "helm1", "fil_release", 0.0, 16.0, 0.0, 1.0);
-                }
-            }
-        }
-
-        RowLayout {
-            id: osc1Panel
-            EnumKnob {
-                text: "W"
-                enums: ["sin",
-                        "triangle",
-                        "square",
-                        "saw up",
-                        "saw down",
-                        "3 step",
-                        "4 step",
-                        "8 step",
-                        "3 pyramid",
-                        "5 pyramid",
-                        "9 pyramid"]
-
-                Component.onCompleted : {
-                    lv2Binding.set(this, "valueChanged", "value", "helm1", "osc_1_waveform", 0.0, 1.0, 0.0, 1.0);
-                }
-            }
-            IntKnob {
-                text: "T"
-                units: "semitones"
-                displayed_from: -48.0
-                displayed_to: 48.0
-                displayed_default: 0.0
-                Component.onCompleted : {
-                    lv2Binding.set(this, "valueChanged", "value", "helm1", "osc_1_transpose", 0.0, 1.0, 0.0, 1.0);
-                }
-            }
-            Knob {
-                text: "t"
-                units: "cents"
-                from: -100.0
-                to: 100.0
-                Component.onCompleted : {
-                    lv2Binding.set(this, "valueChanged", "value", "helm1", "osc_1_transpose", from, to, 0.0, 1.0);
-                }
+            HelmControls {
+                id: helm2
+                lv2InstanceName: "helm2"
             }
         }
     }
-
+    
     Connections {
-        target: stack
+        target: main
 
         onKeyPressed: {
             if (code == keycode.k_escape) {
                 Qt.quit();
             }
-            if (code == keycode.k_f1) {
-                stack.switchTo(ampEnvelope);
+            else if ((code >= keycode.k_f1) && (code <= keycode.k_f8)) {
+                let voiceNumber = code - keycode.k_f1;
+                console.log("switch voice number " + voiceNumber);
+                voiceStack.currentIndex = voiceNumber;
             }
-            else if (code == keycode.k_f2) {
-                stack.switchTo(filterEnvelope);
+            else if (code == keycode.k_number1) {
+                voiceStack.children[voiceStack.currentIndex].switchTo("ampEnvelope");
             }
-            else if (code == keycode.k_f3) {
-                stack.switchTo(osc1Panel);
+            else if (code == keycode.k_number2) {
+                voiceStack.children[voiceStack.currentIndex].switchTo("filterEnvelope");
+            }
+            else if (code == keycode.k_number3) {
+                voiceStack.children[voiceStack.currentIndex].switchTo("osc1Panel");
             }
             else if ((code >= keycode.k_row3_1) && (code <= keycode.k_row3_10)) {
                 // 69 : A4
