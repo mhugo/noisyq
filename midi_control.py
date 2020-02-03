@@ -134,6 +134,8 @@ class JALVLV2Binding(QObject):
         lv2_max_value: float
           Maximum value of the LV2 parameter
         """
+        print("lv2_binding_set", obj, obj_signal_name, obj_property_name, lv2_instance_name, lv2_parameter_name,
+            obj_min_value, obj_max_value, lv2_min_value, lv2_max_value)
         instance = self.__instances.get(lv2_instance_name)
         if instance is None:
             print("Instance not found: {}".format(lv2_instance_name))
@@ -152,13 +154,17 @@ class JALVLV2Binding(QObject):
             print("Signal not found: {}".format(obj_signal_name))
             return
 
+        def _set_control(inst, param_name, value):
+            print("inst", inst, "param_name", param_name, "value", value)
+            inst.set_control(param_name, value)
+            
         sig.connect(lambda :
-                    instance.set_control(lv2_parameter_name,
+                    _set_control(instance, lv2_parameter_name,
                                          (obj.property(obj_property_name) - obj_min_value)
                                          / (obj_max_value - obj_min_value)
                                          * (lv2_max_value - lv2_min_value)
                                          + lv2_min_value)
-        )
+                    )
 
     
 app = QApplication(sys.argv)

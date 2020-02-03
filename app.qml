@@ -169,7 +169,7 @@ Item {
                 voiceStack.children[voiceStack.currentIndex].switchTo("filterEnvelope");
             }
             else if (code == keycode.k_number3) {
-                voiceStack.children[voiceStack.currentIndex].switchTo("osc1Panel");
+                voiceStack.children[voiceStack.currentIndex].switchTo("oscPanel");
             }
             else if ((code >= keycode.k_row3_1) && (code <= keycode.k_row3_10)) {
                 // 69 : A4

@@ -17,7 +17,7 @@ StackLayout {
         else if (itemName === "filterEnvelope") {
             currentIndex = 1;
         }
-        else if (itemName === "osc1Panel") {
+        else if (itemName === "oscPanel") {
             currentIndex = 2;
         }
     }
@@ -56,44 +56,65 @@ StackLayout {
         }
     }
 
-    RowLayout {
-        id: osc1Panel
-        EnumKnob {
-            text: "W"
-            enums: ["sin",
-                    "triangle",
-                    "square",
-                    "saw up",
-                    "saw down",
-                    "3 step",
-                    "4 step",
-                    "8 step",
-                    "3 pyramid",
-                    "5 pyramid",
-                    "9 pyramid"]
+    ColumnLayout {
+        HelmOscillator {
+            oscillatorNumber: 1
+        }
+        HelmOscillator {
+            oscillatorNumber: 2
+        }
+        RowLayout {
+            // sub oscillator
+            Text { text: "Sub" }
+            Knob {
+                text: "Volume"
+                Component.onCompleted : {
+                    lv2Binding.set(this, "valueChanged", "value", lv2InstanceName, "sub_volume", from, to, 0.0, 1.0);
+                }
+            }
+            EnumKnob {
+                text: "W"
+                enums: ["sin",
+                        "triangle",
+                        "square",
+                        "saw up",
+                        "saw down",
+                        "3 step",
+                        "4 step",
+                        "8 step",
+                        "3 pyramid",
+                        "5 pyramid",
+                        "9 pyramid"]
 
-            Component.onCompleted : {
-                lv2Binding.set(this, "valueChanged", "value", lv2InstanceName, "osc_1_waveform", 0.0, 1.0, 0.0, 1.0);
+                Component.onCompleted : {
+                    lv2Binding.set(this, "valueChanged", "value", lv2InstanceName, "sub_waveform", 0.0, 1.0, 0.0, 1.0);
+                }
+            }
+            Switch {
+                text: "Sub octave"
+                Component.onCompleted : {
+                    lv2Binding.set(this, "checkedChanged", "checked", lv2InstanceName, "sub_octave", 0.0, 1.0, 0.0, 1.0);
+                }
+            }
+            Knob {
+                text: "Sub shuffle"
+                units: "cents"
+                from: 0.0
+                to: 100.0
+                Component.onCompleted : {
+                    lv2Binding.set(this, "valueChanged", "value", lv2InstanceName, "sub_shuffle", from, to, 0.0, 1.0);
+                }
             }
         }
-        IntKnob {
-            text: "T"
-            units: "semitones"
-            displayed_from: -48.0
-            displayed_to: 48.0
-            displayed_default: 0.0
-            Component.onCompleted : {
-                lv2Binding.set(this, "valueChanged", "value", lv2InstanceName, "osc_1_transpose", 0.0, 1.0, 0.0, 1.0);
-            }
-        }
-        Knob {
-            text: "t"
-            units: "cents"
-            from: -100.0
-            to: 100.0
-            Component.onCompleted : {
-                lv2Binding.set(this, "valueChanged", "value", lv2InstanceName, "osc_1_transpose", from, to, 0.0, 1.0);
-            }
+
+        RowLayout {
+            Text { text: "Noise" }
+            Knob {
+                text: "Volume"
+                Component.onCompleted : {
+                    lv2Binding.set(this, "valueChanged", "value", lv2InstanceName, "noise_volume", from, to, 0.0, 1.0);
+                }
+            }            
         }
     }
 }
