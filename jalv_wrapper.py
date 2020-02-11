@@ -30,6 +30,7 @@ class JALVInstance:
         self.read_until_prompt()
 
     def read_controls(self):
+        print("read_controls")
         controls = {}
         os.write(self.__in_master, b"controls\r")
         raw_controls = self.read_until_prompt()[:-2]
@@ -43,6 +44,7 @@ class JALVInstance:
         return controls
 
     def read_presets(self):
+        print("read_presets")
         presets = []
         os.write(self.__in_master, b"presets\r")
         raw_presets = self.read_until_prompt()[:-2]
@@ -56,14 +58,14 @@ class JALVInstance:
         return presets
 
     def set_control(self, k, v):
-        print("set_control", k, v)
+        print("set_control", self.__jack_name, k, v)
         os.write(self.__in_master, bytes("{} = {}\n".format(k, v), "utf8"))
         self.read_until_prompt()
 
     def get_control(self, k):
         if not self.__controls:
             self.read_controls()
-        print(self.__controls.get(k, None))
+        print("get_control", self.__jack_name, k, "->", self.__controls.get(k, None))
         return self.__controls.get(k, None)
 
     def read_until_prompt(self):

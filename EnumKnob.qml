@@ -17,7 +17,7 @@ ColumnLayout {
     property real to : 1.0
 
     // list of enum strings
-    property var enums
+    property var enums : ["A", "B"]
     // enum index of the current enum
     property int displayed_enum_index
     // current enum value
@@ -39,9 +39,9 @@ ColumnLayout {
         onValueChanged: {
             updateDisplay();
         }
-        Component.onCompleted : {
-            updateDisplay();
-        }
+        //Component.onCompleted : {
+        //    updateDisplay();
+        //}
         Text {
             text: parent.parent.text
             horizontalAlignment: Text.AlignHCenter

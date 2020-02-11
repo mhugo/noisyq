@@ -17,9 +17,9 @@ ColumnLayout {
     property real to : 1.0
 
     // minimum displayed value
-    property int displayed_from
+    property int displayed_from: 0
     // maximum displayed value
-    property int displayed_to
+    property int displayed_to: 9
     // current displayed value
     property int displayed_value
     // default value

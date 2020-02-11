@@ -2,8 +2,10 @@ import QtQuick 2.0
 import QtQuick.Controls 2.4
 import QtQuick.Layouts 1.11
 
+import Binding 1.0
+
 StackLayout {
-    anchors.fill:parent
+    //anchors.fill:parent
     currentIndex: 0
 
     property string lv2InstanceName
@@ -26,11 +28,25 @@ StackLayout {
         id: ampEnvelope
         title: "Amplitude Envelope"
 
-        Component.onCompleted : {
-            lv2Binding.set(this, "attackChanged", "attack", lv2InstanceName, "amp_attack", 0.0, 16.0, 0.0, 1.0);
-            lv2Binding.set(this, "decayChanged", "decay", lv2InstanceName, "amp_decay", 0.0, 16.0, 0.0, 1.0);
-            lv2Binding.set(this, "sustainChanged", "sustain", lv2InstanceName, "amp_sustain", 0.0, 1.0, 0.0, 1.0);
-            lv2Binding.set(this, "releaseChanged", "release", lv2InstanceName, "amp_release", 0.0, 16.0, 0.0, 1.0);
+        BindingDeclaration {
+            propertyName: "attack"
+            parameterName: "amp_attack"
+            propertyMax: 16.0
+        }
+        BindingDeclaration {
+            propertyName: "decay"
+            parameterName: "amp_decay"
+            propertyMax: 16.0
+        }
+        BindingDeclaration {
+            propertyName: "sustain"
+            parameterName: "amp_sustain"
+            propertyMax: 1.0
+        }
+        BindingDeclaration {
+            propertyName: "release"
+            parameterName: "amp_release"
+            propertyMax: 16.0
         }
     }
 
@@ -40,20 +56,36 @@ StackLayout {
             id: filterEnabled
             checked: false
             text: "Enable filter"
-            Component.onCompleted : {
-                lv2Binding.set(this, "checkedChanged", "checked", lv2InstanceName, "filter_on", 0.0, 1.0, 0.0, 1.0);
+            BindingDeclaration {
+                propertyName: "checked"
+                parameterName: "filter_on"
             }
         }
         Envelope {
             enabled: filterEnabled.checked
             title: "Filter Envelope"
-            Component.onCompleted : {
-                lv2Binding.set(this, "attackChanged", "attack", lv2InstanceName, "fil_attack", 0.0, 16.0, 0.0, 1.0);
-                lv2Binding.set(this, "decayChanged", "decay", lv2InstanceName, "fil_decay", 0.0, 16.0, 0.0, 1.0);
-                lv2Binding.set(this, "sustainChanged", "sustain", lv2InstanceName, "fil_sustain", 0.0, 1.0, 0.0, 1.0);
-                lv2Binding.set(this, "releaseChanged", "release", lv2InstanceName, "fil_release", 0.0, 16.0, 0.0, 1.0);
+            BindingDeclaration {
+                propertyName: "attack"
+                parameterName: "fil_attack"
+                propertyMax: 16.0
+            }
+            BindingDeclaration {
+                propertyName: "decay"
+                parameterName: "fil_decay"
+                propertyMax: 16.0
+            }
+            BindingDeclaration {
+                propertyName: "sustain"
+                parameterName: "fil_sustain"
+                propertyMax: 1.0
+            }
+            BindingDeclaration {
+                propertyName: "release"
+                parameterName: "fil_release"
+                propertyMax: 16.0
             }
         }
+
     }
 
     ColumnLayout {
@@ -68,8 +100,10 @@ StackLayout {
             Text { text: "Sub" }
             Knob {
                 text: "Volume"
-                Component.onCompleted : {
-                    lv2Binding.set(this, "valueChanged", "value", lv2InstanceName, "sub_volume", from, to, 0.0, 1.0);
+                BindingDeclaration {
+                    parameterName: "sub_volume"
+                    propertyMin: parent.from
+                    propertyMax: parent.to
                 }
             }
             EnumKnob {
@@ -86,14 +120,13 @@ StackLayout {
                         "5 pyramid",
                         "9 pyramid"]
 
-                Component.onCompleted : {
-                    lv2Binding.set(this, "valueChanged", "value", lv2InstanceName, "sub_waveform", 0.0, 1.0, 0.0, 1.0);
-                }
+                BindingDeclaration { parameterName: "sub_waveform" }
             }
             Switch {
                 text: "Sub octave"
-                Component.onCompleted : {
-                    lv2Binding.set(this, "checkedChanged", "checked", lv2InstanceName, "sub_octave", 0.0, 1.0, 0.0, 1.0);
+                BindingDeclaration {
+                    propertyName: "checked"
+                    parameterName: "sub_shuffle"
                 }
             }
             Knob {
@@ -101,20 +134,21 @@ StackLayout {
                 units: "cents"
                 from: 0.0
                 to: 100.0
-                Component.onCompleted : {
-                    lv2Binding.set(this, "valueChanged", "value", lv2InstanceName, "sub_shuffle", from, to, 0.0, 1.0);
+                BindingDeclaration {
+                    parameterName: "sub_shuffle"
+                    propertyMin: parent.from
+                    propertyMax: parent.to
+                    
                 }
             }
         }
-
+        
         RowLayout {
             Text { text: "Noise" }
             Knob {
                 text: "Volume"
-                Component.onCompleted : {
-                    lv2Binding.set(this, "valueChanged", "value", lv2InstanceName, "noise_volume", from, to, 0.0, 1.0);
-                }
-            }            
+                BindingDeclaration { parameterName: "noise_volume" }
+            }
         }
     }
 }

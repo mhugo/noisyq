@@ -11,8 +11,6 @@ import QtCharts 2.0
 import QtQuick.Controls 2.4
 import QtQuick.Layouts 1.11
 
-import QtQml.StateMachine 1.0 as DSM
-
 import Midi 1.0
 
 Item {
@@ -109,7 +107,7 @@ Item {
         }
     }
 
-    MidiIn {
+/*    MidiIn {
         id: midi_in
         port: Qt.application.arguments[1] || ""
 
@@ -119,7 +117,7 @@ Item {
                 adsr.attack = data[2] / 127.0 * 16;
             }
         }
-    }
+    }*/
 
     ColumnLayout {
 
@@ -131,19 +129,15 @@ Item {
             id: voiceStack
 
             HelmControls {
-                id: helm1
                 lv2InstanceName: "Helm 1"
                 MidiOut {
-                    id: midi_out1
                     ports: ["midi_out1"]
                 }
             }
 
             HelmControls {
-                id: helm2
                 lv2InstanceName: "Helm 2"
                 MidiOut {
-                    id: midi_out2
                     ports: ["midi_out2"]
                 }
             }
