@@ -4,25 +4,35 @@ import QtQuick.Layouts 1.11
 
 import Binding 1.0
 
-StackLayout {
-    //anchors.fill:parent
-    currentIndex: 0
-
-    property string lv2InstanceName
-
+ColumnLayout {
     // switch to a given item by its id
     function switchTo(itemName) {
         // TODO use a constant array ?
         if (itemName === "ampEnvelope") {
-            currentIndex = 0;
+            stack.currentIndex = 0;
         }
         else if (itemName === "filterEnvelope") {
-            currentIndex = 1;
+            stack.currentIndex = 1;
         }
         else if (itemName === "oscPanel") {
-            currentIndex = 2;
+            stack.currentIndex = 2;
         }
     }
+
+    property string lv2InstanceName
+
+    RowLayout {
+        Text { text: "Preset" }
+        ComboBox {
+            model: ["A", "B", "C"]
+        }
+    }
+
+    StackLayout {
+        id: stack
+    //anchors.fill:parent
+    currentIndex: 0
+
 
     Envelope {
         id: ampEnvelope
@@ -151,4 +161,5 @@ StackLayout {
             }
         }
     }
+}
 }
