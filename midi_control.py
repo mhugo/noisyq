@@ -9,8 +9,14 @@ import rtmidi
 
 from jalv_wrapper import JALVInstance
 
+import json
+
 import sys
 import os
+
+# TODO
+# Replace JALV by mod-host to support presets
+#  - can be used for a load / save state
 
 class MidiIn (QQuickItem):
     def __init__(self, parent = None):
@@ -83,6 +89,9 @@ class BindingDeclaration(QQuickItem):
 
         self.__parent = None
 
+        # LV2 instance
+        self.__instance_name = None
+
     def getSignalName(self):
         return self.__signal_name
 
@@ -133,13 +142,43 @@ class BindingDeclaration(QQuickItem):
     parameterMin = pyqtProperty(float, getParameterMin, setParameterMin)
     parameterMax = pyqtProperty(float, getParameterMax, setParameterMax)
 
-    def _find_lv2_instance_name(self, item):
+    def __find_lv2_instance_name(self, item):
         instance_name = item.property("lv2InstanceName")
         if instance_name:
             return instance_name
         if item.parent():
-            return self._find_lv2_instance_name(item.parent())
+            return self.__find_lv2_instance_name(item.parent())
         return None
+
+    def _find_lv2_instance_name(self):
+        if self.__instance_name is None:
+            self.__instance_name = self.__find_lv2_instance_name(self)
+
+    def _property_to_parameter(self, value):
+        """Convert a value of the QItem's property into an LV2 parameter"""
+        return (value - self.__property_min) / (self.__property_max - self.__property_min) \
+            * (self.__parameter_max - self.__parameter_min) \
+            + self.__parameter_min
+
+    def _parameter_to_property(self, value):
+        """Convert the value of an LV2 parameter into a QItem's property value"""
+        print("value", value,
+              "param", self.__parameter_min, self.__parameter_max,
+              "prop", self.__property_min, self.__property_max)
+        return (value - self.__parameter_min) \
+            / (self.__parameter_max - self.__parameter_min) \
+            * (self.__property_max - self.__property_min) \
+            + self.__property_min
+
+    def instance_name(self):
+        return self.__instance_name
+
+    def get_parameter(self):
+        return self._property_to_parameter(self.__parent.property(self.__property_name))
+
+    def set_parameter(self, value):
+        if value is not None:
+            self.__parent.setProperty(self.__property_name, self._parameter_to_property(value))
 
     def install(self):
         """Install a binding between a widget and an LV2 parameter.
@@ -155,10 +194,10 @@ class BindingDeclaration(QQuickItem):
         - a signal that is triggered when the object's internal state changes
 
         """
-        lv2_instance_name = self._find_lv2_instance_name(self)
-        instance = lv2_instances.get(lv2_instance_name)
+        self._find_lv2_instance_name()
+        instance = lv2_instances.get(self.__instance_name)
         if instance is None:
-            print("Instance not found: {}".format(lv2_instance_name))
+            print("Instance not found: {}".format(self.__instance_name))
             return
 
         # We are going to install a signal connection from Python
@@ -169,7 +208,8 @@ class BindingDeclaration(QQuickItem):
         # Get the current parameter value
         # and modify the corresponding property
         current_value = instance.get_control(self.__parameter_name)
-        self.__parent.setProperty(self.__property_name, current_value)
+        if current_value is not None:
+            self.__parent.setProperty(self.__property_name, self._parameter_to_property(current_value))
 
         # The signal is given by name. Since a signal is represented as an attribute,
         # We call getattr to get the corresponding signal object
@@ -182,13 +222,11 @@ class BindingDeclaration(QQuickItem):
             return
 
         def _set_control(binding, instance, obj):
-            instance.set_control(binding.parameterName, (obj.property(binding.propertyName) - binding.propertyMin)
-                                 / (binding.propertyMax - binding.propertyMin)
-                                 * (binding.parameterMax - binding.parameterMin)
-                                 + binding.parameterMin)
+            instance.set_control(binding.parameterName, binding._property_to_parameter(obj.property(binding.propertyName)))
 
         sig.connect(lambda b=self, i=instance, o=self.__parent: _set_control(b, i, o))
 
+PARAMETERS_FILE = ".midi_controls.presets"
 app = QApplication(sys.argv)
 
 #print(qmlRegisterType(MidiIn, 'Midi', 1, 0, 'MidiIn'))
@@ -197,17 +235,37 @@ qmlRegisterType(BindingDeclaration, 'Binding', 1, 0, 'BindingDeclaration')
 
 current_path = os.path.abspath(os.path.dirname(__file__))
 qml_file = os.path.join(current_path, 'app.qml')
-engine = QQmlEngine()
-
-component = QQmlComponent(engine)
 
 view = QQuickView()
 view.setResizeMode(QQuickView.SizeRootObjectToView)
 view.setSource(QUrl.fromLocalFile(qml_file))
+view.engine().quit.connect(app.quit)
 
 for binding in view.findChildren(BindingDeclaration):
     binding.install()
 
+# TODO: load/save using BindingDeclaration
+    
+# Load parameters, if any
+if os.path.exists(PARAMETERS_FILE):
+    with open(PARAMETERS_FILE, "r") as fi:
+        params = json.load(fi)
+
+    for binding in view.findChildren(BindingDeclaration):
+        v = params[binding.instance_name()].get(binding.parameterName, None)
+        binding.set_parameter(v)
+
 view.show()
 res = app.exec_()
+
+# Save parameters
+params = {
+    "__version__" : 1
+}
+for instance_name, instance in lv2_instances.items():
+    params[instance_name] = instance.read_controls()
+
+with open(PARAMETERS_FILE, "w") as fo:
+    json.dump(params, fo)
+
 sys.exit(res)
