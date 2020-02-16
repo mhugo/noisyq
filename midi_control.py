@@ -162,9 +162,6 @@ class BindingDeclaration(QQuickItem):
 
     def _parameter_to_property(self, value):
         """Convert the value of an LV2 parameter into a QItem's property value"""
-        print("value", value,
-              "param", self.__parameter_min, self.__parameter_max,
-              "prop", self.__property_min, self.__property_max)
         return (value - self.__parameter_min) \
             / (self.__parameter_max - self.__parameter_min) \
             * (self.__property_max - self.__property_min) \

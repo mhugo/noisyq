@@ -23,6 +23,9 @@ ColumnLayout {
     // current enum value
     property string displayed_enum
 
+    onValueChanged: {
+        dial.value = (value - from) / (to - from) * (dial.to - dial.from) + dial.from;
+    }
     Dial {
         id: dial
         from: 0
