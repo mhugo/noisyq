@@ -1,5 +1,8 @@
 /*
 TODO
+- homogénéiser voix (entiers ?), instances et notes midi
+  - instance: parametre lv2 + note midi
+  - voix: un entier
 - map more controls
 - route midi keyboard notes events to midi in of each instance
 - find how to configure midi in control changes binding
@@ -15,8 +18,8 @@ import Midi 1.0
 
 Item {
     id: main
-    width: 600
-    height: 600
+    width: childrenRect.width
+    height: childrenRect.height
 
     // French keyboard scan codes
     Item {
@@ -94,6 +97,9 @@ Item {
     signal keyPressed(int code, int key)
     signal keyReleased(int code, int key)
     focus: true
+
+    signal noteOn(int voice, int note)
+    signal noteOff(int voice, int note)
         
     Keys.onPressed: {
         if (! event.isAutoRepeat) {
@@ -129,18 +135,18 @@ Item {
             id: voiceStack
 
             HelmControls {
-                lv2InstanceName: "Helm 1"
-                MidiOut {
-                    ports: ["midi_out1"]
-                }
+                voice: 0
             }
 
             HelmControls {
-                lv2InstanceName: "Helm 2"
-                MidiOut {
-                    ports: ["midi_out2"]
-                }
+                voice: 1
             }
+        }
+
+        Sequencer {
+            id: seq
+
+            currentVoice : voiceStack.currentIndex
         }
     }
     
@@ -155,6 +161,7 @@ Item {
                 let voiceNumber = code - keycode.k_f1;
                 console.log("switch voice number " + voiceNumber);
                 voiceStack.currentIndex = voiceNumber;
+                seq.currentVoice = voiceStack.children[voiceStack.currentIndex].lv2InstanceName;
             }
             else if (code == keycode.k_number1) {
                 voiceStack.children[voiceStack.currentIndex].switchTo("ampEnvelope");
@@ -167,20 +174,16 @@ Item {
             }
             else if ((code >= keycode.k_row3_1) && (code <= keycode.k_row3_10)) {
                 // 69 : A4
-                let note = code - keycode.k_row3_1 + 69
-                let currentVoice = voiceStack.children[voiceStack.currentIndex];
-                let currentVoiceMidiOut = currentVoice.children[currentVoice.children.length-1];
-                currentVoiceMidiOut.note_on(0, 1, note, 64);
+                let note = code - keycode.k_row3_1 + 69;
+                noteOn(voiceStack.currentIndex, note);
             }
         }
         onKeyReleased: {
             console.log("on released", code);
             if ((code >= keycode.k_row3_1) && (code <= keycode.k_row3_10)) {
                 // 69 : A4
-                let note = code - keycode.k_row3_1 + 69
-                let currentVoice = voiceStack.children[voiceStack.currentIndex];
-                let currentVoiceMidiOut = currentVoice.children[currentVoice.children.length-1];
-                currentVoiceMidiOut.note_off(0, 1, note);
+                let note = code - keycode.k_row3_1 + 69;
+                noteOff(voiceStack.currentIndex, note);
             }
         }
     }

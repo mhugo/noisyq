@@ -1,4 +1,4 @@
-from PyQt5.QtCore import QUrl, pyqtSignal, pyqtProperty, pyqtSlot, QObject
+from PyQt5.QtCore import QUrl, pyqtSignal, pyqtProperty, pyqtSlot, QObject, QTimer
 from PyQt5.QtWidgets import QApplication
 from PyQt5.QtQuick import QQuickItem, QQuickView
 
@@ -38,12 +38,38 @@ class MidiIn (QQuickItem):
 
     dataReceived = pyqtSignal([list, float], arguments=["data", "timestamp"])
 
+class MidiOut:
+    def __init__(self, jack_name):
+        self.__midi_out, _ = open_midioutput(api=rtmidi.API_UNIX_JACK, use_virtual=True, client_name=jack_name)
+
+        # timer for note play
+        self.__timer = QTimer()
+        self.__timer.setSingleShot(True)
+        
+    def note_on(self, channel, note, velocity):
+        self.__midi_out.send_message([0x90+channel, note, velocity])
+
+    def note_off(self, channel, note):
+        self.__midi_out.send_message([0x80+channel, note, 0])
+
+    def note(self, channel, note, velocity, duration):
+        # note_on, then pause, then note_off
+        self.note_on(channel, note, velocity)
+        self.__timer.setInterval(duration)
+        self.__timer.timeout.connect(lambda c=channel, n=note: \
+                                     self.note_off(c, n))
+        self.__timer.start()
+
 class MultipleMidiOut (QQuickItem):
     def __init__(self, parent = None):
         QQuickItem.__init__(self, parent)
 
         self.__ports = []
         self.__midi_outs = []
+
+        # timer for note play
+        self.__timer = QTimer(self)
+        self.__timer.setSingleShot(True)
 
     def getPorts(self):
         return self.__ports
@@ -59,6 +85,13 @@ class MultipleMidiOut (QQuickItem):
     def note_on(self, port_number, channel, note, velocity):
         self.__midi_outs[port_number].send_message([0x90+channel, note, velocity])
 
+    def note(self, port_number, channel, note, velocity, duration):
+        # note_on, then pause, then note_off
+        self.note_on(port_number, channel, note, velocity)
+        self.__timer.timeout.connect(lambda p=port_number, c=channel, n=note: \
+                                     self.note_off(p, c, n))
+        self.__timer.start()
+
     @pyqtSlot(int, int, int)
     def note_off(self, port_number, channel, note):
         self.__midi_outs[port_number].send_message([0x80+channel, note, 0])
@@ -69,11 +102,53 @@ class MultipleMidiOut (QQuickItem):
         
     ports = pyqtProperty(list, getPorts, setPorts)
 
-
+"""
 lv2_instances = {
     "Helm 1" : JALVInstance("http://tytel.org/helm", "Helm 1"),
     "Helm 2" : JALVInstance("http://tytel.org/helm", "Helm 2")
 }
+"""
+
+voices = [
+    (MidiOut("midi_out1"), JALVInstance("http://tytel.org/helm", "Helm 1")),
+    (MidiOut("midi_out2"), JALVInstance("http://tytel.org/helm", "Helm 2"))
+]
+
+class Step:
+    def __init__(self, note, velocity, duration):
+        self.note = note
+        self.velocity = velocity
+        self.duration = duration
+    
+class Sequencer(QObject):
+
+    def __init__(self, n_steps = 16):
+        super().__init__()
+        self.__n_steps = 16
+        # sequence of Step|None
+        self.__steps = []
+        for voice in range(2):
+            self.__steps.append([None] * n_steps)
+
+    def step(self, voice, step_n):
+        return self.__steps[voice][step_n]
+
+    @pyqtSlot(int, int, int, int, int)
+    def set_step(self, voice, step_n, note, velocity, duration_ms):
+        print("** voice ", voice, " step ", step_n)
+        self.__steps[voice][step_n] = Step(note, velocity, duration_ms)
+
+    @pyqtSlot(int, int)
+    def unset_step(self, voice, step_n):
+        self.__steps[voice][step_n] = None
+
+    @pyqtSlot(int)
+    def play_step(self, step_n):
+        for voice in range(len(self.__steps)):
+            step = self.__steps[voice][step_n]
+            if step is not None:
+                print("**", "step", step_n, "voice", voice, "note", step.note, "duration", step.duration, "velocity", step.velocity)
+                voices[voice][0].note(1, step.note, step.velocity, step.duration)
 
 class BindingDeclaration(QQuickItem):
     def __init__(self, parent = None):
@@ -91,6 +166,7 @@ class BindingDeclaration(QQuickItem):
 
         # LV2 instance
         self.__instance_name = None
+        self.__voice = None
 
     def getSignalName(self):
         return self.__signal_name
@@ -154,6 +230,24 @@ class BindingDeclaration(QQuickItem):
         if self.__instance_name is None:
             self.__instance_name = self.__find_lv2_instance_name(self)
 
+    def instance_name(self):
+        return self.__instance_name
+
+    def __find_voice(self, item):
+        voice = item.property("voice")
+        if voice is not None:
+            return voice
+        if item.parent():
+            return self.__find_voice(item.parent())
+        return None
+
+    def _find_voice(self):
+        if self.__voice is None:
+            self.__voice = self.__find_voice(self)
+
+    def voice(self):
+        return self.__voice
+
     def _property_to_parameter(self, value):
         """Convert a value of the QItem's property into an LV2 parameter"""
         return (value - self.__property_min) / (self.__property_max - self.__property_min) \
@@ -166,9 +260,6 @@ class BindingDeclaration(QQuickItem):
             / (self.__parameter_max - self.__parameter_min) \
             * (self.__property_max - self.__property_min) \
             + self.__property_min
-
-    def instance_name(self):
-        return self.__instance_name
 
     def get_parameter(self):
         return self._property_to_parameter(self.__parent.property(self.__property_name))
@@ -191,11 +282,8 @@ class BindingDeclaration(QQuickItem):
         - a signal that is triggered when the object's internal state changes
 
         """
-        self._find_lv2_instance_name()
-        instance = lv2_instances.get(self.__instance_name)
-        if instance is None:
-            print("Instance not found: {}".format(self.__instance_name))
-            return
+        self._find_voice()
+        instance = voices[self.voice()][1]
 
         # We are going to install a signal connection from Python
         # on a C++ object.
@@ -233,10 +321,16 @@ qmlRegisterType(BindingDeclaration, 'Binding', 1, 0, 'BindingDeclaration')
 current_path = os.path.abspath(os.path.dirname(__file__))
 qml_file = os.path.join(current_path, 'app.qml')
 
+sequencer = Sequencer()
+
 view = QQuickView()
 view.setResizeMode(QQuickView.SizeRootObjectToView)
+view.rootContext().setContextProperty("sequencer", sequencer)
 view.setSource(QUrl.fromLocalFile(qml_file))
 view.engine().quit.connect(app.quit)
+#view.rootObject().noteOn.connect(lambda v, n: voices[v][0].note_on(1, n, 64))
+view.rootObject().noteOn.connect(lambda v, n: voices[v][0].note(1, n, 64, 500))
+view.rootObject().noteOff.connect(lambda v, n: voices[v][0].note_off(1, n))
 
 for binding in view.findChildren(BindingDeclaration):
     binding.install()
@@ -249,7 +343,7 @@ if os.path.exists(PARAMETERS_FILE):
         params = json.load(fi)
 
     for binding in view.findChildren(BindingDeclaration):
-        v = params[binding.instance_name()].get(binding.parameterName, None)
+        v = params[str(binding.voice())].get(binding.parameterName, None)
         binding.set_parameter(v)
 
 view.show()
@@ -259,8 +353,8 @@ res = app.exec_()
 params = {
     "__version__" : 1
 }
-for instance_name, instance in lv2_instances.items():
-    params[instance_name] = instance.read_controls()
+for voice, (midi_out, instance) in enumerate(voices):
+    params[str(voice)] = instance.read_controls()
 
 with open(PARAMETERS_FILE, "w") as fo:
     json.dump(params, fo)

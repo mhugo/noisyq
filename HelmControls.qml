@@ -19,7 +19,7 @@ ColumnLayout {
         }
     }
 
-    property string lv2InstanceName
+    property int voice : 0
 
     RowLayout {
         Text { text: "Preset" }
