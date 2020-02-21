@@ -114,8 +114,9 @@ voices = [
     (MidiOut("midi_out2"), JALVInstance("http://tytel.org/helm", "Helm 2"))
 ]
 
-class Step:
+class Step(QObject):
     def __init__(self, note, velocity, duration):
+        super().__init__()
         self.note = note
         self.velocity = velocity
         self.duration = duration
@@ -124,12 +125,14 @@ class Sequencer(QObject):
 
     def __init__(self, n_steps = 16):
         super().__init__()
-        self.__n_steps = 16
+        self.__n_steps = n_steps
         # sequence of Step|None
         self.__steps = []
         for voice in range(2):
             self.__steps.append([None] * n_steps)
 
+
+    @pyqtSlot(int, int, result=Step)
     def step(self, voice, step_n):
         return self.__steps[voice][step_n]
 
