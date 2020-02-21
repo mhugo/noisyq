@@ -161,7 +161,6 @@ Item {
                 let voiceNumber = code - keycode.k_f1;
                 console.log("switch voice number " + voiceNumber);
                 voiceStack.currentIndex = voiceNumber;
-                seq.currentVoice = voiceStack.children[voiceStack.currentIndex].lv2InstanceName;
             }
             else if (code == keycode.k_number1) {
                 voiceStack.children[voiceStack.currentIndex].switchTo("ampEnvelope");
