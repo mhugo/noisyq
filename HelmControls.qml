@@ -20,13 +20,10 @@ ColumnLayout {
     }
 
     property int voice : 0
+    property int bank: 0
+    property int program: 0
 
-    RowLayout {
-        Text { text: "Preset" }
-        ComboBox {
-            model: ["A", "B", "C"]
-        }
-    }
+    Text { text: "Bank " + bank + " Program " + program }
 
     StackLayout {
         id: stack

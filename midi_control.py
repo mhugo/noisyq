@@ -60,6 +60,15 @@ class MidiOut:
                                      self.note_off(c, n))
         self.__timer.start()
 
+    def control_change(self, channel, control, value):
+        self.__midi_out.send_message([0xB0+channel, control, value])
+
+    def program_change(self, channel, bank, program):
+        print("program change", channel, program)
+        self.control_change(channel, 32, bank & 0x7f)
+        self.control_change(channel, 0, bank >> 7)
+        self.__midi_out.send_message([0xC0+channel, program])
+
 class MultipleMidiOut (QQuickItem):
     def __init__(self, parent = None):
         QQuickItem.__init__(self, parent)
@@ -334,6 +343,7 @@ view.engine().quit.connect(app.quit)
 #view.rootObject().noteOn.connect(lambda v, n: voices[v][0].note_on(1, n, 64))
 view.rootObject().noteOn.connect(lambda v, n: voices[v][0].note(1, n, 64, 500))
 view.rootObject().noteOff.connect(lambda v, n: voices[v][0].note_off(1, n))
+view.rootObject().programChange.connect(lambda v, b, p: voices[v][0].program_change(1, b, p))
 
 for binding in view.findChildren(BindingDeclaration):
     binding.install()

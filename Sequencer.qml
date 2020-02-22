@@ -98,13 +98,21 @@ RowLayout {
         }
     }
 
-    IntKnob {
-        id: bpm
-        text: "BPM"
-        displayed_from: 1
-        displayed_to: 300
-        from: 1
-        to: 300
-        displayed_default: 120
+    ColumnLayout {
+        IntKnob {
+            id: bpm
+            text: "BPM"
+            displayed_from: 1
+            displayed_to: 300
+            from: 1
+            to: 300
+            displayed_default: 120
+        }
+        RowLayout {
+            Text { text: "Steps by beat" }
+            ComboBox {
+                model : ["1", "2", "4", "8", "16"]
+            }
+        }
     }
 }

@@ -26,6 +26,8 @@ Item {
         id: keycode
         property int k_escape : 9
         property int k_backspace : 22
+        property int k_page_up : 112
+        property int k_page_down : 117
 
         property int k_f1 : 67
         property int k_f2 : 68
@@ -94,22 +96,23 @@ Item {
         property int k_row3_10 : 61
     }
 
-    signal keyPressed(int code, int key)
-    signal keyReleased(int code, int key)
+    signal keyPressed(int code, int key, int modifiers)
+    signal keyReleased(int code, int key, int modifiers)
     focus: true
 
     signal noteOn(int voice, int note)
     signal noteOff(int voice, int note)
+    signal programChange(int voice, int bank, int program)
         
     Keys.onPressed: {
         if (! event.isAutoRepeat) {
             console.log("scan code " + event.nativeScanCode);
-            keyPressed(event.nativeScanCode, event.key);
+            keyPressed(event.nativeScanCode, event.key, event.modifiers);
         }
     }
     Keys.onReleased: {
         if (! event.isAutoRepeat) {
-            keyReleased(event.nativeScanCode, event.key);
+            keyReleased(event.nativeScanCode, event.key, event.modifiers);
         }
     }
 
@@ -134,12 +137,19 @@ Item {
         StackLayout {
             id: voiceStack
 
-            HelmControls {
-                voice: 0
-            }
-
-            HelmControls {
-                voice: 1
+            Repeater {
+                model: 2
+                HelmControls {
+                    voice: index
+                    onProgramChanged : {
+                        console.log("programChange", index, program);
+                        programChange(index, bank, program);
+                    }
+                    onBankChanged : {
+                        console.log("bankChange", index, bank);
+                        programChange(index, bank, program);
+                    }
+                }
             }
         }
 
@@ -163,18 +173,37 @@ Item {
                 voiceStack.currentIndex = voiceNumber;
             }
             else if (code == keycode.k_number1) {
-                voiceStack.children[voiceStack.currentIndex].switchTo("ampEnvelope");
+                voiceStack.itemAt(voiceStack.currentIndex).switchTo("ampEnvelope");
             }
             else if (code == keycode.k_number2) {
-                voiceStack.children[voiceStack.currentIndex].switchTo("filterEnvelope");
+                voiceStack.itemAt(voiceStack.currentIndex).switchTo("filterEnvelope");
             }
             else if (code == keycode.k_number3) {
-                voiceStack.children[voiceStack.currentIndex].switchTo("oscPanel");
+                voiceStack.itemAt(voiceStack.currentIndex).switchTo("oscPanel");
             }
             else if ((code >= keycode.k_row3_1) && (code <= keycode.k_row3_10)) {
                 // 69 : A4
                 let note = code - keycode.k_row3_1 + 69;
                 noteOn(voiceStack.currentIndex, note);
+            }
+            else if (code == keycode.k_page_up) {
+                if (modifiers & Qt.ShiftModifier) {
+                    voiceStack.itemAt(voiceStack.currentIndex).bank += 1;
+                }
+                else {
+                    if (voiceStack.itemAt(voiceStack.currentIndex).program < 127)
+                        voiceStack.itemAt(voiceStack.currentIndex).program += 1;
+                }
+            }
+            else if (code == keycode.k_page_down) {
+                if (modifiers & Qt.ShiftModifier) {
+                    if (voiceStack.itemAt(voiceStack.currentIndex).bank > 0)
+                        voiceStack.itemAt(voiceStack.currentIndex).bank -= 1;
+                }
+                else {
+                    if (voiceStack.itemAt(voiceStack.currentIndex).program > 0)
+                        voiceStack.itemAt(voiceStack.currentIndex).program -= 1;
+                }
             }
         }
         onKeyReleased: {
