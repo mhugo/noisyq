@@ -27,14 +27,13 @@ RowLayout {
 
     onCurrentVoiceChanged : {
         for (var i = 0; i < seq.nSteps; i++) {
-            console.log(i, sequencer.step(seq.currentVoice, i));
             steps.itemAt(i).checked = sequencer.step(seq.currentVoice, i) != null;
         }
     }
 
     Timer {
         id: timer
-        interval: 250
+        interval: 1 / (bpm.value / 60) * 1000
         repeat: true
         triggeredOnStart: true
         onTriggered : {
@@ -97,5 +96,15 @@ RowLayout {
                 }
             }
         }
+    }
+
+    IntKnob {
+        id: bpm
+        text: "BPM"
+        displayed_from: 1
+        displayed_to: 300
+        from: 1
+        to: 300
+        displayed_default: 120
     }
 }
