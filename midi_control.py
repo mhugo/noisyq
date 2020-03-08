@@ -120,7 +120,8 @@ lv2_instances = {
 
 voices = [
     (MidiOut("midi_out1"), JALVInstance("http://tytel.org/helm", "Helm 1")),
-    (MidiOut("midi_out2"), JALVInstance("http://tytel.org/helm", "Helm 2"))
+    (MidiOut("midi_out2"), JALVInstance("http://tytel.org/helm", "Helm 2")),
+    (MidiOut("midi_out3"), JALVInstance("http://samplv1.sourceforge.net/lv2", "Samplv1"))
 ]
 
 class Step(QObject):
@@ -137,7 +138,7 @@ class Sequencer(QObject):
         self.__n_steps = n_steps
         # sequence of Step|None
         self.__steps = []
-        for voice in range(2):
+        for voice in range(len(voices)):
             self.__steps.append([None] * n_steps)
 
 

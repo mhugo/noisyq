@@ -151,6 +151,17 @@ Item {
                     }
                 }
             }
+
+            Samplv1Controls {
+                    onProgramChanged : {
+                        console.log("programChange", 2, program);
+                        programChange(2, bank, program);
+                    }
+                    onBankChanged : {
+                        console.log("bankChange", 2, bank);
+                        programChange(2, bank, program);
+                    }
+            }
         }
 
         Sequencer {
@@ -171,15 +182,6 @@ Item {
                 let voiceNumber = code - keycode.k_f1;
                 console.log("switch voice number " + voiceNumber);
                 voiceStack.currentIndex = voiceNumber;
-            }
-            else if (code == keycode.k_number1) {
-                voiceStack.itemAt(voiceStack.currentIndex).switchTo("ampEnvelope");
-            }
-            else if (code == keycode.k_number2) {
-                voiceStack.itemAt(voiceStack.currentIndex).switchTo("filterEnvelope");
-            }
-            else if (code == keycode.k_number3) {
-                voiceStack.itemAt(voiceStack.currentIndex).switchTo("oscPanel");
             }
             else if ((code >= keycode.k_row3_1) && (code <= keycode.k_row3_10)) {
                 // 69 : A4
@@ -204,6 +206,21 @@ Item {
                     if (voiceStack.itemAt(voiceStack.currentIndex).program > 0)
                         voiceStack.itemAt(voiceStack.currentIndex).program -= 1;
                 }
+            }
+            else if (voiceStack.currentIndex < 2) {
+                // specific keys for helm
+                if (code == keycode.k_number1) {
+                    voiceStack.itemAt(voiceStack.currentIndex).switchTo("ampEnvelope");
+                }
+                else if (code == keycode.k_number2) {
+                    voiceStack.itemAt(voiceStack.currentIndex).switchTo("filterEnvelope");
+                }
+                else if (code == keycode.k_number3) {
+                    voiceStack.itemAt(voiceStack.currentIndex).switchTo("oscPanel");
+                }
+            }
+            else if (voiceStack.currentIndex == 2) {
+                // specific keys for samplv1
             }
         }
         onKeyReleased: {
