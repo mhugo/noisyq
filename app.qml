@@ -133,34 +133,49 @@ Item {
         Text {
             text: "Current voice " + (voiceStack.currentIndex + 1)
         }
-    
+
+        RowLayout {
+            Text { text: "Load preset" }
+            ComboBox {
+                id: presetCombo
+            }
+        }
+
+        Component {
+            id: helmPlugin
+            HelmControls {
+                onProgramChanged : {
+                    console.log("programChange", voice, program);
+                    programChange(voice, bank, program);
+                }
+                onBankChanged : {
+                    console.log("bankChange", voice, bank);
+                    programChange(voice, bank, program);
+                }
+            }
+        }
+
+        Component {
+            id: samplv1Plugin
+            Samplv1Controls {
+                onProgramChanged : {
+                    console.log("programChange", voice, program);
+                    programChange(voice, bank, program);
+                }
+                onBankChanged : {
+                    console.log("bankChange", voice, bank);
+                    programChange(voice, bank, program);
+                }
+            }
+        }
         StackLayout {
             id: voiceStack
 
             Repeater {
-                model: 2
-                HelmControls {
-                    voice: index
-                    onProgramChanged : {
-                        console.log("programChange", index, program);
-                        programChange(index, bank, program);
-                    }
-                    onBankChanged : {
-                        console.log("bankChange", index, bank);
-                        programChange(index, bank, program);
-                    }
+                model: tracks.count()
+                Loader {
+                    id: pluginLoader
                 }
-            }
-
-            Samplv1Controls {
-                    onProgramChanged : {
-                        console.log("programChange", 2, program);
-                        programChange(2, bank, program);
-                    }
-                    onBankChanged : {
-                        console.log("bankChange", 2, bank);
-                        programChange(2, bank, program);
-                    }
             }
         }
 
@@ -175,13 +190,30 @@ Item {
         target: main
 
         onKeyPressed: {
+            let currentPlugin = voiceStack.itemAt(voiceStack.currentIndex).item;
             if (code == keycode.k_escape) {
                 Qt.quit();
             }
             else if ((code >= keycode.k_f1) && (code <= keycode.k_f8)) {
-                let voiceNumber = code - keycode.k_f1;
-                console.log("switch voice number " + voiceNumber);
-                voiceStack.currentIndex = voiceNumber;
+                if ((currentPlugin === null) &&
+                    (modifiers & Qt.ControlModifier )) {
+                    // load a plugin
+                    let pluginNumber = code - keycode.k_f1;
+                    if (pluginNumber == 0) {
+                        voiceStack.itemAt(voiceStack.currentIndex).sourceComponent = helmPlugin;
+                        tracks.instantiate_plugin("http://tytel.org/helm", voiceStack.currentIndex);
+                    }
+                    else if (pluginNumber == 1) {
+                        voiceStack.itemAt(voiceStack.currentIndex).sourceComponent = samplv1Plugin;
+                        tracks.instantiate_plugin("http://samplv1.sourceforge.net/lv2", voiceStack.currentIndex);
+                    }
+                }
+                else if (! (modifiers & Qt.ControlModifier) ) {
+                    let voiceNumber = code - keycode.k_f1;
+                    if (voiceNumber < voiceStack.count) {
+                        voiceStack.currentIndex = voiceNumber;
+                    }
+                }
             }
             else if ((code >= keycode.k_row3_1) && (code <= keycode.k_row3_10)) {
                 // 69 : A4
@@ -190,33 +222,33 @@ Item {
             }
             else if (code == keycode.k_page_up) {
                 if (modifiers & Qt.ShiftModifier) {
-                    voiceStack.itemAt(voiceStack.currentIndex).bank += 1;
+                    currentPlugin.bank += 1;
                 }
                 else {
-                    if (voiceStack.itemAt(voiceStack.currentIndex).program < 127)
-                        voiceStack.itemAt(voiceStack.currentIndex).program += 1;
+                    if (currentPlugin.program < 127)
+                        currentPlugin.program += 1;
                 }
             }
             else if (code == keycode.k_page_down) {
                 if (modifiers & Qt.ShiftModifier) {
-                    if (voiceStack.itemAt(voiceStack.currentIndex).bank > 0)
-                        voiceStack.itemAt(voiceStack.currentIndex).bank -= 1;
+                    if (currentPlugin.bank > 0)
+                        currentPlugin.bank -= 1;
                 }
                 else {
-                    if (voiceStack.itemAt(voiceStack.currentIndex).program > 0)
-                        voiceStack.itemAt(voiceStack.currentIndex).program -= 1;
+                    if (currentPlugin.program > 0)
+                        currentPlugin.program -= 1;
                 }
             }
             else if (voiceStack.currentIndex < 2) {
                 // specific keys for helm
                 if (code == keycode.k_number1) {
-                    voiceStack.itemAt(voiceStack.currentIndex).switchTo("ampEnvelope");
+                    currentPlugin.switchTo("ampEnvelope");
                 }
                 else if (code == keycode.k_number2) {
-                    voiceStack.itemAt(voiceStack.currentIndex).switchTo("filterEnvelope");
+                    currentPlugin.switchTo("filterEnvelope");
                 }
                 else if (code == keycode.k_number3) {
-                    voiceStack.itemAt(voiceStack.currentIndex).switchTo("oscPanel");
+                    currentPlugin.switchTo("oscPanel");
                 }
             }
             else if (voiceStack.currentIndex == 2) {

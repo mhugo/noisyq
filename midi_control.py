@@ -111,18 +111,83 @@ class MultipleMidiOut (QQuickItem):
         
     ports = pyqtProperty(list, getPorts, setPorts)
 
-"""
-lv2_instances = {
-    "Helm 1" : JALVInstance("http://tytel.org/helm", "Helm 1"),
-    "Helm 2" : JALVInstance("http://tytel.org/helm", "Helm 2")
-}
-"""
+class Track(QObject):
+    def __init__(self):
+        self.__plugin = None
+        self.__track_number = 0
+        self.__midi_out = None
 
-voices = [
-    (MidiOut("midi_out1"), JALVInstance("http://tytel.org/helm", "Helm 1")),
-    (MidiOut("midi_out2"), JALVInstance("http://tytel.org/helm", "Helm 2")),
-    (MidiOut("midi_out3"), JALVInstance("http://samplv1.sourceforge.net/lv2", "Samplv1"))
-]
+    def plugin(self):
+        return self.__plugin
+
+    def track_number(self):
+        return self.__track_number
+
+    def midi_out(self):
+        return self.__midi_out
+
+    def instantiate_plugin(self, lv2_url, track_number):
+        self.__track_number = track_number
+        self.__plugin = JALVInstance(lv2_url, "Plugin {}".format(track_number))
+        self.__midi_out = MidiOut("midi_out{}".format(track_number))
+
+class Tracks(QObject):
+
+    PARAMETERS_FILE = ".midi_controls.presets"
+    
+    PARAMETERS_FILE_VERSION = 2
+
+    def __init__(self):
+        super().__init__()
+        self.__tracks = [
+            Track(),
+            Track(),
+            Track()
+        ]
+
+    def __getitem__(self, k):
+        return self.__tracks[k]
+
+    @pyqtSlot(result=int)
+    def count(self):
+        return len(self.__tracks)
+
+    @pyqtSlot(str, int)
+    def instantiate_plugin(self, lv2_url, track_number):
+        self.__tracks[track_number].instantiate_plugin(lv2_url, track_number)
+
+    def load_parameters(self):
+        out_params = {}
+        if os.path.exists(self.PARAMETERS_FILE):
+            with open(self.PARAMETERS_FILE, "r") as fi:
+                params = json.load(fi)
+
+            if params["__version__"] == self.PARAMETERS_FILE_VERSION:
+
+                # create tracks
+                for k, v in params.items():
+                    if k != "__version__":
+                        track_number = int(k)
+                        self.instantiate_plugin(v["lv2_url"], track_number)
+
+                        out_params[track_number] = v
+        return out_params
+
+    def save_parameters(self):
+        params = {
+            "__version__" : self.PARAMETERS_FILE_VERSION
+        }
+        for track in self.__tracks:
+            if track.plugin():
+                params[str(track.track_number())] = {
+                    "lv2_url": track.plugin().lv2_url(),
+                    "controls": track.plugin().read_controls()
+                }
+
+        with open(self.PARAMETERS_FILE, "w") as fo:
+            json.dump(params, fo)
+
+tracks = Tracks()
 
 class Step(QObject):
     def __init__(self, note, velocity, duration):
@@ -138,30 +203,30 @@ class Sequencer(QObject):
         self.__n_steps = n_steps
         # sequence of Step|None
         self.__steps = []
-        for voice in range(len(voices)):
+        for track in range(tracks.count()):
             self.__steps.append([None] * n_steps)
 
 
     @pyqtSlot(int, int, result=Step)
-    def step(self, voice, step_n):
-        return self.__steps[voice][step_n]
+    def step(self, track, step_n):
+        return self.__steps[track][step_n]
 
     @pyqtSlot(int, int, int, int, int)
-    def set_step(self, voice, step_n, note, velocity, duration_ms):
-        print("** voice ", voice, " step ", step_n)
-        self.__steps[voice][step_n] = Step(note, velocity, duration_ms)
+    def set_step(self, track, step_n, note, velocity, duration_ms):
+        print("** track ", track, " step ", step_n)
+        self.__steps[track][step_n] = Step(note, velocity, duration_ms)
 
     @pyqtSlot(int, int)
-    def unset_step(self, voice, step_n):
-        self.__steps[voice][step_n] = None
+    def unset_step(self, track, step_n):
+        self.__steps[track][step_n] = None
 
     @pyqtSlot(int)
     def play_step(self, step_n):
-        for voice in range(len(self.__steps)):
-            step = self.__steps[voice][step_n]
+        for track in range(tracks.count()):
+            step = self.__steps[track][step_n]
             if step is not None:
-                print("**", "step", step_n, "voice", voice, "note", step.note, "duration", step.duration, "velocity", step.velocity)
-                voices[voice][0].note(1, step.note, step.velocity, step.duration)
+                print("**", "step", step_n, "track", track, "note", step.note, "duration", step.duration, "velocity", step.velocity)
+                tracks[track].midi_out().note(1, step.note, step.velocity, step.duration)
 
 class BindingDeclaration(QQuickItem):
     def __init__(self, parent = None):
@@ -179,7 +244,7 @@ class BindingDeclaration(QQuickItem):
 
         # LV2 instance
         self.__instance_name = None
-        self.__voice = None
+        self.__track = None
 
     def getSignalName(self):
         return self.__signal_name
@@ -246,20 +311,20 @@ class BindingDeclaration(QQuickItem):
     def instance_name(self):
         return self.__instance_name
 
-    def __find_voice(self, item):
-        voice = item.property("voice")
-        if voice is not None:
-            return voice
+    def __find_track(self, item):
+        track = item.property("track")
+        if track is not None:
+            return track
         if item.parent():
-            return self.__find_voice(item.parent())
+            return self.__find_track(item.parent())
         return None
 
-    def _find_voice(self):
-        if self.__voice is None:
-            self.__voice = self.__find_voice(self)
+    def _find_track(self):
+        if self.__track is None:
+            self.__track = self.__find_track(self)
 
-    def voice(self):
-        return self.__voice
+    def track(self):
+        return self.__track
 
     def _property_to_parameter(self, value):
         """Convert a value of the QItem's property into an LV2 parameter"""
@@ -295,8 +360,8 @@ class BindingDeclaration(QQuickItem):
         - a signal that is triggered when the object's internal state changes
 
         """
-        self._find_voice()
-        instance = voices[self.voice()][1]
+        self._find_track()
+        instance = tracks[self.track()].plugin()
 
         # We are going to install a signal connection from Python
         # on a C++ object.
@@ -324,7 +389,6 @@ class BindingDeclaration(QQuickItem):
 
         sig.connect(lambda b=self, i=instance, o=self.__parent: _set_control(b, i, o))
 
-PARAMETERS_FILE = ".midi_controls.presets"
 app = QApplication(sys.argv)
 
 #print(qmlRegisterType(MidiIn, 'Midi', 1, 0, 'MidiIn'))
@@ -339,38 +403,27 @@ sequencer = Sequencer()
 view = QQuickView()
 view.setResizeMode(QQuickView.SizeRootObjectToView)
 view.rootContext().setContextProperty("sequencer", sequencer)
+view.rootContext().setContextProperty("tracks", tracks)
 view.setSource(QUrl.fromLocalFile(qml_file))
 view.engine().quit.connect(app.quit)
-#view.rootObject().noteOn.connect(lambda v, n: voices[v][0].note_on(1, n, 64))
-view.rootObject().noteOn.connect(lambda v, n: voices[v][0].note(1, n, 64, 500))
-view.rootObject().noteOff.connect(lambda v, n: voices[v][0].note_off(1, n))
-view.rootObject().programChange.connect(lambda v, b, p: voices[v][0].program_change(1, b, p))
+view.rootObject().noteOn.connect(lambda v, n: tracks[v].midi_out().note(1, n, 64, 500))
+view.rootObject().noteOff.connect(lambda v, n: tracks[v].midi_out().note_off(1, n))
+view.rootObject().programChange.connect(lambda v, b, p: tracks[v].midi_out().program_change(1, b, p))
 
 for binding in view.findChildren(BindingDeclaration):
     binding.install()
 
-# TODO: load/save using BindingDeclaration
-    
 # Load parameters, if any
-if os.path.exists(PARAMETERS_FILE):
-    with open(PARAMETERS_FILE, "r") as fi:
-        params = json.load(fi)
+params = tracks.load_parameters()
 
-    for binding in view.findChildren(BindingDeclaration):
-        v = params[str(binding.voice())].get(binding.parameterName, None)
-        binding.set_parameter(v)
+for binding in view.findChildren(BindingDeclaration):
+    v = params[binding.track()].get(binding.parameterName, None)
+    binding.set_parameter(v)
 
 view.show()
 res = app.exec_()
 
 # Save parameters
-params = {
-    "__version__" : 1
-}
-for voice, (midi_out, instance) in enumerate(voices):
-    params[str(voice)] = instance.read_controls()
-
-with open(PARAMETERS_FILE, "w") as fo:
-    json.dump(params, fo)
+tracks.save_parameters()
 
 sys.exit(res)

@@ -26,6 +26,8 @@ RowLayout {
     }
 
     onCurrentVoiceChanged : {
+        if (! steps.count)
+            return;
         for (var i = 0; i < seq.nSteps; i++) {
             steps.itemAt(i).checked = sequencer.step(seq.currentVoice, i) != null;
         }

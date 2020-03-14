@@ -27,21 +27,28 @@ class JALVInstance:
 
         self.__controls = {}
 
+        self.__presets = None
+
         self.read_until_prompt()
 
-    def read_controls(self):
-        print("read_controls")
+    def lv2_url(self):
+        return self.__lv2_name
+
+    def _read_controls_after_command(self):
         controls = {}
-        os.write(self.__in_master, b"controls\r")
         raw_controls = self.read_until_prompt()[:-2]
         if raw_controls is None:
             return {}
         for x in raw_controls.decode("utf8").split("\r\n")[:-1]:
             k,v = x.split(" = ")
-            controls[k] = float(v)
-
-        self.__controls = dict(controls)
+            controls[k] = float(v.replace(",", "."))
         return controls
+
+    def read_controls(self):
+        print("read_controls")
+        os.write(self.__in_master, b"controls\r")
+        self.__controls = self._read_controls_after_command()
+        return self.__controls
 
     def read_presets(self):
         print("read_presets")
@@ -56,6 +63,16 @@ class JALVInstance:
             preset_name = ''.join(s[1:])[:-1]
             presets.append((preset_name, preset_uri))
         return presets
+
+    def presets(self):
+        if self.__presets is None:
+            self.__presets = self.read_presets()
+        return self.__presets
+
+    def load_preset(self, uri):
+        print("load_preset", uri)
+        os.write(self.__in_master, bytes("preset {}\n".format(uri), "utf8"))
+        self.__controls = self._read_controls_after_command()
 
     def set_control(self, k, v):
         print("set_control", self.__jack_name, k, v)
