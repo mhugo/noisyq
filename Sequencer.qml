@@ -26,8 +26,14 @@ RowLayout {
     }
 
     onCurrentVoiceChanged : {
+        console.log("currentVoiceChanged");
         if (! steps.count)
             return;
+        updateState();
+    }
+
+    // FIXME called from the host to initialize
+    function updateState() {
         for (var i = 0; i < seq.nSteps; i++) {
             steps.itemAt(i).checked = sequencer.step(seq.currentVoice, i) != null;
         }

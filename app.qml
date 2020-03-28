@@ -16,6 +16,8 @@ import QtQuick.Layouts 1.11
 
 import Midi 1.0
 
+import Tracks 1.0
+
 Item {
     id: main
     width: childrenRect.width
@@ -131,7 +133,7 @@ Item {
     ColumnLayout {
 
         Text {
-            text: "Current voice " + (voiceStack.currentIndex + 1)
+            text: "Current track " + (tracks.currentTrack + 1)
         }
 
         RowLayout {
@@ -141,48 +143,21 @@ Item {
             }
         }
 
-        Component {
-            id: helmPlugin
-            HelmControls {
-                onProgramChanged : {
-                    console.log("programChange", voice, program);
-                    programChange(voice, bank, program);
-                }
-                onBankChanged : {
-                    console.log("bankChange", voice, bank);
-                    programChange(voice, bank, program);
-                }
-            }
-        }
+        Tracks {
+            width: childrenRect.width
+            height: childrenRect.height
+            id: tracks
 
-        Component {
-            id: samplv1Plugin
-            Samplv1Controls {
-                onProgramChanged : {
-                    console.log("programChange", voice, program);
-                    programChange(voice, bank, program);
-                }
-                onBankChanged : {
-                    console.log("bankChange", voice, bank);
-                    programChange(voice, bank, program);
-                }
-            }
-        }
-        StackLayout {
-            id: voiceStack
-
-            Repeater {
-                model: tracks.count()
-                Loader {
-                    id: pluginLoader
-                }
+            onCurrentTrackChanged : {
+                console.log("current track changed from qml", currentTrack);
             }
         }
 
         Sequencer {
             id: seq
-
-            currentVoice : voiceStack.currentIndex
+            objectName: "sequencer"
+            
+            currentVoice : tracks.currentTrack
         }
     }
     
@@ -190,35 +165,35 @@ Item {
         target: main
 
         onKeyPressed: {
-            let currentPlugin = voiceStack.itemAt(voiceStack.currentIndex).item;
             if (code == keycode.k_escape) {
                 Qt.quit();
             }
             else if ((code >= keycode.k_f1) && (code <= keycode.k_f8)) {
-                if ((currentPlugin === null) &&
+                console.log("currentItem", tracks.currentItem);
+                if ((tracks.currentItem === null) &&
                     (modifiers & Qt.ControlModifier )) {
                     // load a plugin
                     let pluginNumber = code - keycode.k_f1;
                     if (pluginNumber == 0) {
-                        voiceStack.itemAt(voiceStack.currentIndex).sourceComponent = helmPlugin;
-                        tracks.instantiate_plugin("http://tytel.org/helm", voiceStack.currentIndex);
+                        tracks.instantiate_plugin("HelmControls.qml", "http://tytel.org/helm", tracks.currentTrack);
                     }
                     else if (pluginNumber == 1) {
-                        voiceStack.itemAt(voiceStack.currentIndex).sourceComponent = samplv1Plugin;
-                        tracks.instantiate_plugin("http://samplv1.sourceforge.net/lv2", voiceStack.currentIndex);
+                        tracks.instantiate_plugin("Samplv1Controls.qml", "http://samplv1.sourceforge.net/lv2", tracks.currentTrack);
                     }
                 }
                 else if (! (modifiers & Qt.ControlModifier) ) {
                     let voiceNumber = code - keycode.k_f1;
-                    if (voiceNumber < voiceStack.count) {
-                        voiceStack.currentIndex = voiceNumber;
+                    console.log("switch to track #" + voiceNumber);
+                    if (voiceNumber < tracks.count) {
+                        console.log("switch to track #" + voiceNumber);
+                        tracks.currentTrack = voiceNumber;
                     }
                 }
             }
             else if ((code >= keycode.k_row3_1) && (code <= keycode.k_row3_10)) {
                 // 69 : A4
                 let note = code - keycode.k_row3_1 + 69;
-                noteOn(voiceStack.currentIndex, note);
+                noteOn(tracks.currentTrack, note);
             }
             else if (code == keycode.k_page_up) {
                 if (modifiers & Qt.ShiftModifier) {
@@ -239,7 +214,7 @@ Item {
                         currentPlugin.program -= 1;
                 }
             }
-            else if (voiceStack.currentIndex < 2) {
+            else if (tracks.currentTrack < 2) {
                 // specific keys for helm
                 if (code == keycode.k_number1) {
                     currentPlugin.switchTo("ampEnvelope");
@@ -251,7 +226,7 @@ Item {
                     currentPlugin.switchTo("oscPanel");
                 }
             }
-            else if (voiceStack.currentIndex == 2) {
+            else if (tracks.currentTrack == 2) {
                 // specific keys for samplv1
             }
         }
@@ -260,7 +235,7 @@ Item {
             if ((code >= keycode.k_row3_1) && (code <= keycode.k_row3_10)) {
                 // 69 : A4
                 let note = code - keycode.k_row3_1 + 69;
-                noteOff(voiceStack.currentIndex, note);
+                noteOff(tracks.currentStack, note);
             }
         }
     }

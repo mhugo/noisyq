@@ -54,8 +54,8 @@ ColumnLayout {
         legend.visible: false
         Layout.fillWidth: true
         theme: ChartView.ChartThemeDark
-        width: 400
-        height: 400
+        width: 200
+        height: 200
         LineSeries {
             id: lineSeries
         }

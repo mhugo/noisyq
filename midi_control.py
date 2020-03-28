@@ -1,8 +1,14 @@
-from PyQt5.QtCore import QUrl, pyqtSignal, pyqtProperty, pyqtSlot, QObject, QTimer
+from PyQt5.QtCore import (
+    QUrl, pyqtSignal, pyqtProperty, pyqtSlot, QObject, QTimer,
+    QMetaObject
+)
 from PyQt5.QtWidgets import QApplication
 from PyQt5.QtQuick import QQuickItem, QQuickView
 
-from PyQt5.QtQml import qmlRegisterType, QQmlEngine, QQmlComponent
+from PyQt5.QtQml import (
+    qmlRegisterType, QQmlComponent,
+    QQmlEngine
+)
 
 from rtmidi.midiutil import open_midiinput, open_midioutput
 import rtmidi
@@ -13,6 +19,9 @@ import json
 
 import sys
 import os
+
+# Number of tracks
+N_TRACKS = 8
 
 # TODO
 # Replace JALV by mod-host to support presets
@@ -112,13 +121,19 @@ class MultipleMidiOut (QQuickItem):
     ports = pyqtProperty(list, getPorts, setPorts)
 
 class Track(QObject):
-    def __init__(self):
+    def __init__(self, parent=None):
+        super().__init__(parent)
         self.__plugin = None
         self.__track_number = 0
         self.__midi_out = None
+        self.__component = None
+        self.__quick_item = None
 
     def plugin(self):
         return self.__plugin
+
+    def component(self):
+        return self.__component
 
     def track_number(self):
         return self.__track_number
@@ -126,38 +141,104 @@ class Track(QObject):
     def midi_out(self):
         return self.__midi_out
 
-    def instantiate_plugin(self, lv2_url, track_number):
+    def quick_item(self):
+        return self.__quick_item
+
+    def set_quick_item(self, item):
+        self.__quick_item = item
+
+    def instantiate_plugin(self, qml_context, qml_url, lv2_url, track_number):
         self.__track_number = track_number
         self.__plugin = JALVInstance(lv2_url, "Plugin {}".format(track_number))
         self.__midi_out = MidiOut("midi_out{}".format(track_number))
+        self.__component = QQmlComponent(qml_context.engine(), qml_url)
+        self.__quick_item = self.__component.create(qml_context)
 
-class Tracks(QObject):
+
+class Tracks(QQuickItem):
 
     PARAMETERS_FILE = ".midi_controls.presets"
     
-    PARAMETERS_FILE_VERSION = 2
+    PARAMETERS_FILE_VERSION = 3
 
-    def __init__(self):
-        super().__init__()
-        self.__tracks = [
-            Track(),
-            Track(),
-            Track()
-        ]
+    def __init__(self, parent):
+        super().__init__(parent)
+
+        self.__tracks = []
+        for i in range(N_TRACKS):
+            self.__tracks.append(Track(self))
+        self.__current_track = 0
+
+        self.setFlags(self.flags() | QQuickItem.ItemHasContents)
+
+        blank_component = QQmlComponent(
+            view.engine(),
+            "BlankTrack.qml"
+        )
+
+        self.__blank_item = blank_component.create(
+            view.rootContext()
+        )
+        self.__blank_item.setParentItem(self)
 
     def __getitem__(self, k):
         return self.__tracks[k]
 
-    @pyqtSlot(result=int)
+    def __iter__(self):
+        for t in self.__tracks:
+            yield t
+
+    current_track_changed = pyqtSignal(int)
+
+    def current_track(self):
+        return self.__current_track
+
+    def set_current_track(self, t):
+        old_item = self.__tracks[self.__current_track].quick_item()
+        if not old_item:
+            old_item = self.__blank_item
+        old_item.setParentItem(None)
+        item = self.__tracks[t].quick_item()
+        if not item:
+            item = self.__blank_item
+        item.setParentItem(self)
+        self.__current_track = t
+        self.current_track_changed.emit(t)
+        self.setImplicitHeight(self.height())
+        self.setImplicitWidth(self.width())
+
+    currentTrack = pyqtProperty(int, current_track, set_current_track, notify=current_track_changed)
+
+    @pyqtProperty(QQuickItem)
+    def currentItem(self):
+        return self.__tracks[self.__current_track].quick_item()
+
+    @pyqtProperty(int)
     def count(self):
         return len(self.__tracks)
 
-    @pyqtSlot(str, int)
-    def instantiate_plugin(self, lv2_url, track_number):
-        self.__tracks[track_number].instantiate_plugin(lv2_url, track_number)
+    @pyqtSlot(str, str, int, result=QQmlComponent)
+    def instantiate_plugin(self, qml_url, lv2_url, track_number):
+        old_item = self.__tracks[track_number].quick_item()
+        if not old_item:
+            old_item = self.__blank_item
+        old_item.setParentItem(None)
+        self.__tracks[track_number].instantiate_plugin(
+            view.rootContext(),
+            qml_url,
+            lv2_url,
+            track_number
+        )
+        self.__tracks[track_number].quick_item().setParentItem(self)
+        # Sets "track" property of the item
+        self.__tracks[track_number].quick_item().setProperty("track", track_number)
+        self.setImplicitHeight(self.height())
+        self.setImplicitWidth(self.width())
+
 
     def load_parameters(self):
-        out_params = {}
+        print("*** load_parameters")
+        params = {}
         if os.path.exists(self.PARAMETERS_FILE):
             with open(self.PARAMETERS_FILE, "r") as fi:
                 params = json.load(fi)
@@ -165,29 +246,36 @@ class Tracks(QObject):
             if params["__version__"] == self.PARAMETERS_FILE_VERSION:
 
                 # create tracks
-                for k, v in params.items():
-                    if k != "__version__":
-                        track_number = int(k)
-                        self.instantiate_plugin(v["lv2_url"], track_number)
+                for n, track in enumerate(params["tracks"]):
+                    self.instantiate_plugin(
+                        track["qml_url"],
+                        track["lv2_url"],
+                        n
+                    )
 
-                        out_params[track_number] = v
-        return out_params
+                # sequencer state
+                sequencer.restore(params["sequencer"])
+
+                self.set_current_track(0)
+
+        return params
 
     def save_parameters(self):
         params = {
-            "__version__" : self.PARAMETERS_FILE_VERSION
+            "__version__" : self.PARAMETERS_FILE_VERSION,
+            "sequencer" : sequencer.dump(),
+            "tracks" : []
         }
         for track in self.__tracks:
             if track.plugin():
-                params[str(track.track_number())] = {
+                params["tracks"].append({
                     "lv2_url": track.plugin().lv2_url(),
+                    "qml_url": track.component().url().toString(),
                     "controls": track.plugin().read_controls()
-                }
+                })
 
         with open(self.PARAMETERS_FILE, "w") as fo:
             json.dump(params, fo)
-
-tracks = Tracks()
 
 class Step(QObject):
     def __init__(self, note, velocity, duration):
@@ -195,6 +283,20 @@ class Step(QObject):
         self.note = note
         self.velocity = velocity
         self.duration = duration
+
+    def dump(self):
+        return {
+            "note": self.note,
+            "velocity": self.velocity,
+            "duration": self.duration
+        }
+
+def step_restore(dump):
+    return Step(
+        dump["note"],
+        dump["velocity"],
+        dump["duration"]
+    )
     
 class Sequencer(QObject):
 
@@ -203,7 +305,7 @@ class Sequencer(QObject):
         self.__n_steps = n_steps
         # sequence of Step|None
         self.__steps = []
-        for track in range(tracks.count()):
+        for track in range(N_TRACKS):
             self.__steps.append([None] * n_steps)
 
 
@@ -213,7 +315,6 @@ class Sequencer(QObject):
 
     @pyqtSlot(int, int, int, int, int)
     def set_step(self, track, step_n, note, velocity, duration_ms):
-        print("** track ", track, " step ", step_n)
         self.__steps[track][step_n] = Step(note, velocity, duration_ms)
 
     @pyqtSlot(int, int)
@@ -222,11 +323,24 @@ class Sequencer(QObject):
 
     @pyqtSlot(int)
     def play_step(self, step_n):
-        for track in range(tracks.count()):
+        for track in range(tracks.count):
             step = self.__steps[track][step_n]
             if step is not None:
-                print("**", "step", step_n, "track", track, "note", step.note, "duration", step.duration, "velocity", step.velocity)
                 tracks[track].midi_out().note(1, step.note, step.velocity, step.duration)
+
+    def dump(self):
+        return [
+            [s.dump() if s is not None else None for s in t]
+            for t in self.__steps
+        ]
+
+    def restore(self, dump):
+        for ti, track in enumerate(dump):
+            for si, step in enumerate(track):
+                if step is None:
+                    self.__steps[ti][si] = None
+                else:
+                    self.__steps[ti][si] = step_restore(step)
 
 class BindingDeclaration(QQuickItem):
     def __init__(self, parent = None):
@@ -391,39 +505,57 @@ class BindingDeclaration(QQuickItem):
 
 app = QApplication(sys.argv)
 
-#print(qmlRegisterType(MidiIn, 'Midi', 1, 0, 'MidiIn'))
-print(qmlRegisterType(MultipleMidiOut, 'Midi', 1, 0, 'MidiOut'))
+qmlRegisterType(MultipleMidiOut, 'Midi', 1, 0, 'MidiOut')
 qmlRegisterType(BindingDeclaration, 'Binding', 1, 0, 'BindingDeclaration')
+qmlRegisterType(Tracks, 'Tracks', 1, 0, 'Tracks')
 
 current_path = os.path.abspath(os.path.dirname(__file__))
 qml_file = os.path.join(current_path, 'app.qml')
 
-sequencer = Sequencer()
 
 view = QQuickView()
-view.setResizeMode(QQuickView.SizeRootObjectToView)
+view.setResizeMode(QQuickView.SizeViewToRootObject)
+
+sequencer = Sequencer()
 view.rootContext().setContextProperty("sequencer", sequencer)
-view.rootContext().setContextProperty("tracks", tracks)
+
 view.setSource(QUrl.fromLocalFile(qml_file))
 view.engine().quit.connect(app.quit)
 view.rootObject().noteOn.connect(lambda v, n: tracks[v].midi_out().note(1, n, 64, 500))
 view.rootObject().noteOff.connect(lambda v, n: tracks[v].midi_out().note_off(1, n))
 view.rootObject().programChange.connect(lambda v, b, p: tracks[v].midi_out().program_change(1, b, p))
 
-for binding in view.findChildren(BindingDeclaration):
-    binding.install()
+params = None
+has_tracks = False
+for tracks in view.findChildren(Tracks):
+    has_tracks = True
+    p = tracks.load_parameters()
+    if "tracks" in p:
+        params = p["tracks"]
+    
+if not has_tracks:
+    print("No Tracks object defined !")
+    sys.exit(1)
 
-# Load parameters, if any
-params = tracks.load_parameters()
-
-for binding in view.findChildren(BindingDeclaration):
-    v = params[binding.track()].get(binding.parameterName, None)
-    binding.set_parameter(v)
+# Install bindings and initialize parameters
+for n, track in enumerate(tracks):
+    if track.quick_item():
+        for binding in track.quick_item().findChildren(BindingDeclaration):
+            binding.install()
+            v = params[n]["controls"].get(binding.parameterName, None)
+            binding.set_parameter(v)
 
 view.show()
+
+# FIXME
+# Force sequencer state initialization
+for seq in view.findChildren(QQuickItem, "sequencer"):
+    QMetaObject.invokeMethod(seq, "updateState")
+
 res = app.exec_()
 
 # Save parameters
-tracks.save_parameters()
+for tracks in view.findChildren(Tracks):
+    tracks.save_parameters()
 
 sys.exit(res)

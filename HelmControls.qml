@@ -5,6 +5,10 @@ import QtQuick.Layouts 1.11
 import Binding 1.0
 
 ColumnLayout {
+    // must be present, set by the main program
+    // once it is instantiated to a given track number
+    property int track
+
     // switch to a given item by its id
     function switchTo(itemName) {
         // TODO use a constant array ?
