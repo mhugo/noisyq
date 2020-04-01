@@ -5,12 +5,21 @@ import QtQuick.Layouts 1.11
 import Binding 1.0
 
 ColumnLayout {
-    // must be present, set by the main program
+    //---------------------------------------------------
+    //
+    //                 REQUIRED API
+    //
+    //---------------------------------------------------
+
+    // Will be set by the main program
     // once it is instantiated to a given track number
     property int track
 
+    // Keys sent by the main program
     signal keyPressed(int code, int key, int modifiers)
     signal keyReleased(int code, int key, int modifiers)
+
+    //------------ END OF REQUIRED API ------------------
 
     onKeyPressed : {
         // specific keys for helm
@@ -39,7 +48,6 @@ ColumnLayout {
         }
     }
 
-    property int voice : 0
     property int bank: 0
     property int program: 0
 
