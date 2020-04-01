@@ -9,6 +9,22 @@ ColumnLayout {
     // once it is instantiated to a given track number
     property int track
 
+    signal keyPressed(int code, int key, int modifiers)
+    signal keyReleased(int code, int key, int modifiers)
+
+    onKeyPressed : {
+        // specific keys for helm
+        if (code == keycode.k_number1) {
+            switchTo("ampEnvelope");
+        }
+        else if (code == keycode.k_number2) {
+            switchTo("filterEnvelope");
+        }
+        else if (code == keycode.k_number3) {
+            switchTo("oscPanel");
+        }
+    }
+
     // switch to a given item by its id
     function switchTo(itemName) {
         // TODO use a constant array ?
@@ -31,136 +47,136 @@ ColumnLayout {
 
     StackLayout {
         id: stack
-    //anchors.fill:parent
-    currentIndex: 0
+        //anchors.fill:parent
+        currentIndex: 0
 
 
-    Envelope {
-        id: ampEnvelope
-        title: "Amplitude Envelope"
-
-        BindingDeclaration {
-            propertyName: "attack"
-            parameterName: "amp_attack"
-            propertyMax: 16.0
-        }
-        BindingDeclaration {
-            propertyName: "decay"
-            parameterName: "amp_decay"
-            propertyMax: 16.0
-        }
-        BindingDeclaration {
-            propertyName: "sustain"
-            parameterName: "amp_sustain"
-            propertyMax: 1.0
-        }
-        BindingDeclaration {
-            propertyName: "release"
-            parameterName: "amp_release"
-            propertyMax: 16.0
-        }
-    }
-
-    ColumnLayout {
-        id: filterEnvelope
-        Switch {
-            id: filterEnabled
-            checked: false
-            text: "Enable filter"
-            BindingDeclaration {
-                propertyName: "checked"
-                parameterName: "filter_on"
-            }
-        }
         Envelope {
-            enabled: filterEnabled.checked
-            title: "Filter Envelope"
+            id: ampEnvelope
+            title: "Amplitude Envelope"
+
             BindingDeclaration {
                 propertyName: "attack"
-                parameterName: "fil_attack"
+                parameterName: "amp_attack"
                 propertyMax: 16.0
             }
             BindingDeclaration {
                 propertyName: "decay"
-                parameterName: "fil_decay"
+                parameterName: "amp_decay"
                 propertyMax: 16.0
             }
             BindingDeclaration {
                 propertyName: "sustain"
-                parameterName: "fil_sustain"
+                parameterName: "amp_sustain"
                 propertyMax: 1.0
             }
             BindingDeclaration {
                 propertyName: "release"
-                parameterName: "fil_release"
+                parameterName: "amp_release"
                 propertyMax: 16.0
             }
         }
 
-    }
-
-    ColumnLayout {
-        HelmOscillator {
-            oscillatorNumber: 1
-        }
-        HelmOscillator {
-            oscillatorNumber: 2
-        }
-        RowLayout {
-            // sub oscillator
-            Text { text: "Sub" }
-            Knob {
-                text: "Volume"
-                BindingDeclaration {
-                    parameterName: "sub_volume"
-                    propertyMin: parent.from
-                    propertyMax: parent.to
-                }
-            }
-            EnumKnob {
-                text: "W"
-                enums: ["sin",
-                        "triangle",
-                        "square",
-                        "saw up",
-                        "saw down",
-                        "3 step",
-                        "4 step",
-                        "8 step",
-                        "3 pyramid",
-                        "5 pyramid",
-                        "9 pyramid"]
-
-                BindingDeclaration { parameterName: "sub_waveform" }
-            }
+        ColumnLayout {
+            id: filterEnvelope
             Switch {
-                text: "Sub octave"
+                id: filterEnabled
+                checked: false
+                text: "Enable filter"
                 BindingDeclaration {
                     propertyName: "checked"
-                    parameterName: "sub_shuffle"
+                    parameterName: "filter_on"
                 }
             }
-            Knob {
-                text: "Sub shuffle"
-                units: "cents"
-                from: 0.0
-                to: 100.0
+            Envelope {
+                enabled: filterEnabled.checked
+                title: "Filter Envelope"
                 BindingDeclaration {
-                    parameterName: "sub_shuffle"
-                    propertyMin: parent.from
-                    propertyMax: parent.to
-                    
+                    propertyName: "attack"
+                    parameterName: "fil_attack"
+                    propertyMax: 16.0
+                }
+                BindingDeclaration {
+                    propertyName: "decay"
+                    parameterName: "fil_decay"
+                    propertyMax: 16.0
+                }
+                BindingDeclaration {
+                    propertyName: "sustain"
+                    parameterName: "fil_sustain"
+                    propertyMax: 1.0
+                }
+                BindingDeclaration {
+                    propertyName: "release"
+                    parameterName: "fil_release"
+                    propertyMax: 16.0
                 }
             }
+
         }
-        
-        RowLayout {
-            Text { text: "Noise" }
-            Knob {
-                text: "Volume"
-                BindingDeclaration { parameterName: "noise_volume" }
+
+        ColumnLayout {
+            HelmOscillator {
+                oscillatorNumber: 1
+            }
+            HelmOscillator {
+                oscillatorNumber: 2
+            }
+            RowLayout {
+                // sub oscillator
+                Text { text: "Sub" }
+                Knob {
+                    text: "Volume"
+                    BindingDeclaration {
+                        parameterName: "sub_volume"
+                        propertyMin: parent.from
+                        propertyMax: parent.to
+                    }
+                }
+                EnumKnob {
+                    text: "W"
+                    enums: ["sin",
+                            "triangle",
+                            "square",
+                            "saw up",
+                            "saw down",
+                            "3 step",
+                            "4 step",
+                            "8 step",
+                            "3 pyramid",
+                            "5 pyramid",
+                            "9 pyramid"]
+
+                    BindingDeclaration { parameterName: "sub_waveform" }
+                }
+                Switch {
+                    text: "Sub octave"
+                    BindingDeclaration {
+                        propertyName: "checked"
+                        parameterName: "sub_shuffle"
+                    }
+                }
+                Knob {
+                    text: "Sub shuffle"
+                    units: "cents"
+                    from: 0.0
+                    to: 100.0
+                    BindingDeclaration {
+                        parameterName: "sub_shuffle"
+                        propertyMin: parent.from
+                        propertyMax: parent.to
+                        
+                    }
+                }
+            }
+            
+            RowLayout {
+                Text { text: "Noise" }
+                Knob {
+                    text: "Volume"
+                    BindingDeclaration { parameterName: "noise_volume" }
+                }
             }
         }
     }
-}
 }

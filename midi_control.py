@@ -20,6 +20,8 @@ import json
 import sys
 import os
 
+from keycode import KeyCode
+
 # Number of tracks
 N_TRACKS = 8
 
@@ -518,6 +520,9 @@ view.setResizeMode(QQuickView.SizeViewToRootObject)
 
 sequencer = Sequencer()
 view.rootContext().setContextProperty("sequencer", sequencer)
+
+keycode = KeyCode()
+view.rootContext().setContextProperty("keycode", keycode)
 
 view.setSource(QUrl.fromLocalFile(qml_file))
 view.engine().quit.connect(app.quit)
