@@ -7,7 +7,6 @@ import QtQuick.Layouts 1.11
 // a.k.a. an enumerated value
 
 ColumnLayout {
-    property string text
     // internal value
     property real value
 
@@ -26,6 +25,7 @@ ColumnLayout {
     onValueChanged: {
         dial.value = (value - from) / (to - from) * (dial.to - dial.from) + dial.from;
     }
+
     Dial {
         id: dial
         from: 0
@@ -46,15 +46,10 @@ ColumnLayout {
         //    updateDisplay();
         //}
         Text {
-            text: parent.parent.text
+            text: parent.parent.displayed_enum
             horizontalAlignment: Text.AlignHCenter
             verticalAlignment: Text.AlignVCenter
             anchors.fill: parent
         }
-    }
-    Text {
-        text: parent.displayed_enum
-        horizontalAlignment: Text.AlignHCenter
-        verticalAlignment: Text.AlignVCenter
     }
 }

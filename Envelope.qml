@@ -64,37 +64,45 @@ ColumnLayout {
     RowLayout {
         Layout.fillWidth: true
         Item { Layout.fillWidth: true }
-        Knob {
-            id: attackKnob
+        ControlFrame {
             text: "A"
-            onValueChanged: {
-                adsr.attack = value;
+            Knob {
+                id: attackKnob
+                onValueChanged: {
+                    adsr.attack = value;
+                }
             }
         }
         Item { Layout.fillWidth: true }
-        Knob {
-            id: decayKnob
+        ControlFrame {
             text: "D"
-            onValueChanged: {
-                adsr.decay = value;
+            Knob {
+                id: decayKnob
+                onValueChanged: {
+                    adsr.decay = value;
+                }
             }
         }
         Item { Layout.fillWidth: true }
-        Knob {
-            from: 0
-            to: 1.0
-            id: sustainKnob
+        ControlFrame {
             text: "S"
-            onValueChanged: {
-                adsr.sustain = value;
+            Knob {
+                from: 0
+                to: 1.0
+                id: sustainKnob
+                onValueChanged: {
+                    adsr.sustain = value;
+                }
             }
         }
         Item { Layout.fillWidth: true }
-        Knob {
-            id: releaseKnob
+        ControlFrame {
             text: "R"
-            onValueChanged: {
-                adsr.release = value;
+            Knob {
+                id: releaseKnob
+                onValueChanged: {
+                    adsr.release = value;
+                }
             }
         }
         Item { Layout.fillWidth: true }

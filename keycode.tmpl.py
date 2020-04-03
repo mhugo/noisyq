@@ -6,7 +6,9 @@ keycodes = dict(
         ("escape", 9),
         ("backspace", 12),
         ("page_up", 112),
-        ("page_down", 117)
+        ("page_down", 117),
+        ("right", 114),
+        ("left", 113)
     ]
     # F keys
     + [

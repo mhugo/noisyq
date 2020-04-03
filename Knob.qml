@@ -3,7 +3,6 @@ import QtQuick.Controls 2.4
 import QtQuick.Layouts 1.11
 
 ColumnLayout {
-    property string text
     property string units
     property real value
     onValueChanged: {
@@ -21,15 +20,10 @@ ColumnLayout {
             parent.value = value;
         }
         Text {
-            text: parent.parent.text
+            text: dial.value.toFixed(2)
             horizontalAlignment: Text.AlignHCenter
             verticalAlignment: Text.AlignVCenter
             anchors.fill: parent
         }
-    }
-    Text {
-        text: dial.value.toFixed(2) + " " + parent.units
-        horizontalAlignment: Text.AlignHCenter
-        verticalAlignment: Text.AlignVCenter
     }
 }

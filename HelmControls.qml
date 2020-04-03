@@ -10,6 +10,7 @@ ColumnLayout {
     //                 REQUIRED API
     //
     //---------------------------------------------------
+    id: plugin
 
     // Will be set by the main program
     // once it is instantiated to a given track number
@@ -21,16 +22,26 @@ ColumnLayout {
 
     //------------ END OF REQUIRED API ------------------
 
+    property int selected: 0
+
+    Text { text: "Selected " + selected }
+
     onKeyPressed : {
         // specific keys for helm
         if (code == keycode.k_number1) {
-            switchTo("ampEnvelope");
+            switchTo("oscPanel");
         }
         else if (code == keycode.k_number2) {
-            switchTo("filterEnvelope");
+            switchTo("ampEnvelope");
         }
         else if (code == keycode.k_number3) {
-            switchTo("oscPanel");
+            switchTo("filterEnvelope");
+        }
+        else if (code == keycode.k_right) {
+            selected += 1;
+        }
+        else if (code == keycode.k_left) {
+            selected -= 1;
         }
     }
 
@@ -38,13 +49,13 @@ ColumnLayout {
     function switchTo(itemName) {
         // TODO use a constant array ?
         if (itemName === "ampEnvelope") {
-            stack.currentIndex = 0;
-        }
-        else if (itemName === "filterEnvelope") {
             stack.currentIndex = 1;
         }
-        else if (itemName === "oscPanel") {
+        else if (itemName === "filterEnvelope") {
             stack.currentIndex = 2;
+        }
+        else if (itemName === "oscPanel") {
+            stack.currentIndex = 0;
         }
     }
 
@@ -58,6 +69,81 @@ ColumnLayout {
         //anchors.fill:parent
         currentIndex: 0
 
+        ColumnLayout {
+            RowLayout {
+                Text { text: "Osc. 1" }
+                HelmOscillator {
+                    oscillatorNumber: 1
+                }
+            }
+            RowLayout {
+                Text { text: "Osc. 2" }
+                HelmOscillator {
+                    oscillatorNumber: 2
+                }
+            }
+            RowLayout {
+                // sub oscillator
+                Text { text: "Sub" }
+                ControlFrame {
+                    text: "Volume"
+                    Knob {
+                        BindingDeclaration {
+                            parameterName: "sub_volume"
+                            propertyMin: parent.from
+                            propertyMax: parent.to
+                        }
+                    }
+                }
+                ControlFrame{
+                    text: "Wave"
+                    EnumKnob {
+                        enums: ["sin",
+                                "triangle",
+                                "square",
+                                "saw up",
+                                "saw down",
+                                "3 step",
+                                "4 step",
+                                "8 step",
+                                "3 pyramid",
+                                "5 pyramid",
+                                "9 pyramid"]
+                        BindingDeclaration { parameterName: "sub_waveform" }
+                    }
+                }
+                Switch {
+                    text: "Sub octave"
+                    BindingDeclaration {
+                        propertyName: "checked"
+                        parameterName: "sub_shuffle"
+                    }
+                }
+                ControlFrame {
+                    text: "Sub shuffle"
+                    Knob {
+                        units: "cents"
+                        from: 0.0
+                        to: 100.0
+                        BindingDeclaration {
+                            parameterName: "sub_shuffle"
+                            propertyMin: parent.from
+                            propertyMax: parent.to
+                        }
+                    }
+                }
+            }
+            
+            RowLayout {
+                Text { text: "Noise" }
+                ControlFrame {
+                    text: "Volume"
+                    Knob {
+                        BindingDeclaration { parameterName: "noise_volume" }
+                    }
+                }
+            }
+        }
 
         Envelope {
             id: ampEnvelope
@@ -123,68 +209,5 @@ ColumnLayout {
 
         }
 
-        ColumnLayout {
-            HelmOscillator {
-                oscillatorNumber: 1
-            }
-            HelmOscillator {
-                oscillatorNumber: 2
-            }
-            RowLayout {
-                // sub oscillator
-                Text { text: "Sub" }
-                Knob {
-                    text: "Volume"
-                    BindingDeclaration {
-                        parameterName: "sub_volume"
-                        propertyMin: parent.from
-                        propertyMax: parent.to
-                    }
-                }
-                EnumKnob {
-                    text: "W"
-                    enums: ["sin",
-                            "triangle",
-                            "square",
-                            "saw up",
-                            "saw down",
-                            "3 step",
-                            "4 step",
-                            "8 step",
-                            "3 pyramid",
-                            "5 pyramid",
-                            "9 pyramid"]
-
-                    BindingDeclaration { parameterName: "sub_waveform" }
-                }
-                Switch {
-                    text: "Sub octave"
-                    BindingDeclaration {
-                        propertyName: "checked"
-                        parameterName: "sub_shuffle"
-                    }
-                }
-                Knob {
-                    text: "Sub shuffle"
-                    units: "cents"
-                    from: 0.0
-                    to: 100.0
-                    BindingDeclaration {
-                        parameterName: "sub_shuffle"
-                        propertyMin: parent.from
-                        propertyMax: parent.to
-                        
-                    }
-                }
-            }
-            
-            RowLayout {
-                Text { text: "Noise" }
-                Knob {
-                    text: "Volume"
-                    BindingDeclaration { parameterName: "noise_volume" }
-                }
-            }
-        }
     }
 }

@@ -6,7 +6,6 @@ import QtQuick.Layouts 1.11
 // A parameter that is controlled by a knob that represents an integer value
 
 ColumnLayout {
-    property string text
     property string units
     // internal value
     property real value
@@ -38,7 +37,7 @@ ColumnLayout {
             parent.value = (value - parent.displayed_from) / (parent.displayed_to - parent.displayed_from) * (parent.to - parent.from) + parent.from;
         }
         Text {
-            text: parent.parent.text
+            text: parent.parent.displayed_value
             horizontalAlignment: Text.AlignHCenter
             verticalAlignment: Text.AlignVCenter
             anchors.fill: parent
@@ -46,10 +45,5 @@ ColumnLayout {
         Component.onCompleted: {
             value = parent.displayed_default;
         }
-    }
-    Text {
-        text: parent.displayed_value + " " + parent.units
-        horizontalAlignment: Text.AlignHCenter
-        verticalAlignment: Text.AlignVCenter
     }
 }

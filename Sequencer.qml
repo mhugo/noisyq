@@ -107,14 +107,16 @@ RowLayout {
     }
 
     ColumnLayout {
-        IntKnob {
-            id: bpm
+        ControlFrame {
             text: "BPM"
-            displayed_from: 1
-            displayed_to: 300
-            from: 1
-            to: 300
-            displayed_default: 120
+            IntKnob {
+                id: bpm
+                displayed_from: 1
+                displayed_to: 300
+                from: 1
+                to: 300
+                displayed_default: 120
+            }
         }
         RowLayout {
             Text { text: "Steps by beat" }

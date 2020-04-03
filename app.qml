@@ -3,6 +3,8 @@ TODO
 - map more controls
 - route midi keyboard notes events to midi in of each instance
 - find how to configure midi in control changes binding
+- add a virtual piano
+- dynamic loading of plugin: ensure errors are reported
 */
 import QtQuick 2.0
 import QtCharts 2.0
@@ -148,10 +150,5 @@ Item {
                 noteOff(tracks.currentStack, note);
             }
         }
-    }
-
-    Component.onCompleted : {
-        console.log("k_f1", my_keycode.k_f1);
-        console.log("k_f2", my_keycode.k_f2);
     }
 }

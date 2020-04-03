@@ -153,7 +153,13 @@ class Track(QObject):
         self.__track_number = track_number
         self.__plugin = JALVInstance(lv2_url, "Plugin {}".format(track_number))
         self.__midi_out = MidiOut("midi_out{}".format(track_number))
-        self.__component = QQmlComponent(qml_context.engine(), qml_url)
+        component = QQmlComponent(qml_context.engine(), qml_url)
+        if component.isError():
+            print("** Error loading the QML component: " + qml_url)
+            for error in component.errors():
+                print("  >", error.toString())
+            return
+        self.__component = component
         self.__quick_item = self.__component.create(qml_context)
 
 
@@ -231,6 +237,8 @@ class Tracks(QQuickItem):
             lv2_url,
             track_number
         )
+        if not self.__tracks[track_number].component():
+            return
         self.__tracks[track_number].quick_item().setParentItem(self)
         # Sets "track" property of the item
         self.__tracks[track_number].quick_item().setProperty("track", track_number)
