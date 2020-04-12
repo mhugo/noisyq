@@ -24,6 +24,8 @@ ColumnLayout {
 
     property int selected: 0
 
+    property bool shifted: false
+
     Text { text: "Selected " + selected }
 
     onKeyPressed : {
@@ -37,12 +39,45 @@ ColumnLayout {
         else if (code == keycode.k_number3) {
             switchTo("filterEnvelope");
         }
+        else if ((code >= keycode.k_row1_1) && (code <= keycode.k_row1_8)) {
+            selected = code - keycode.k_row1_1;
+            if (modifiers & Qt.ShiftModifier)
+                selected += 8;
+        }
+        else if ((code >= keycode.k_row2_1) && (code <= keycode.k_row2_8)) {
+            selected = code - keycode.k_row2_1 + 16;
+            if (modifiers & Qt.ShiftModifier)
+                selected += 8;
+        }
         else if (code == keycode.k_right) {
-            selected += 1;
+            // look for the selected item
+            if (selected < layout.data.length - 1) {
+                layout.data[selected].selected = false;
+                selected += 1;
+                layout.data[selected].selected = true;
+            }
         }
         else if (code == keycode.k_left) {
-            selected -= 1;
+            // look for the selected item
+            if (selected > 0) {
+                layout.data[selected].selected = false;
+                selected -= 1;
+                layout.data[selected].selected = true;
+            }
         }
+        else if (code == keycode.k_capslock) {
+            shifted = true;
+        }
+        else {
+            console.log("pass to ", layout.data[selected]);
+            layout.data[selected].keyPressed(code, key, modifiers);
+        }
+    }
+
+    onKeyReleased: {
+        if (code == keycode.k_capslock) {
+            shifted = false;
+        }        
     }
 
     // switch to a given item by its id
@@ -75,287 +110,182 @@ ColumnLayout {
                              "3 pyramid",
                              "5 pyramid",
                              "9 pyramid"]
+
     StackLayout {
         id: stack
         //anchors.fill:parent
         currentIndex: 0
 
+        ColumnLayout {
+
+            Rectangle {
+                width: 100
+                height: 40
+                border.width: 2
+                radius: 10
+                color: shifted ? "blue" : "white"
+                Text {
+                    text: "Shift"
+                    anchors.fill: parent
+                    verticalAlignment: Text.AlignVCenter
+                    horizontalAlignment: Text.AlignHCenter
+                    color: shifted ? "white" : "black"
+                }
+            }
+
         GridLayout {
+            id: layout
             columns: 8
             ControlFrame {
-                text: "Volume"
                 selected: true
+                text: "Volume"
                 Knob {
-                    BindingDeclaration {
-                        parameterName: "osc_1_volume"
-                        propertyMin: parent.from
-                        propertyMax: parent.to
-                    }
+                    bindingParameter: "osc_1_volume"
+                    displayedFrom: 0.0
+                    displayedTo: 16.0
                 }
             }
             ControlFrame {
                 text: "Wave"
-                EnumKnob {
+                Knob {
                     enums: waveEnum
-                    BindingDeclaration {
-                        parameterName: "osc_1_waveform"
-                    }
+                    type: enumKnob
+                    bindingParameter: "osc_1_waveform"
+                }
+            }
+            ControlFrame {
+                text: "Detune"
+                Knob {
+                    type: intKnob
+                    displayedFrom: -48
+                    displayedTo: 48
+                    bindingParameter: "osc_1_tune"
                 }
             }
             ControlFrame {
                 text: "Transpose"
-                IntKnob {
-                    units: "semitones"
-                    displayed_from: -48.0
-                    displayed_to: 48.0
-                    displayed_default: 0.0
-                    BindingDeclaration {
-                        parameterName: "osc_1_detune"
-                    }
-                }
-            }
-            ControlFrame {
-                text: "Tune"
                 Knob {
-                    units: "cents"
-                    from: -100.0
-                    to: 100.0
-                    BindingDeclaration {
-                        parameterName: "osc_1_transpose"
-                        propertyMin: parent.from
-                        propertyMax: parent.to
-                    }
+                    type: intKnob
+                    displayedFrom: -100
+                    displayedTo: 100
+                    bindingParameter: "osc_1_transpose"
                 }
             }
             ControlFrame {
                 text: "Voices"
-                IntKnob {
-                    displayed_from: 1
-                    displayed_to: 15
-                    BindingDeclaration {
-                        parameterName: "osc_1_unison_voices"
-                        propertyMin: parent.from
-                        propertyMax: parent.to
-                    }
+                Knob {
+                    type: intKnob
+                    displayedFrom: 1
+                    displayedTo: 15
+                    bindingParameter: "osc_1_unison_voices"
                 }
             }
             ControlFrame {
-                text: "Unison tune"
+                text: "V. detune"
                 Knob {
-                    units: "cents"
-                    to: 100.0
-                    BindingDeclaration {
-                        parameterName: "osc_1_unison_detune"
-                        propertyMin: parent.from
-                        propertyMax: parent.to
-                    }
-                }
-            }
-            ColumnLayout {
-                Text { text: "Harmonize unison" }
-                Switch {
-                    BindingDeclaration {
-                        parameterName: "osc_1_harmonize"
-                        propertyName: "checked"
-                    }
+                    type: intKnob
+                    displayedFrom: 0
+                    displayedTo: 100
+                    bindingParameter: "osc_1_unison_detune"
                 }
             }
             ControlFrame {
+                text: "Sub vol."
                 Knob {
-                    enabled: false
+                    displayedFrom: 0
+                    displayedTo: 16
+                    bindingParameter: "sub_volume"
+                }
+            }
+            ControlFrame {
+                text: "Noise vol."
+                Knob {
+                    displayedFrom: 0
+                    displayedTo: 16
+                    bindingParameter: "noise_volume"
                 }
             }
 
-            // second row
+            // row 2
             ControlFrame {
-                text: "Volume"
-                selected: true
+                text: "Vol"
+                shiftText: "X. mod."
+                shifted: plugin.shifted
                 Knob {
-                    BindingDeclaration {
-                        parameterName: "osc_2_volume"
-                        propertyMin: parent.from
-                        propertyMax: parent.to
-                    }
+                    bindingParameter: "osc_2_volume"
+                    displayedFrom: 0.0
+                    displayedTo: 16.0
+                    visible: ! shifted
+                }
+                Knob {
+                    bindingParameter: "cross_modulation"
+                    displayedFrom: 0.0
+                    displayedTo: 100.0
+                    visible: shifted
                 }
             }
             ControlFrame {
                 text: "Wave"
-                EnumKnob {
+                Knob {
                     enums: waveEnum
-                    BindingDeclaration {
-                        parameterName: "osc_2_waveform"
-                    }
+                    type: enumKnob
+                    bindingParameter: "osc_2_waveform"
+                }
+            }
+            ControlFrame {
+                text: "Detune"
+                Knob {
+                    type: intKnob
+                    displayedFrom: -48
+                    displayedTo: 48
+                    bindingParameter: "osc_2_tune"
                 }
             }
             ControlFrame {
                 text: "Transpose"
-                IntKnob {
-                    units: "semitones"
-                    displayed_from: -48.0
-                    displayed_to: 48.0
-                    displayed_default: 0.0
-                    BindingDeclaration {
-                        parameterName: "osc_2_detune"
-                    }
-                }
-            }
-            ControlFrame {
-                text: "Tune"
                 Knob {
-                    units: "cents"
-                    from: -100.0
-                    to: 100.0
-                    BindingDeclaration {
-                        parameterName: "osc_2_transpose"
-                        propertyMin: parent.from
-                        propertyMax: parent.to
-                    }
+                    type: intKnob
+                    displayedFrom: -100
+                    displayedTo: 100
+                    bindingParameter: "osc_2_transpose"
                 }
             }
             ControlFrame {
                 text: "Voices"
-                IntKnob {
-                    displayed_from: 1
-                    displayed_to: 15
-                    BindingDeclaration {
-                        parameterName: "osc_2_unison_voices"
-                        propertyMin: parent.from
-                        propertyMax: parent.to
-                    }
+                Knob {
+                    type: intKnob
+                    displayedFrom: 1
+                    displayedTo: 15
+                    bindingParameter: "osc_2_unison_voices"
                 }
             }
             ControlFrame {
-                text: "Unison tune"
+                text: "V. detune"
                 Knob {
-                    units: "cents"
-                    to: 100.0
-                    BindingDeclaration {
-                        parameterName: "osc_2_unison_detune"
-                        propertyMin: parent.from
-                        propertyMax: parent.to
-                    }
+                    type: intKnob
+                    displayedFrom: 0
+                    displayedTo: 100
+                    bindingParameter: "osc_2_unison_detune"
                 }
             }
-            ColumnLayout {
-                Text { text: "Harmonize unison" }
-                Switch {
-                    BindingDeclaration {
-                        parameterName: "osc_2_harmonize"
-                        propertyName: "checked"
-                    }
-                }
-            }
-
-            // third row
             ControlFrame {
-                text: "Sub Vol"
+                text: "Sub wave"
                 Knob {
-                    BindingDeclaration {
-                        parameterName: "sub_volume"
-                        propertyMin: parent.from
-                        propertyMax: parent.to
-                    }
-                }
-            }
-            ControlFrame{
-                text: "Wave"
-                EnumKnob {
+                    type: enumKnob
                     enums: waveEnum
-                    BindingDeclaration { parameterName: "sub_waveform" }
-                }
-            }
-            Switch {
-                text: "Sub octave"
-                BindingDeclaration {
-                    propertyName: "checked"
-                    parameterName: "sub_shuffle"
+                    bindingParameter: "sub_waveform"
                 }
             }
             ControlFrame {
                 text: "Sub shuffle"
                 Knob {
-                    units: "cents"
-                    from: 0.0
-                    to: 100.0
-                    BindingDeclaration {
-                        parameterName: "sub_shuffle"
-                        propertyMin: parent.from
-                        propertyMax: parent.to
-                    }
+                    type: intKnob
+                    displayedFrom: 0
+                    displayedTo: 100
+                    bindingParameter: "sub_shuffle"
                 }
             }
         }
-            
-        ControlFrame {
-            text: "Noise Vol"
-            Knob {
-                BindingDeclaration { parameterName: "noise_volume" }
-            }
         }
-
-        Envelope {
-            id: ampEnvelope
-            title: "Amplitude Envelope"
-
-            BindingDeclaration {
-                propertyName: "attack"
-                parameterName: "amp_attack"
-                propertyMax: 16.0
-            }
-            BindingDeclaration {
-                propertyName: "decay"
-                parameterName: "amp_decay"
-                propertyMax: 16.0
-            }
-            BindingDeclaration {
-                propertyName: "sustain"
-                parameterName: "amp_sustain"
-                propertyMax: 1.0
-            }
-            BindingDeclaration {
-                propertyName: "release"
-                parameterName: "amp_release"
-                propertyMax: 16.0
-            }
-        }
-
-        ColumnLayout {
-            id: filterEnvelope
-            Switch {
-                id: filterEnabled
-                checked: false
-                text: "Enable filter"
-                BindingDeclaration {
-                    propertyName: "checked"
-                    parameterName: "filter_on"
-                }
-            }
-            Envelope {
-                enabled: filterEnabled.checked
-                title: "Filter Envelope"
-                BindingDeclaration {
-                    propertyName: "attack"
-                    parameterName: "fil_attack"
-                    propertyMax: 16.0
-                }
-                BindingDeclaration {
-                    propertyName: "decay"
-                    parameterName: "fil_decay"
-                    propertyMax: 16.0
-                }
-                BindingDeclaration {
-                    propertyName: "sustain"
-                    parameterName: "fil_sustain"
-                    propertyMax: 1.0
-                }
-                BindingDeclaration {
-                    propertyName: "release"
-                    parameterName: "fil_release"
-                    propertyMax: 16.0
-                }
-            }
-
-        }
-
     }
 }

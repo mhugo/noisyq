@@ -149,6 +149,11 @@ Item {
                 let note = code - keycode.k_row3_1 + 69;
                 noteOff(tracks.currentStack, note);
             }
+            else {
+                if (tracks.currentItem) {
+                    tracks.currentItem.keyReleased(code, key, modifiers);
+                }
+            }
         }
     }
 }

@@ -8,7 +8,10 @@ keycodes = dict(
         ("page_up", 112),
         ("page_down", 117),
         ("right", 114),
-        ("left", 113)
+        ("left", 113),
+        ("up", 111),
+        ("down", 116),
+        ("capslock", 66)
     ]
     # F keys
     + [
