@@ -111,27 +111,22 @@ ColumnLayout {
                              "5 pyramid",
                              "9 pyramid"]
 
-    StackLayout {
-        id: stack
-        //anchors.fill:parent
-        currentIndex: 0
+    ColumnLayout {
 
-        ColumnLayout {
-
-            Rectangle {
-                width: 100
-                height: 40
-                border.width: 2
-                radius: 10
-                color: shifted ? "blue" : "white"
-                Text {
-                    text: "Shift"
-                    anchors.fill: parent
-                    verticalAlignment: Text.AlignVCenter
-                    horizontalAlignment: Text.AlignHCenter
-                    color: shifted ? "white" : "black"
-                }
+        Rectangle {
+            width: 100
+            height: 40
+            border.width: 2
+            radius: 10
+            color: shifted ? "blue" : "white"
+            Text {
+                text: "Shift"
+                anchors.fill: parent
+                verticalAlignment: Text.AlignVCenter
+                horizontalAlignment: Text.AlignHCenter
+                color: shifted ? "white" : "black"
             }
+        }
 
         GridLayout {
             id: layout
@@ -285,7 +280,17 @@ ColumnLayout {
                     bindingParameter: "sub_shuffle"
                 }
             }
-        }
+
+            // buttons
+            ControlFrame {
+                Pad {
+                    color: "#ff1412"
+                }
+            }
+            ControlFrame {
+                Pad {
+                }
+            }
         }
     }
 }
