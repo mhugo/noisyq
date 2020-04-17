@@ -284,11 +284,42 @@ ColumnLayout {
             // buttons
             ControlFrame {
                 Pad {
-                    color: "#ff1412"
+                    color: "red"
                 }
             }
             ControlFrame {
                 Pad {
+                    color: "green"
+                }
+            }
+            ControlFrame {
+                Pad {
+                    color: "green"
+                }
+            }
+            ControlFrame {
+                Pad {
+                    color: "green"
+                }
+            }
+            ControlFrame {
+                Pad {
+                    color: "blue"
+                }
+            }
+            ControlFrame {
+                Pad {
+                    color: "green"
+                }
+            }
+            ControlFrame {
+                Pad {
+                    color: "blue"
+                }
+            }
+            ControlFrame {
+                Pad {
+                    color: "green"
                 }
             }
         }

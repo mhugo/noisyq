@@ -8,13 +8,26 @@ import Binding 1.0
 ColumnLayout {
     id: root
 
-    property color color : "#d90243"
+    property string color : "black"
     Rectangle
     {
         width: 64
         height: 64
         radius: 6
-        color: root.color
+        color: {
+            if (parent.color == "red") {
+                "#d90243"
+            }
+            else if (parent.color == "green") {
+                "#6fc22b"
+            }
+            else if (parent.color == "blue") {
+                "#2f9af7"
+            }
+            else {
+                "white"
+            }
+        }
         Image {
             y: parent.y + 6
             x: parent.x + 6
