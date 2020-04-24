@@ -1,18 +1,17 @@
 import QtQuick 2.0
 import QtQuick.Controls 2.4
 import QtQuick.Layouts 1.11
-import QtGraphicalEffects 1.0
 
-import Binding 1.0
-
-ColumnLayout {
+Item {
     id: root
+    width: 64
+    height: 64
 
     property string color : "black"
     Rectangle
     {
-        width: 64
-        height: 64
+        width: root.width
+        height: root.height
         radius: 6
         color: {
             if (parent.color == "red") {
@@ -32,8 +31,8 @@ ColumnLayout {
             y: parent.y + 6
             x: parent.x + 6
             source: "pad.svg"
-            sourceSize.width: 52
-            sourceSize.height: 52
+            sourceSize.width: root.width - 12
+            sourceSize.height: root.height - 12
         }
     }
 }
