@@ -5,6 +5,7 @@ import QtQuick.Layouts 1.11
 ColumnLayout {
     id: root
     width: 68*8
+
     FontLoader {
         id: titleFont
         source: "fonts/big_noodle_titling.ttf"
@@ -56,7 +57,6 @@ ColumnLayout {
                         value = 1.0;
                     knobMoved(selectedKnob, value);
                     knobValue[selectedKnob] = value;
-                    console.log("up ", value);
                 }
                 else if (event.key == Qt.Key_Down) {
                     value = knobValue[selectedKnob] - 0.1;
@@ -74,6 +74,23 @@ ColumnLayout {
                 if (event.nativeScanCode >= 52 && event.nativeScanCode < 60) {
                     let padNumber = event.nativeScanCode - 52;
                     padReleased(padNumber);
+                }
+            }
+        }
+    }
+
+    Component {
+        id: helmControls
+        RowLayout {
+            width: 64
+            Dial {
+            }
+            Dial {
+            }
+
+            onVisibleChanged : {
+                if (visible) {
+                    padMenu.texts = ["Osc", "", "", "", "", "", "", "Back"];
                 }
             }
         }
@@ -99,8 +116,38 @@ ColumnLayout {
         id: canvas
         width: parent.width
         height: 64*3
+
+        // Items associated to each instrument
+        property var instruments : [null, null, null, null, null, null, null]
+
+        property int currentInstrument: 0
+
+        // map of instrument number -> stack layout index
+        property var instrumentStackIndex : ({})
+
+        function editInstrument() {
+            // display the component associated with the instrument in the canvas
+            if (instruments[currentInstrument] === null) {
+                // blank instrument
+                currentIndex = 1;
+            }
+            else {
+                currentIndex = instrumentStackIndex[currentInstrument];
+            }
+        }
+
+        // Assign a given Item to the current instrument slot
+        function assignInstrument(obj) {
+            children.push(obj);
+            instruments[currentInstrument] = obj;
+            instrumentStackIndex[currentInstrument] = children.length - 1;
+            currentIndex = children.length - 1;
+        }
+
+        // index: 0 - blank
         Text {
         }
+        // index: 1 - no instrument assigned
         ColumnLayout {
             id: blankTrack
             Text {
@@ -119,10 +166,25 @@ ColumnLayout {
                 enabled: blankTrack.visible
 
                 onKnobMoved : {
-                    console.log("on knob moved");
                     if (knobNumber == 0) {
                         instrCombo.currentIndex = ~~(amount * (instrCombo.count-1));
                     }
+                }
+
+                onPadPressed : {
+                    if (padNumber == 0) {
+                        // confirm assignment
+                        if (instrCombo.currentIndex == 1) {
+                            let obj = helmControls.createObject(root, {});
+                            canvas.assignInstrument(obj);
+                        }
+                    }
+                }
+            }
+
+            onVisibleChanged : {
+                if (visible) {
+                    padMenu.texts = ["Assign"].concat(padMenu.texts.slice(1));
                 }
             }
         }
@@ -151,17 +213,6 @@ ColumnLayout {
     }
 
     state: "rootMenu"
-
-    property var instruments : [null, null, null, null, null, null, null]
-
-    function editInstrument(instrNumber) {
-        // display the component associated with the instrument in the canvas
-        if (instruments[instrNumber] === null) {
-            // blank instrument
-            canvas.currentIndex = 1;
-            padMenu.texts = ["Assign"].concat(padMenu.texts.slice(1));
-        }
-    }
 
     Connections {
         target: board
@@ -194,7 +245,8 @@ ColumnLayout {
                 }
                 else {
                     state = "instrEditMenu";
-                    editInstrument(padNumber);
+                    canvas.currentInstrument = padNumber;
+                    canvas.editInstrument();
                 }
             }
                 break;
