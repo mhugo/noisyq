@@ -2,9 +2,25 @@ import QtQuick 2.0
 import QtQuick.Controls 2.4
 import QtQuick.Layouts 1.11
 
+import "utils.js" as Utils
+
 ColumnLayout {
     id: root
     width: 68*8
+
+    function quit()
+    {
+        Utils.saveFile("state.json", canvas.saveState());
+        Qt.callLater(Qt.quit);
+    }
+
+    Component.onCompleted: {
+        let state = Utils.readFile("state.json");
+        if (state) {
+            console.log("-- Loading state from state.json --");
+            canvas.loadState(state);
+        }
+    }
 
     FontLoader {
         id: titleFont
@@ -27,12 +43,14 @@ ColumnLayout {
             property var knobValue: [0, 0, 0, 0, 0, 0, 0, 0,
                                      0, 0, 0, 0, 0, 0, 0, 0]
 
+            // debug display
             text: "Knob " + selectedKnob + ": " + knobValue[selectedKnob]
             font.family: titleFont.name
             font.pointSize: 14
             focus: true
 
             Keys.onPressed : {
+                // FIXME isAutoRepeat only for pads, not for knobs +/-
                 if (event.isAutoRepeat) {
                     return;
                 }
@@ -49,7 +67,7 @@ ColumnLayout {
                 }
                 else if (event.key == Qt.Key_Escape) {
                     // escape
-                    Qt.quit();
+                    quit();
                 }
                 else if (event.key == Qt.Key_Up) {
                     value = knobValue[selectedKnob] + 0.1;
@@ -81,13 +99,30 @@ ColumnLayout {
 
     Component {
         id: helmControls
+
         RowLayout {
-            width: 64
-            Dial {
-            }
-            Dial {
+            function saveState() {
+                return {
+                    "pluginName": "helm",
+                    "knobs" : [dial1.value, dial2.value]
+                };
             }
 
+            function loadState(state) {
+                dial1.value = state["knobs"][0];
+                dial2.value = state["knobs"][1];
+            }
+
+            Dial {
+                id: dial1
+                Layout.maximumWidth: 64
+                Layout.maximumHeight: 64
+            }
+            Dial {
+                id: dial2
+                Layout.maximumWidth: 64
+                Layout.maximumHeight: 64
+            }
             onVisibleChanged : {
                 if (visible) {
                     padMenu.texts = ["Osc", "", "", "", "", "", "", "Back"];
@@ -117,6 +152,47 @@ ColumnLayout {
         width: parent.width
         height: 64*3
 
+        function saveState() {
+            // save the state of each instrument
+            var instrStates = []
+            for (var i = 0; i < instruments.length; i++) {
+                if (instruments[i]) {
+                    let state = instruments[i].saveState();
+                    instrStates.push(state);
+                }
+                else {
+                    instrStates.push(null);
+                }
+            }
+            return {
+                "instruments": instrStates,
+                "stackMapping": instrumentStackIndex
+            };
+        }
+
+        function loadState(state) {
+            //
+            instrumentStackIndex = state["stackMapping"];
+
+            // invert the mapping instrument -> stack index
+            // to get a mapping stack index -> instrument
+            let stackInstrumentIndex = {};
+            for (var instr in instrumentStackIndex) {
+                let idx = instrumentStackIndex[instr];
+                stackInstrumentIndex[idx] = instr;
+            }
+
+            for (var i in stackInstrumentIndex) {
+                currentInstrument = stackInstrumentIndex[i];
+                let instrState = state["instruments"][currentInstrument];
+                if (instrState && instrState["pluginName"] == "helm") {
+                    let obj = helmControls.createObject(root, {});
+                    obj.loadState(instrState);
+                    assignInstrument(obj);
+                }
+            }
+        }
+
         // Items associated to each instrument
         property var instruments : [null, null, null, null, null, null, null]
 
@@ -141,7 +217,6 @@ ColumnLayout {
             children.push(obj);
             instruments[currentInstrument] = obj;
             instrumentStackIndex[currentInstrument] = children.length - 1;
-            currentIndex = children.length - 1;
         }
 
         // index: 0 - blank
@@ -177,6 +252,7 @@ ColumnLayout {
                         if (instrCombo.currentIndex == 1) {
                             let obj = helmControls.createObject(root, {});
                             canvas.assignInstrument(obj);
+                            canvas.currentIndex = canvas.children.length - 1;
                         }
                     }
                 }
