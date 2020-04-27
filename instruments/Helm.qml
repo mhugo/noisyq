@@ -29,9 +29,11 @@ RowLayout {
         Layout.maximumWidth: 64
         Layout.maximumHeight: 64
     }
+
     onVisibleChanged : {
         if (visible) {
             padMenu.texts = ["Osc", "", "", "", "", "", "", "Back"];
+            infoScreen.text = "Helm";
         }
     }
 

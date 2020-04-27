@@ -125,8 +125,8 @@ ColumnLayout {
         id: lv2Host
 
         // returns an lv2Id
-        function addInstance(lv2Name, jackName) {
-            console.log("== addInstance", lv2Name, jackName);
+        function addInstance(lv2Name) {
+            console.log("== addInstance", lv2Name);
             return 0;
         }
 
@@ -149,7 +149,10 @@ ColumnLayout {
         width: parent.width
         height: 40
 
+        property alias text: text.text
+
         Text {
+            id: text
             anchors.fill: infoScreen
             font.family: pixelFont.name
             font.pointSize: 8
@@ -376,6 +379,10 @@ ColumnLayout {
                 target: canvas
                 currentIndex: 0
             }
+            PropertyChanges {
+                target: infoScreen
+                text: "Main menu"
+            }
         },
         State {
             name: "projectMenu"
@@ -383,12 +390,20 @@ ColumnLayout {
                 target: padMenu
                 texts: ["", "", "", "", "", "", "", "Back"]
             }
+            PropertyChanges {
+                target: infoScreen
+                text: "Project"
+            }
         },
         State {
             name: "instrMenu"
             PropertyChanges {
                 target: padMenu
                 texts: ["0", "1", "2", "3", "4", "5", "6", "Back"]
+            }
+            PropertyChanges {
+                target: infoScreen
+                text: "Instrument"
             }
         },
         State {
