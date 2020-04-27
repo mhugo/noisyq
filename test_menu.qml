@@ -4,6 +4,9 @@ import QtQuick.Layouts 1.11
 
 import "utils.js" as Utils
 
+// TODO
+// map controls to LV2 parameters
+
 ColumnLayout {
     id: root
     width: 68*8
@@ -14,7 +17,33 @@ ColumnLayout {
         Qt.callLater(Qt.quit);
     }
 
+    // List of {"name": "xxx", "lv2Url": "xxx", "component": Component}
+    property var instrumentComponents : []
+
+    // List of names, extracted from instrumentComponents
+    property var instrumentNames : []
+
     Component.onCompleted: {
+        // load instruments
+        let instruments = Utils.readFile("instruments/instruments.json");
+        if (instruments) {
+            for (var i in instruments) {
+                let qmlFile = "instruments/" + instruments[i]["qml"];
+                let comp = Qt.createComponent(qmlFile);
+                if (comp.status == Component.Ready) {
+                    let url = instruments[i]["url"];
+                    console.log("== Loading component for LV2 " + url + " from " + qmlFile);
+                    instrumentComponents.push({
+                        "name": instruments[i]["name"],
+                        "lv2Url": instruments[i]["url"],
+                        "component": comp
+                    });
+                }
+            }
+        }
+
+        instrumentNames = instrumentComponents.map(function(x) { return x["name"]; });
+
         let state = Utils.readFile("state.json");
         if (state) {
             console.log("-- Loading state from state.json --");
@@ -97,37 +126,25 @@ ColumnLayout {
         }
     }
 
-    Component {
-        id: helmControls
+    QtObject {
+        id: lv2Host
 
-        RowLayout {
-            function saveState() {
-                return {
-                    "pluginName": "helm",
-                    "knobs" : [dial1.value, dial2.value]
-                };
-            }
+        // returns an lv2Id
+        function addInstance(lv2Name, jackName) {
+            console.log("== addInstance", lv2Name, jackName);
+            return 0;
+        }
 
-            function loadState(state) {
-                dial1.value = state["knobs"][0];
-                dial2.value = state["knobs"][1];
-            }
+        function getParameterValue(lv2Id, parameterName) {
+            console.log("== getParameterValue", lv2Id, parameterName);
+        }
 
-            Dial {
-                id: dial1
-                Layout.maximumWidth: 64
-                Layout.maximumHeight: 64
-            }
-            Dial {
-                id: dial2
-                Layout.maximumWidth: 64
-                Layout.maximumHeight: 64
-            }
-            onVisibleChanged : {
-                if (visible) {
-                    padMenu.texts = ["Osc", "", "", "", "", "", "", "Back"];
-                }
-            }
+        function setParameterValue(lv2Id, parameterName, value) {
+            console.log("== setParameterValue", lv2Id, parameterName, value);
+        }
+
+        function sendMidiMessage(lv2Id, msg) {
+            console.log("== sendMidiMessage", lv2id, msg);
         }
     }
 
@@ -158,7 +175,10 @@ ColumnLayout {
             for (var i = 0; i < instruments.length; i++) {
                 if (instruments[i]) {
                     let state = instruments[i].saveState();
-                    instrStates.push(state);
+                    instrStates.push({
+                        "name": instruments[i].name,
+                        "state": state
+                    });
                 }
                 else {
                     instrStates.push(null);
@@ -185,10 +205,9 @@ ColumnLayout {
             for (var i in stackInstrumentIndex) {
                 currentInstrument = stackInstrumentIndex[i];
                 let instrState = state["instruments"][currentInstrument];
-                if (instrState && instrState["pluginName"] == "helm") {
-                    let obj = helmControls.createObject(root, {});
-                    obj.loadState(instrState);
-                    assignInstrument(obj);
+                if (instrState) {
+                    let obj = assignInstrument(instrState["name"]);
+                    obj.loadState(instrState["state"]);
                 }
             }
         }
@@ -213,10 +232,24 @@ ColumnLayout {
         }
 
         // Assign a given Item to the current instrument slot
-        function assignInstrument(obj) {
-            children.push(obj);
-            instruments[currentInstrument] = obj;
-            instrumentStackIndex[currentInstrument] = children.length - 1;
+        function assignInstrument(name) {
+            // look for the instrument in the component list
+            let obj = null;
+            for (var i in instrumentComponents) {
+                if (instrumentComponents[i].name == name) {
+                    obj = instrumentComponents[i].component.createObject(root, {});
+                    break;
+                }
+            }
+            if (obj != null) {
+                children.push(obj);
+                instruments[currentInstrument] = obj;
+                instrumentStackIndex[currentInstrument] = children.length - 1;
+            }
+            else {
+                console.log("Cannot find instrument", name);
+            }
+            return obj;
         }
 
         // index: 0 - blank
@@ -230,7 +263,7 @@ ColumnLayout {
             }
             ComboBox {
                 id: instrCombo
-                model: ["None", "Helm", "SamplV1"]
+                model: instrumentNames
             }
             // FIXME
             // knob values must be independant and then saved for each panel
@@ -249,11 +282,8 @@ ColumnLayout {
                 onPadPressed : {
                     if (padNumber == 0) {
                         // confirm assignment
-                        if (instrCombo.currentIndex == 1) {
-                            let obj = helmControls.createObject(root, {});
-                            canvas.assignInstrument(obj);
-                            canvas.currentIndex = canvas.children.length - 1;
-                        }
+                        canvas.assignInstrument(instrCombo.currentText);
+                        canvas.currentIndex = canvas.children.length - 1;
                     }
                 }
             }
