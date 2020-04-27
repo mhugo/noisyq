@@ -20,9 +20,6 @@ ColumnLayout {
     // List of {"name": "xxx", "lv2Url": "xxx", "component": Component}
     property var instrumentComponents : []
 
-    // List of names, extracted from instrumentComponents
-    property var instrumentNames : []
-
     Component.onCompleted: {
         // load instruments
         let instruments = Utils.readFile("instruments/instruments.json");
@@ -41,8 +38,6 @@ ColumnLayout {
                 }
             }
         }
-
-        instrumentNames = instrumentComponents.map(function(x) { return x["name"]; });
 
         let state = Utils.readFile("state.json");
         if (state) {
@@ -263,7 +258,9 @@ ColumnLayout {
             }
             ComboBox {
                 id: instrCombo
-                model: instrumentNames
+                Component.onCompleted : {
+                    model = instrumentComponents.map(function(x) { return x["name"]; });
+                }
             }
             // FIXME
             // knob values must be independant and then saved for each panel
