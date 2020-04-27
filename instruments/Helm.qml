@@ -3,6 +3,7 @@ import QtQuick.Controls 2.4
 import QtQuick.Layouts 1.11
 
 RowLayout {
+    id: root
     property string lv2Url: "http://tytel.org/helm"
 
     property string name: "Helm"
@@ -31,6 +32,24 @@ RowLayout {
     onVisibleChanged : {
         if (visible) {
             padMenu.texts = ["Osc", "", "", "", "", "", "", "Back"];
+        }
+    }
+
+    Connections {
+        target: board
+
+        // only visible panels should react to knob / pad changes
+        enabled: root.visible
+
+        onKnobMoved : {
+            switch (knobNumber) {
+            case 0:
+                dial1.value = amount;
+                break;
+            case 1:
+                dial2.value = amount;
+                break;
+            }
         }
     }
 }
