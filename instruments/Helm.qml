@@ -34,6 +34,9 @@ RowLayout {
         if (visible) {
             padMenu.texts = ["Osc", "", "", "", "", "", "", "Back"];
             infoScreen.text = "Helm";
+
+            board.setKnobValue(0, dial1.value);
+            board.setKnobValue(1, dial2.value);
         }
     }
 

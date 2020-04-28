@@ -64,11 +64,24 @@ ColumnLayout {
             signal knobMoved(int knobNumber, real amount)
 
             property int selectedKnob : 0
-            property var knobValue: [0, 0, 0, 0, 0, 0, 0, 0,
-                                     0, 0, 0, 0, 0, 0, 0, 0]
+            property var knobValue: [
+                0, 0, 0, 0, 0, 0, 0, 0,
+                0, 0, 0, 0, 0, 0, 0, 0
+            ]
+            property var padColor: [
+                "white", "white", "white", "white", "white", "white", "white", "white"
+            ]
+
+            function setKnobValue(knobNumber, value) {
+                knobValue[knobNumber] = value;
+                // manually trigger the change signal
+                // since modification of only one term of an array
+                // does not trigger it
+                knobValueChanged(knobValue);
+            }
 
             // debug display
-            text: "Knob " + selectedKnob + ": " + knobValue[selectedKnob]
+            text: "Knob " + selectedKnob + ": " + knobValue[selectedKnob].toFixed(2)
             font.family: titleFont.name
             font.pointSize: 14
             focus: true
@@ -98,14 +111,14 @@ ColumnLayout {
                     if (value >= 1.0)
                         value = 1.0;
                     knobMoved(selectedKnob, value);
-                    knobValue[selectedKnob] = value;
+                    setKnobValue(selectedKnob, value);
                 }
                 else if (event.key == Qt.Key_Down) {
                     value = knobValue[selectedKnob] - 0.1;
                     if (value < 0.0)
                         value = 0.0;
                     knobMoved(selectedKnob, value);
-                    knobValue[selectedKnob] = value;
+                    setKnobValue(selectedKnob, value);
                 }
             }
             Keys.onReleased : {
@@ -303,7 +316,7 @@ ColumnLayout {
             id: padRep
             model: ["", "", "", "", "", "", "", ""]
             Pad {
-                color: "white"
+                color: board.padColor[index]
                 Text {
                     width: parent.width
                     height: parent.height
@@ -326,7 +339,7 @@ ColumnLayout {
             padRep.itemAt(padNumber).color = "red";
         }
         onPadReleased : {
-            padRep.itemAt(padNumber).color = "white";
+            padRep.itemAt(padNumber).color = board.padColor[padNumber];
             switch (state) {
             case "rootMenu": {
                 switch (padNumber) {
@@ -400,6 +413,17 @@ ColumnLayout {
             PropertyChanges {
                 target: padMenu
                 texts: ["0", "1", "2", "3", "4", "5", "6", "Back"]
+            }
+            PropertyChanges {
+                target: board
+                padColor: {
+                    var colors = []
+                    for (var i=0; i < 7; i++) {
+                        colors.push(canvas.instruments[i] != null ? "green" : "white");
+                    }
+                    colors.push("white");
+                    return colors;
+                }
             }
             PropertyChanges {
                 target: infoScreen
