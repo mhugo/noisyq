@@ -6,6 +6,8 @@ import "utils.js" as Utils
 
 // TODO
 // map controls to LV2 parameters
+// - setup a main application
+// - expose a "lv2Host" object
 
 ColumnLayout {
     id: root
@@ -21,6 +23,9 @@ ColumnLayout {
     property var instrumentComponents : []
 
     Component.onCompleted: {
+        // TODO load stub for lv2Host if run from qmlscene
+        // use JS Object.defineProperty to add it to the "root" object ?
+        console.log("____qt", Qt.application.displayName);
         // load instruments
         let instruments = Utils.readFile("instruments/instruments.json");
         if (instruments) {
@@ -138,7 +143,7 @@ ColumnLayout {
         }
     }
 
-    QtObject {
+    /*QtObject {
         id: lv2Host
 
         // returns an lv2Id
@@ -158,7 +163,7 @@ ColumnLayout {
         function sendMidiMessage(lv2Id, msg) {
             console.log("== sendMidiMessage", lv2id, msg);
         }
-    }
+    }*/
 
     Rectangle {
         id: infoScreen
@@ -253,6 +258,9 @@ ColumnLayout {
             for (var i in instrumentComponents) {
                 if (instrumentComponents[i].name == name) {
                     obj = instrumentComponents[i].component.createObject(root, {});
+                    let lv2Id = lv2Host.addInstance(instrumentComponents[i].lv2Url);
+                    obj.lv2Id = lv2Id;
+                    console.log("lv2id", obj.lv2Id);
                     break;
                 }
             }

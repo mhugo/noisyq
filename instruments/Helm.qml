@@ -34,7 +34,7 @@ RowLayout {
         Layout.maximumHeight: 64
 
         onValueChanged: {
-            _setLV2("slide", value);
+            _setLV2("osc_1_volume", value);
         }
     }
     Dial {
