@@ -36,6 +36,10 @@ ColumnLayout {
                         "component": comp
                     });
                 }
+                else if (comp.status == Component.Error) {
+                    console.log("## Error loading " + qmlFile);
+                    console.log(comp.errorString());
+                }
             }
         }
 
