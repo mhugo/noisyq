@@ -73,24 +73,73 @@ ColumnLayout {
             signal knobMoved(int knobNumber, real amount)
 
             property int selectedKnob : 0
-            property var knobValue: [
-                0, 0, 0, 0, 0, 0, 0, 0,
-                0, 0, 0, 0, 0, 0, 0, 0
-            ]
-            property var padColor: [
-                "white", "white", "white", "white", "white", "white", "white", "white"
-            ]
+
+            Repeater {
+                id: knobs
+                model: 8
+                Item {
+                    property real value: 0
+                    property bool isInteger: false
+                    property real min: 0.0
+                    property real max: 1.0
+
+                    function increment() {
+                        value = value + (isInteger ? 1 : (max - min) / 10.0);
+                        if (value > max) {
+                            value = max;
+                        }
+                    }
+                    function decrement() {
+                        value = value - (isInteger ? 1 : (max - min) / 10.0);
+                        if (value < min) {
+                            value = min;
+                        }
+                    }
+                }
+            }
+
+            Repeater {
+                id: pads
+                model: 8
+                Item {
+                    property string color: "white"
+                }
+            }
+
+            function knobValue(knobNumber) {
+                console.log("knobValue", knobs, knobs.count);
+                return knobs.itemAt(knobNumber).value;
+            }
 
             function setKnobValue(knobNumber, value) {
-                knobValue[knobNumber] = value;
+                knobs.itemAt(knobNumber).value = value;
                 // manually trigger the change signal
                 // since modification of only one term of an array
                 // does not trigger it
-                knobValueChanged(knobValue);
+                //knobValueChanged(knobValue);
+            }
+
+            function setKnobMinMax(knobNumber, min, max) {
+                knobs.itemAt(knobNumber).min = min;
+                knobs.itemAt(knobNumber).max = max;
+            }
+
+            function setKnobIsInteger(knobNumber, isInteger) {
+                knobs.itemAt(knobNumber).isInteger = isInteger;
+            }
+
+            function padColor(padNumber) {
+                let item = pads.itemAt(padNumber);
+                if (item === null)
+                    return "white";
+                return item.color;
+            }
+            function setPadColor(padNumber, color) {
+                pads.itemAt(padNumber).color = color;
             }
 
             // debug display
-            text: "Knob " + selectedKnob + ": " + knobValue[selectedKnob].toFixed(2)
+            text: "Knob " + selectedKnob + ": " + knobValue(selectedKnob).toFixed(2)
             font.family: titleFont.name
             font.pointSize: 14
             focus: true
@@ -116,18 +165,12 @@ ColumnLayout {
                     quit();
                 }
                 else if (event.key == Qt.Key_Up) {
-                    value = knobValue[selectedKnob] + 0.1;
-                    if (value >= 1.0)
-                        value = 1.0;
-                    knobMoved(selectedKnob, value);
-                    setKnobValue(selectedKnob, value);
+                    knobs.itemAt(selectedKnob).increment();
+                    knobMoved(selectedKnob, knobs.itemAt(selectedKnob).value);
                 }
                 else if (event.key == Qt.Key_Down) {
-                    value = knobValue[selectedKnob] - 0.1;
-                    if (value < 0.0)
-                        value = 0.0;
-                    knobMoved(selectedKnob, value);
-                    setKnobValue(selectedKnob, value);
+                    knobs.itemAt(selectedKnob).decrement();
+                    knobMoved(selectedKnob, knobs.itemAt(selectedKnob).value);
                 }
             }
             Keys.onReleased : {
@@ -328,7 +371,7 @@ ColumnLayout {
             id: padRep
             model: ["", "", "", "", "", "", "", ""]
             Pad {
-                color: board.padColor[index]
+                color: board.padColor(index)
                 Text {
                     width: parent.width
                     height: parent.height
@@ -351,7 +394,7 @@ ColumnLayout {
             padRep.itemAt(padNumber).color = "red";
         }
         onPadReleased : {
-            padRep.itemAt(padNumber).color = board.padColor[padNumber];
+            padRep.itemAt(padNumber).color = board.padColor(padNumber);
             switch (state) {
             case "rootMenu": {
                 switch (padNumber) {
@@ -390,6 +433,9 @@ ColumnLayout {
                 break;
             }
 
+            /*for (var i = 0; i < 8; i++) {
+                padRep.itemAt(i).color = board.padColor(i);
+            }*/
         }
     }
 
@@ -427,17 +473,6 @@ ColumnLayout {
                 texts: ["0", "1", "2", "3", "4", "5", "6", "Back"]
             }
             PropertyChanges {
-                target: board
-                padColor: {
-                    var colors = []
-                    for (var i=0; i < 7; i++) {
-                        colors.push(canvas.instruments[i] != null ? "green" : "white");
-                    }
-                    colors.push("white");
-                    return colors;
-                }
-            }
-            PropertyChanges {
                 target: infoScreen
                 text: "Instrument"
             }
@@ -450,4 +485,13 @@ ColumnLayout {
             }
         }
     ]
+
+    onStateChanged : {
+        if (state == "instrMenu") {
+            // green = an instrument is assigned, white otherwise
+            for (var i=0; i < 7; i++) {
+                board.setPadColor(i, canvas.instruments[i] != null ? "green" : "white");
+            }
+        }
+    }
 }

@@ -3,7 +3,8 @@ from PyQt5.QtCore import (
     QMetaObject
 )
 from PyQt5.QtWidgets import QApplication
-from PyQt5.QtQuick import QQuickView
+from PyQt5.QtQuick import QQuickView, QQuickItem
+from PyQt5.QtQml import QQmlEngine, qmlRegisterSingletonType
 
 import sys
 
@@ -16,6 +17,14 @@ app.setApplicationDisplayName("HOST")
 
 current_path = os.path.abspath(os.path.dirname(__file__))
 qml_file = os.path.join(current_path, 'test_menu.qml')
+
+class Utils(QObject):
+    @pyqtSlot(QObject, result=str)
+    def objectId(self, obj):
+        ctxt = QQmlEngine.contextForObject(obj)
+        if ctxt:
+            return ctxt.nameForObject(obj)
+        return "<nocontext>"
 
 class LV2Host(QObject):
     def __init__(self, parent=None):
@@ -41,8 +50,37 @@ class LV2Host(QObject):
         instance = self.__instances[lv2_id]
         instance.set_control(parameter_name, value)
 
-lv2Host = LV2Host()
+class StubHost(QObject):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+
+        self.__next_id = 0
+
+    @pyqtSlot(str, result=str)
+    def addInstance(self, lv2_name):
+        print(">>> addInstance", lv2_name)
+        lv2_id = "stub{}".format(self.__next_id)
+        self.__next_id += 1
+        return lv2_id
+
+    @pyqtSlot(str, str, float)
+    def setParameterValue(self, lv2_id, parameter_name, value):
+        print(">>> setParameterValue", lv2_id, parameter_name, value)
+
+print(sys.argv)
+if "--help" in sys.argv:
+    print("Arguments:")
+    print("\t--help\tThis help screen")
+    print("\t--stub\tStub LV2 host")
+    sys.exit(0)
+
+if "--stub" in sys.argv:
+    lv2Host = StubHost()
+else:
+    lv2Host = LV2Host()
         
+qmlRegisterSingletonType(Utils, 'MyUtils', 1, 0, "MyUtils", lambda engine, script_engine: Utils())
+
 view = QQuickView()
 view.setResizeMode(QQuickView.SizeViewToRootObject)
 
