@@ -15,8 +15,8 @@ GridLayout {
     property string name: "Helm"
 
     // shortcut
-    function _setLV2(param, value) {
-        lv2Host.setParameterValue(lv2Id, param, value);
+    function _setLV2(obj, value) {
+        lv2Host.setParameterValue(lv2Id, MyUtils.objectId(obj), value);
     }
 
     // Automatically save values of objects with "saveState" property defined
@@ -61,9 +61,19 @@ GridLayout {
                              "9 pyramid"]
 
     // First row
-    Text {
-        text: "---"
+    RowLayout {
         Layout.columnSpan: 8
+        Rectangle {
+            width: 100
+            height: 4
+            color: "black"
+        }
+        Text {
+            text: "---[ OSC 1 ]---"
+        }
+        Text {
+            text: "---[ OSC 1 ]---"
+        }
     }
 
     // Second row
@@ -72,14 +82,40 @@ GridLayout {
     }
 
     Text {
+        text: "Shape"
+    }
+
+    Text {
+        text: "Tune"
+    }
+
+    Text {
+        text: "Transp."
+    }
+
+    Text {
+        text: "Voices"
+    }
+
+    Text {
+        text: "V. detune"
+    }
+
+    Text {
         text: "---"
-        Layout.columnSpan: 7
+        Layout.columnSpan: 2
     }
 
     // Third row
     Slider {
         id: osc_1_volume
+
+        // If saveState is defined, the "value" property will be saved in state
         property bool saveState: true
+
+        property string controllerType: "knob"
+        property int controllerNumber: 0
+        property bool isInteger: false
 
         from: 0.0
         to: 16.0
@@ -87,7 +123,7 @@ GridLayout {
         Layout.maximumHeight: 64
 
         onValueChanged: {
-            _setLV2("osc_1_volume", value);
+            _setLV2(this, value);
         }
     }
 
@@ -96,7 +132,14 @@ GridLayout {
         property bool saveState: true
         property alias value: osc_1_waveform.currentIndex
 
+        property string controllerType: "knob"
+        property int controllerNumber: 1
+        property int from: 0
+        property int to: rep.count
+        property bool isInteger: true
+
         Layout.fillHeight: true
+        Layout.maximumWidth: 64
         Repeater {
             id: rep
             model: waveEnum
@@ -106,22 +149,107 @@ GridLayout {
         }
 
         onCurrentIndexChanged: {
-            _setLV2("osc_1_volume", currentIndex / (rep.count - 1));
+            _setLV2(this, currentIndex / (rep.count - 1));
         }
     }
+
+    Dial {
+        id: osc_1_tune
+        property bool saveState: true
+        from: -48
+        to: 48
+        Layout.maximumHeight: 64
+        Layout.maximumWidth: 64
+
+        property string controllerType: "knob"
+        property int controllerNumber: 2
+        property bool isInteger: true
+
+        onValueChanged: {
+            _setLV2(this, (value - from) / (to - from));
+        }
+    }
+
+    Dial {
+        id: osc_1_transpose
+        property bool saveState: true
+        from: -100
+        to: 100
+        Layout.maximumHeight: 64
+        Layout.maximumWidth: 64
+
+        property string controllerType: "knob"
+        property int controllerNumber: 3
+        property bool isInteger: true
+
+        onValueChanged: {
+            _setLV2(this, (value - from) / (to - from));
+        }
+    }
+    
+    Dial {
+        id: osc_1_unison_voices
+        property bool saveState: true
+        from: 1
+        to: 15
+        Layout.maximumHeight: 64
+        Layout.maximumWidth: 64
+
+        property string controllerType: "knob"
+        property int controllerNumber: 4
+        property bool isInteger: true
+
+        onValueChanged: {
+            _setLV2(this, (value - from) / (to - from));
+        }
+    }
+
+    Dial {
+        id: osc_1_unison_detune
+        property bool saveState: true
+        from: 1
+        to: 15
+        Layout.maximumHeight: 64
+        Layout.maximumWidth: 64
+
+        property string controllerType: "knob"
+        property int controllerNumber: 5
+        property bool isInteger: true
+
+        onValueChanged: {
+            _setLV2(this, (value - from) / (to - from));
+        }
+    }
+
+    // Associates a controller number to an Item
+    property var knobToItem : ({})
 
     onVisibleChanged : {
         if (visible) {
             padMenu.texts = ["Osc", "", "", "", "", "", "", "Back"];
             infoScreen.text = "Helm";
 
-            board.setKnobIsInteger(1, true);
-            board.setKnobMinMax(1, 0, waveEnum.length-1);
-            board.setKnobValue(1, osc_1_waveform.currentIndex);
+            // Set controller options
+            // Also define a mapping between controller and Items
+            for (var i = 0; i < root.children.length; i++) {
+                let child = root.children[i];
+                if (child.controllerType === "knob") {
+                    if (child.controllerNumber == undefined) {
+                        console.log("Missing controllerNumber, object id", MyUtils.objectId(child));
+                    }
+                    else {
+                        knobToItem[child.controllerNumber] = child;
 
-            board.setKnobIsInteger(0, false);
-            board.setKnobMinMax(0, 0, 16);
-            board.setKnobValue(0, osc_1_volume.value);
+                        if ((child.from != undefined) && (child.to != undefined)) {
+                            board.setKnobMinMax(child.controllerNumber, child.from, child.to);
+                        }
+                        if (child.isInteger != undefined) {
+                            board.setKnobIsInteger(child.controllerNumber, child.isInteger);
+                        }
+                        board.setKnobValue(child.controllerNumber, child.value);
+                    }
+                }
+            }
         }
     }
 
@@ -132,13 +260,8 @@ GridLayout {
         enabled: root.visible
 
         onKnobMoved : {
-            switch (knobNumber) {
-            case 0:
-                osc_1_volume.value = amount;
-                break;
-            case 1:
-                osc_1_waveform.value = ~~amount;
-                break;
+            if (knobNumber in knobToItem) {
+                knobToItem[knobNumber].value = amount;
             }
         }
     }

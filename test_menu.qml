@@ -145,7 +145,16 @@ ColumnLayout {
             focus: true
 
             Keys.onPressed : {
-                // FIXME isAutoRepeat only for pads, not for knobs +/-
+                if (event.key == Qt.Key_Up) {
+                    knobs.itemAt(selectedKnob).increment();
+                    knobMoved(selectedKnob, knobs.itemAt(selectedKnob).value);
+                }
+                if (event.key == Qt.Key_Down) {
+                    knobs.itemAt(selectedKnob).decrement();
+                    knobMoved(selectedKnob, knobs.itemAt(selectedKnob).value);
+                }
+
+                // isAutoRepeat only for pads, not for knobs +/-
                 if (event.isAutoRepeat) {
                     return;
                 }
@@ -163,14 +172,6 @@ ColumnLayout {
                 else if (event.key == Qt.Key_Escape) {
                     // escape
                     quit();
-                }
-                else if (event.key == Qt.Key_Up) {
-                    knobs.itemAt(selectedKnob).increment();
-                    knobMoved(selectedKnob, knobs.itemAt(selectedKnob).value);
-                }
-                else if (event.key == Qt.Key_Down) {
-                    knobs.itemAt(selectedKnob).decrement();
-                    knobMoved(selectedKnob, knobs.itemAt(selectedKnob).value);
                 }
             }
             Keys.onReleased : {
