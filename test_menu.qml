@@ -120,6 +120,7 @@ ColumnLayout {
             }
 
             function setKnobMinMax(knobNumber, min, max) {
+                console.log("min max", knobNumber, min, max);
                 knobs.itemAt(knobNumber).min = min;
                 knobs.itemAt(knobNumber).max = max;
             }

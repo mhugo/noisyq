@@ -23,8 +23,8 @@ GridLayout {
     // Use its id as parameter name
     function saveState() {
         let d = {};
-        for (var i = 0; i < root.children.length; i++) {
-            let child = root.children[i];
+        for (var i = 0; i < root.data.length; i++) {
+            let child = root.data[i];
             if (child.saveState != undefined) {
                 let id = MyUtils.objectId(child);
                 d[id] = child.value;
@@ -35,8 +35,8 @@ GridLayout {
 
     function loadState(state) {
         console.log("loadState", state);
-        for (var i = 0; i < root.children.length; i++) {
-            let child = root.children[i];
+        for (var i = 0; i < root.data.length; i++) {
+            let child = root.data[i];
             if (child.saveState != undefined) {
                 let id = MyUtils.objectId(child);
                 if (id in state) {
@@ -62,18 +62,25 @@ GridLayout {
 
     // First row
     RowLayout {
-        Layout.columnSpan: 8
+        Layout.columnSpan: 6
+        Layout.fillWidth: true
         Rectangle {
-            width: 100
+            Layout.fillWidth: true
             height: 4
             color: "black"
         }
         Text {
-            text: "---[ OSC 1 ]---"
+            text: "[ OSC 1 ]"
         }
-        Text {
-            text: "---[ OSC 1 ]---"
+        Rectangle {
+            Layout.fillWidth: true
+            height: 4
+            color: "black"
         }
+    }
+
+    Text {
+        Layout.columnSpan: 2
     }
 
     // Second row
@@ -102,8 +109,10 @@ GridLayout {
     }
 
     Text {
-        text: "---"
-        Layout.columnSpan: 2
+        text: "Sub. vol."
+    }
+    Text {
+        text: "Noise vol."
     }
 
     // Third row
@@ -221,18 +230,298 @@ GridLayout {
         }
     }
 
+    Slider {
+        id: sub_volume
+
+        property bool saveState: true
+
+        property string controllerType: "knob"
+        property int controllerNumber: 6
+        property bool isInteger: false
+
+        from: 0.0
+        to: 16.0
+        orientation: Qt.Vertical
+        Layout.maximumHeight: 64
+
+        onValueChanged: {
+            _setLV2(this, value);
+        }
+    }
+
+    Slider {
+        id: noise_volume
+
+        property bool saveState: true
+
+        property string controllerType: "knob"
+        property int controllerNumber: 7
+        property bool isInteger: false
+
+        from: 0.0
+        to: 16.0
+        orientation: Qt.Vertical
+        Layout.maximumHeight: 64
+
+        onValueChanged: {
+            _setLV2(this, value);
+        }
+    }
+    
+    // Fifth row
+
+    Slider {
+        id: osc_2_volume
+
+        // If saveState is defined, the "value" property will be saved in state
+        property bool saveState: true
+
+        property string controllerType: "knob"
+        property int controllerNumber: 8
+        property bool isInteger: false
+
+        from: 0.0
+        to: 16.0
+        orientation: Qt.Vertical
+        Layout.maximumHeight: 64
+
+        onValueChanged: {
+            _setLV2(this, value);
+        }
+    }
+
+    StackLayout {
+        id: osc_2_waveform
+        property bool saveState: true
+        property alias value: osc_2_waveform.currentIndex
+
+        property string controllerType: "knob"
+        property int controllerNumber: 9
+        property int from: 0
+        property int to: rep.count
+        property bool isInteger: true
+
+        Layout.fillHeight: true
+        Layout.maximumWidth: 64
+        Repeater {
+            id: rep2
+            model: waveEnum
+            Text {
+                text: modelData
+            }
+        }
+
+        onCurrentIndexChanged: {
+            _setLV2(this, currentIndex / (rep2.count - 1));
+        }
+    }
+
+    Dial {
+        id: osc_2_tune
+        property bool saveState: true
+        from: -48
+        to: 48
+        Layout.maximumHeight: 64
+        Layout.maximumWidth: 64
+
+        property string controllerType: "knob"
+        property int controllerNumber: 10
+        property bool isInteger: true
+
+        onValueChanged: {
+            _setLV2(this, (value - from) / (to - from));
+        }
+    }
+
+    Dial {
+        id: osc_2_transpose
+        property bool saveState: true
+        from: -100
+        to: 100
+        Layout.maximumHeight: 64
+        Layout.maximumWidth: 64
+
+        property string controllerType: "knob"
+        property int controllerNumber: 11
+        property bool isInteger: true
+
+        onValueChanged: {
+            _setLV2(this, (value - from) / (to - from));
+        }
+    }
+    
+    Dial {
+        id: osc_2_unison_voices
+        property bool saveState: true
+        from: 1
+        to: 15
+        Layout.maximumHeight: 64
+        Layout.maximumWidth: 64
+
+        property string controllerType: "knob"
+        property int controllerNumber: 12
+        property bool isInteger: true
+
+        onValueChanged: {
+            _setLV2(this, (value - from) / (to - from));
+        }
+    }
+
+    Dial {
+        id: osc_2_unison_detune
+        property bool saveState: true
+        from: 1
+        to: 15
+        Layout.maximumHeight: 64
+        Layout.maximumWidth: 64
+
+        property string controllerType: "knob"
+        property int controllerNumber: 13
+        property bool isInteger: true
+
+        onValueChanged: {
+            _setLV2(this, (value - from) / (to - from));
+        }
+    }
+
+    StackLayout {
+        id: sub_waveform
+        property bool saveState: true
+        property alias value: sub_waveform.currentIndex
+
+        property string controllerType: "knob"
+        property int controllerNumber: 14
+        property int from: 0
+        property int to: rep.count
+        property bool isInteger: true
+
+        Layout.fillHeight: true
+        Layout.maximumWidth: 64
+        Repeater {
+            id: rep3
+            model: waveEnum
+            Text {
+                text: modelData
+            }
+        }
+
+        onCurrentIndexChanged: {
+            _setLV2(this, currentIndex / (rep3.count - 1));
+        }
+    }
+
+    Dial {
+        id: sub_shuffle
+        property bool saveState: true
+        from: 0
+        to: 100
+        Layout.maximumHeight: 64
+        Layout.maximumWidth: 64
+
+        property string controllerType: "knob"
+        property int controllerNumber: 15
+        property bool isInteger: true
+
+        onValueChanged: {
+            _setLV2(this, (value - from) / (to - from));
+        }
+    }
+
+    // Text of second knob row
+
+    Text {
+        text: "Vol."
+    }
+
+    Text {
+        text: "Shape"
+    }
+
+    Text {
+        text: "Tune"
+    }
+
+    Text {
+        text: "Transp."
+    }
+
+    Text {
+        text: "Voices"
+    }
+
+    Text {
+        text: "V. detune"
+    }
+
+    Text {
+        text: "Sub. shape."
+    }
+    Text {
+        text: "Sub. shuffle."
+    }
+
+    
+    RowLayout {
+        Layout.columnSpan: 6
+        Layout.fillWidth: true
+        Rectangle {
+            Layout.fillWidth: true
+            height: 4
+            color: "black"
+        }
+        Text {
+            text: "[ OSC 2 ]"
+        }
+        Rectangle {
+            Layout.fillWidth: true
+            height: 4
+            color: "black"
+        }
+    }
+
+    Text {
+        Layout.columnSpan: 2
+    }
+
+    QtObject {
+        id: unison_1_harmonize
+        property bool saveState: true
+        property string controllerType: "pad"
+        property int controllerNumber: 5
+
+        property bool value: false
+
+        onValueChanged: {
+            _setLV2(this, value ? 1.0 : 0.0);
+        }
+    }
+
+    QtObject {
+        id: unison_2_harmonize
+        property bool saveState: true
+        property string controllerType: "pad"
+        property int controllerNumber: 6
+
+        property bool value: false
+
+        onValueChanged: {
+            _setLV2(this, value ? 1.0 : 0.0);
+        }
+    }
+
     // Associates a controller number to an Item
     property var knobToItem : ({})
+    property var padToItem : ({})
 
     onVisibleChanged : {
         if (visible) {
-            padMenu.texts = ["Osc", "", "", "", "", "", "", "Back"];
+            padMenu.texts = ["Osc", "", "", "", "", "Osc 1 H", "Osc 2 H", "Back"];
             infoScreen.text = "Helm";
 
             // Set controller options
             // Also define a mapping between controller and Items
-            for (var i = 0; i < root.children.length; i++) {
-                let child = root.children[i];
+            for (var i = 0; i < root.data.length; i++) {
+                let child = root.data[i];
                 if (child.controllerType === "knob") {
                     if (child.controllerNumber == undefined) {
                         console.log("Missing controllerNumber, object id", MyUtils.objectId(child));
@@ -249,6 +538,15 @@ GridLayout {
                         board.setKnobValue(child.controllerNumber, child.value);
                     }
                 }
+                else if (child.controllerType === "pad") {
+                    console.log("child pad", child);
+                    if (child.controllerNumber == undefined) {
+                        console.log("Missing controllerNumber, object id", MyUtils.objectId(child));
+                    }
+                    else {
+                        padToItem[child.controllerNumber] = child;
+                    }
+                }
             }
         }
     }
@@ -262,6 +560,14 @@ GridLayout {
         onKnobMoved : {
             if (knobNumber in knobToItem) {
                 knobToItem[knobNumber].value = amount;
+            }
+        }
+
+        onPadPressed: {
+            if (padNumber in padToItem) {
+                padToItem[padNumber].value = ! padToItem[padNumber].value;
+                console.log("pad", padNumber, padToItem[padNumber].value);
+                board.setPadColor(padNumber, padToItem[padNumber].value ? "red" : "white");
             }
         }
     }
