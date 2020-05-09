@@ -5,9 +5,6 @@ import QtQuick.Layouts 1.11
 import "utils.js" as Utils
 
 // TODO
-// map controls to LV2 parameters
-// - setup a main application
-// - expose a "lv2Host" object
 
 ColumnLayout {
     id: root
@@ -76,7 +73,7 @@ ColumnLayout {
 
             Repeater {
                 id: knobs
-                model: 8
+                model: 16
                 Item {
                     property real value: 0
                     property bool isInteger: false
@@ -305,6 +302,7 @@ ColumnLayout {
                     obj = instrumentComponents[i].component.createObject(root, {});
                     let lv2Id = lv2Host.addInstance(instrumentComponents[i].lv2Url);
                     obj.lv2Id = lv2Id;
+                    obj.init();
                     console.log("lv2id", obj.lv2Id);
                     break;
                 }

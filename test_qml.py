@@ -67,6 +67,13 @@ class StubHost(QObject):
     def setParameterValue(self, lv2_id, parameter_name, value):
         print(">>> setParameterValue", lv2_id, parameter_name, value)
 
+    @pyqtSlot(str, str, result=float)
+    def getParameterValue(self, lv2_id, parameter_name):
+        import random
+        v = random.random()
+        print(">>> getParameterValue", lv2_id, parameter_name, v)
+        return v
+
 print(sys.argv)
 if "--help" in sys.argv:
     print("Arguments:")

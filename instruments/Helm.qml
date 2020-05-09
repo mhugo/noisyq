@@ -4,6 +4,15 @@ import QtQuick.Layouts 1.11
 
 import MyUtils 1.0
 
+// TODO
+// - include readFile / saveFile into MyUtils
+//   - and rename to Utils
+// - better alignment of widgets
+// - widgets: text rather than knobs for most integer parameters (tune, transpose, etc.)
+// - handle "cross modulation" on knob8 + shift
+// - add other tabs (enveloppes, etc.)
+// - handle modulation
+
 GridLayout {
     id: root
     // Used by the host to look for an LV2 plugin
@@ -42,6 +51,20 @@ GridLayout {
                 if (id in state) {
                     child.value = state[id];
                 }
+            }
+        }
+    }
+
+    // Initialize a state, reading from the living LV2 process
+    function init() {
+        console.log("init");
+        for (var i = 0; i < root.data.length; i++) {
+            let child = root.data[i];
+            if (child.saveState != undefined) {
+                let parameterName = MyUtils.objectId(child);
+                console.log("---", parameterName);
+                console.log("--- child", child);
+                child.setFromLV2(lv2Host.getParameterValue(lv2Id, parameterName));
             }
         }
     }
@@ -134,6 +157,10 @@ GridLayout {
         onValueChanged: {
             _setLV2(this, value);
         }
+
+        function setFromLV2(v) {
+            value = v * (to - from) + from;
+        }
     }
 
     StackLayout {
@@ -160,6 +187,10 @@ GridLayout {
         onCurrentIndexChanged: {
             _setLV2(this, currentIndex / (rep.count - 1));
         }
+
+        function setFromLV2(v) {
+            value = ~~(v * (to - from) + from);
+        }
     }
 
     Dial {
@@ -176,6 +207,10 @@ GridLayout {
 
         onValueChanged: {
             _setLV2(this, (value - from) / (to - from));
+        }
+
+        function setFromLV2(v) {
+            value = v * (to - from) + from;
         }
     }
 
@@ -194,6 +229,10 @@ GridLayout {
         onValueChanged: {
             _setLV2(this, (value - from) / (to - from));
         }
+
+        function setFromLV2(v) {
+            value = v * (to - from) + from;
+        }
     }
     
     Dial {
@@ -211,6 +250,10 @@ GridLayout {
         onValueChanged: {
             _setLV2(this, (value - from) / (to - from));
         }
+
+        function setFromLV2(v) {
+            value = v * (to - from) + from;
+        }
     }
 
     Dial {
@@ -227,6 +270,10 @@ GridLayout {
 
         onValueChanged: {
             _setLV2(this, (value - from) / (to - from));
+        }
+
+        function setFromLV2(v) {
+            value = v * (to - from) + from;
         }
     }
 
@@ -247,6 +294,10 @@ GridLayout {
         onValueChanged: {
             _setLV2(this, value);
         }
+
+        function setFromLV2(v) {
+            value = v * (to - from) + from;
+        }
     }
 
     Slider {
@@ -265,6 +316,10 @@ GridLayout {
 
         onValueChanged: {
             _setLV2(this, value);
+        }
+
+        function setFromLV2(v) {
+            value = v * (to - from) + from;
         }
     }
     
@@ -287,6 +342,10 @@ GridLayout {
 
         onValueChanged: {
             _setLV2(this, value);
+        }
+
+        function setFromLV2(v) {
+            value = v * (to - from) + from;
         }
     }
 
@@ -314,6 +373,10 @@ GridLayout {
         onCurrentIndexChanged: {
             _setLV2(this, currentIndex / (rep2.count - 1));
         }
+
+        function setFromLV2(v) {
+            value = v * (to - from) + from;
+        }
     }
 
     Dial {
@@ -330,6 +393,10 @@ GridLayout {
 
         onValueChanged: {
             _setLV2(this, (value - from) / (to - from));
+        }
+
+        function setFromLV2(v) {
+            value = v * (to - from) + from;
         }
     }
 
@@ -348,6 +415,10 @@ GridLayout {
         onValueChanged: {
             _setLV2(this, (value - from) / (to - from));
         }
+
+        function setFromLV2(v) {
+            value = v * (to - from) + from;
+        }
     }
     
     Dial {
@@ -365,6 +436,10 @@ GridLayout {
         onValueChanged: {
             _setLV2(this, (value - from) / (to - from));
         }
+
+        function setFromLV2(v) {
+            value = v * (to - from) + from;
+        }
     }
 
     Dial {
@@ -381,6 +456,10 @@ GridLayout {
 
         onValueChanged: {
             _setLV2(this, (value - from) / (to - from));
+        }
+
+        function setFromLV2(v) {
+            value = v * (to - from) + from;
         }
     }
 
@@ -408,6 +487,10 @@ GridLayout {
         onCurrentIndexChanged: {
             _setLV2(this, currentIndex / (rep3.count - 1));
         }
+
+        function setFromLV2(v) {
+            value = v * (to - from) + from;
+        }
     }
 
     Dial {
@@ -424,6 +507,10 @@ GridLayout {
 
         onValueChanged: {
             _setLV2(this, (value - from) / (to - from));
+        }
+
+        function setFromLV2(v) {
+            value = v * (to - from) + from;
         }
     }
 
@@ -494,6 +581,10 @@ GridLayout {
         onValueChanged: {
             _setLV2(this, value ? 1.0 : 0.0);
         }
+
+        function setFromLV2(v) {
+            value = v;
+        }
     }
 
     QtObject {
@@ -506,6 +597,10 @@ GridLayout {
 
         onValueChanged: {
             _setLV2(this, value ? 1.0 : 0.0);
+        }
+
+        function setFromLV2(v) {
+            value = v;
         }
     }
 
