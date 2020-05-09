@@ -26,6 +26,16 @@ class Utils(QObject):
             return ctxt.nameForObject(obj)
         return "<nocontext>"
 
+    @pyqtSlot(str, result=str)
+    def readFile(self, file_name):
+        with open(file_name, "r") as fi:
+            return fi.read()
+
+    @pyqtSlot(str, str)
+    def saveFile(self, file_name, content):
+        with open(file_name, "w") as fo:
+            fo.write(content)
+
 class LV2Host(QObject):
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -86,7 +96,7 @@ if "--stub" in sys.argv:
 else:
     lv2Host = LV2Host()
         
-qmlRegisterSingletonType(Utils, 'MyUtils', 1, 0, "MyUtils", lambda engine, script_engine: Utils())
+qmlRegisterSingletonType(Utils, 'Utils', 1, 0, "Utils", lambda engine, script_engine: Utils())
 
 view = QQuickView()
 view.setResizeMode(QQuickView.SizeViewToRootObject)

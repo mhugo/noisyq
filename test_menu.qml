@@ -2,7 +2,7 @@ import QtQuick 2.0
 import QtQuick.Controls 2.4
 import QtQuick.Layouts 1.11
 
-import "utils.js" as Utils
+import Utils 1.0
 
 // TODO
 
@@ -12,7 +12,7 @@ ColumnLayout {
 
     function quit()
     {
-        Utils.saveFile("state.json", canvas.saveState());
+        Utils.saveFile("state.json", JSON.stringify(canvas.saveState()));
         Qt.callLater(Qt.quit);
     }
 
@@ -24,7 +24,7 @@ ColumnLayout {
         // use JS Object.defineProperty to add it to the "root" object ?
         console.log("____qt", Qt.application.displayName);
         // load instruments
-        let instruments = Utils.readFile("instruments/instruments.json");
+        let instruments = JSON.parse(Utils.readFile("instruments/instruments.json"));
         if (instruments) {
             for (var i in instruments) {
                 let qmlFile = "instruments/" + instruments[i]["qml"];
@@ -45,7 +45,7 @@ ColumnLayout {
             }
         }
 
-        let state = Utils.readFile("state.json");
+        let state = JSON.parse(Utils.readFile("state.json"));
         if (state) {
             console.log("-- Loading state from state.json --");
             canvas.loadState(state);

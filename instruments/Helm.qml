@@ -2,13 +2,12 @@ import QtQuick 2.0
 import QtQuick.Controls 2.4
 import QtQuick.Layouts 1.11
 
-import MyUtils 1.0
+import Utils 1.0
 
 // TODO
-// - include readFile / saveFile into MyUtils
-//   - and rename to Utils
 // - better alignment of widgets
 // - widgets: text rather than knobs for most integer parameters (tune, transpose, etc.)
+// - widgets: factorization
 // - handle "cross modulation" on knob8 + shift
 // - add other tabs (enveloppes, etc.)
 // - handle modulation
@@ -25,7 +24,7 @@ GridLayout {
 
     // shortcut
     function _setLV2(obj, value) {
-        lv2Host.setParameterValue(lv2Id, MyUtils.objectId(obj), value);
+        lv2Host.setParameterValue(lv2Id, Utils.objectId(obj), value);
     }
 
     // Automatically save values of objects with "saveState" property defined
@@ -35,7 +34,7 @@ GridLayout {
         for (var i = 0; i < root.data.length; i++) {
             let child = root.data[i];
             if (child.saveState != undefined) {
-                let id = MyUtils.objectId(child);
+                let id = Utils.objectId(child);
                 d[id] = child.value;
             }
         }
@@ -47,7 +46,7 @@ GridLayout {
         for (var i = 0; i < root.data.length; i++) {
             let child = root.data[i];
             if (child.saveState != undefined) {
-                let id = MyUtils.objectId(child);
+                let id = Utils.objectId(child);
                 if (id in state) {
                     child.value = state[id];
                 }
@@ -61,7 +60,7 @@ GridLayout {
         for (var i = 0; i < root.data.length; i++) {
             let child = root.data[i];
             if (child.saveState != undefined) {
-                let parameterName = MyUtils.objectId(child);
+                let parameterName = Utils.objectId(child);
                 console.log("---", parameterName);
                 console.log("--- child", child);
                 child.setFromLV2(lv2Host.getParameterValue(lv2Id, parameterName));
@@ -619,7 +618,7 @@ GridLayout {
                 let child = root.data[i];
                 if (child.controllerType === "knob") {
                     if (child.controllerNumber == undefined) {
-                        console.log("Missing controllerNumber, object id", MyUtils.objectId(child));
+                        console.log("Missing controllerNumber, object id", Utils.objectId(child));
                     }
                     else {
                         knobToItem[child.controllerNumber] = child;
@@ -636,7 +635,7 @@ GridLayout {
                 else if (child.controllerType === "pad") {
                     console.log("child pad", child);
                     if (child.controllerNumber == undefined) {
-                        console.log("Missing controllerNumber, object id", MyUtils.objectId(child));
+                        console.log("Missing controllerNumber, object id", Utils.objectId(child));
                     }
                     else {
                         padToItem[child.controllerNumber] = child;
