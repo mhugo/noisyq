@@ -5,6 +5,10 @@ import QtQuick.Layouts 1.11
 import Utils 1.0
 
 // TODO
+// - remap keyboard:
+//   - 1. knobs
+//   - 2. pads
+//   - 3. piano
 
 ColumnLayout {
     id: root
@@ -48,6 +52,8 @@ ColumnLayout {
         let state = JSON.parse(Utils.readFile("state.json"));
         if (state) {
             console.log("-- Loading state from state.json --");
+
+
             canvas.loadState(state);
         }
     }
@@ -70,6 +76,9 @@ ColumnLayout {
             signal knobMoved(int knobNumber, real amount)
 
             property int selectedKnob : 0
+
+            signal notePressed(int note, int velocity)
+            signal noteReleased(int note)
 
             Repeater {
                 id: knobs
@@ -158,14 +167,23 @@ ColumnLayout {
                 }
                 console.log(event.nativeScanCode, event.key);
                 let value;
-                // azerty
-                if (event.nativeScanCode >= 24 && event.nativeScanCode < 32) {
-                    selectedKnob = event.nativeScanCode - 24;
+                // 12345...
+                if (event.nativeScanCode >= 10 && event.nativeScanCode < 18) {
+                    selectedKnob = event.nativeScanCode - 10;
                 }
-                // wxcvbn row
-                else if (event.nativeScanCode >= 52 && event.nativeScanCode < 60) {
-                    let padNumber = event.nativeScanCode - 52;
+                // azerty..
+                else if (event.nativeScanCode >= 24 && event.nativeScanCode < 32) {
+                    selectedKnob = event.nativeScanCode - 24 + 8;
+                }
+                // qsdfg...
+                else if (event.nativeScanCode >= 38 && event.nativeScanCode < 46) {
+                    let padNumber = event.nativeScanCode - 38;
                     padPressed(padNumber);
+                }
+                // wxcvbn.. => piano
+                else if (event.nativeScanCode >= 52 && event.nativeScanCode < 60) {
+                    let key = event.nativeScanCode - 52 + 60;
+                    notePressed(key, 127);
                 }
                 else if (event.key == Qt.Key_Escape) {
                     // escape
@@ -176,36 +194,17 @@ ColumnLayout {
                 if (event.isAutoRepeat) {
                     return;
                 }
-                // wxcvbn row
-                if (event.nativeScanCode >= 52 && event.nativeScanCode < 60) {
-                    let padNumber = event.nativeScanCode - 52;
+                if (event.nativeScanCode >= 38 && event.nativeScanCode < 46) {
+                    let padNumber = event.nativeScanCode - 38;
                     padReleased(padNumber);
+                }
+                else if (event.nativeScanCode >= 52 && event.nativeScanCode < 60) {
+                    let key = event.nativeScanCode - 52 + 60;
+                    noteReleased(key);
                 }
             }
         }
     }
-
-    /*QtObject {
-        id: lv2Host
-
-        // returns an lv2Id
-        function addInstance(lv2Name) {
-            console.log("== addInstance", lv2Name);
-            return 0;
-        }
-
-        function getParameterValue(lv2Id, parameterName) {
-            console.log("== getParameterValue", lv2Id, parameterName);
-        }
-
-        function setParameterValue(lv2Id, parameterName, value) {
-            console.log("== setParameterValue", lv2Id, parameterName, value);
-        }
-
-        function sendMidiMessage(lv2Id, msg) {
-            console.log("== sendMidiMessage", lv2id, msg);
-        }
-    }*/
 
     Rectangle {
         id: infoScreen
@@ -291,6 +290,10 @@ ColumnLayout {
             else {
                 currentIndex = instrumentStackIndex[currentInstrument];
             }
+        }
+
+        function currentInstrumentObject() {
+            return instruments[currentInstrument];
         }
 
         // Assign a given Item to the current instrument slot
@@ -432,10 +435,24 @@ ColumnLayout {
             }
                 break;
             }
+        }
 
-            /*for (var i = 0; i < 8; i++) {
-                padRep.itemAt(i).color = board.padColor(i);
-            }*/
+        onNotePressed : {
+            if (state == "instrEditMenu") {
+                let cur = canvas.currentInstrumentObject();
+                if (cur != null) {
+                    lv2Host.noteOn(cur.lv2Id, note, velocity);
+                }
+            }
+        }
+
+        onNoteReleased : {
+            if (state == "instrEditMenu") {
+                let cur = canvas.currentInstrumentObject();
+                if (cur != null) {
+                    lv2Host.noteOff(cur.lv2Id, note);
+                }
+            }
         }
     }
 

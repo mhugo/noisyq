@@ -24,7 +24,10 @@ GridLayout {
 
     // shortcut
     function _setLV2(obj, value) {
-        lv2Host.setParameterValue(lv2Id, Utils.objectId(obj), value);
+        console.log("_setLV2", obj, value);
+        if (lv2Id) {
+            lv2Host.setParameterValue(lv2Id, Utils.objectId(obj), value);
+        }
     }
 
     // Automatically save values of objects with "saveState" property defined
