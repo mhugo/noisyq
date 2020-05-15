@@ -6,9 +6,10 @@ import Utils 1.0
 
 // TODO
 // - remap keyboard:
-//   - 1. knobs
-//   - 2. pads
-//   - 3. piano
+//   - add shift button => shift
+//   - add "pad 1-8/9-16" button => capslock
+//   - add slider
+//   - add pitch bend
 
 ColumnLayout {
     id: root
@@ -79,6 +80,9 @@ ColumnLayout {
 
             signal notePressed(int note, int velocity)
             signal noteReleased(int note)
+
+            signal octaveUp()
+            signal octaveDown()
 
             Repeater {
                 id: knobs
@@ -181,9 +185,15 @@ ColumnLayout {
                     padPressed(padNumber);
                 }
                 // wxcvbn.. => piano
-                else if (event.nativeScanCode >= 52 && event.nativeScanCode < 60) {
+                else if (event.nativeScanCode >= 52 && event.nativeScanCode < 62) {
                     let key = event.nativeScanCode - 52 + 60;
                     notePressed(key, 127);
+                }
+                else if (event.text == ">") {
+                    octaveUp();
+                }
+                else if (event.text == "<") {
+                    octaveDown();
                 }
                 else if (event.key == Qt.Key_Escape) {
                     // escape
@@ -198,7 +208,7 @@ ColumnLayout {
                     let padNumber = event.nativeScanCode - 38;
                     padReleased(padNumber);
                 }
-                else if (event.nativeScanCode >= 52 && event.nativeScanCode < 60) {
+                else if (event.nativeScanCode >= 52 && event.nativeScanCode < 62) {
                     let key = event.nativeScanCode - 52 + 60;
                     noteReleased(key);
                 }
@@ -389,6 +399,75 @@ ColumnLayout {
         }
     }
 
+    RowLayout {
+        id: piano
+        property int octave: 4
+        Text {
+            id: octaveText
+            text: "Octave\n" + parent.octave
+            horizontalAlignment: Text.AlignHCenter
+        }
+        Item {
+            id: pianoK
+            width: root.width
+            height: 100
+            property real keyWidth: (root.width - octaveText.width) / 15
+
+            // note index -> corresponding Rectangle for key
+            property var keyForNote: ({})
+
+            // 
+            function noteOn(note, velocity) {
+                keyForNote[note].color = "grey";
+            }
+            function noteOff(note) {
+                keyForNote[note].color = keyForNote[note].initialColor;
+            }
+
+            Repeater {
+                id: whiteKeyRep
+                model: 15
+                property var semis : [0, 2, 4, 5, 7, 9, 11, 12, 14, 16, 17, 19, 21, 23, 24]
+                Rectangle {
+                    x: (index * pianoK.keyWidth)
+                    y: parent.y
+                    width: pianoK.keyWidth
+                    height: parent.height
+                    border.width: 1
+                    Layout.margins: 0
+                    border.color: "black"
+                    property string initialColor: "white"
+                    color: initialColor
+                }
+            }
+            Repeater {
+                id: blackKeyRep
+                model: [0, 1, 3, 4, 5, 7, 8, 10, 11, 12]
+                property var semis : [1, 3, 6, 8, 10, 13, 15, 18, 20, 22]
+                Rectangle {
+                    x: ((modelData+0.75) * pianoK.keyWidth)
+                    y: parent.y
+                    width: pianoK.keyWidth / 2
+                    height: parent.height / 2
+                    border.width: 1
+                    Layout.margins: 0
+                    border.color: "black"
+                    property string initialColor: "black"
+                    color: initialColor
+                }
+            }
+
+            Component.onCompleted : {
+                for (var i = 0; i < whiteKeyRep.semis.length; i++) {
+                    keyForNote[whiteKeyRep.semis[i]] = whiteKeyRep.itemAt(i);
+                }
+                for (var i = 0; i < blackKeyRep.semis.length; i++) {
+                    keyForNote[blackKeyRep.semis[i]] = blackKeyRep.itemAt(i);
+                }
+            }
+        }
+    }
+
     state: "rootMenu"
 
     Connections {
@@ -444,6 +523,7 @@ ColumnLayout {
                     lv2Host.noteOn(cur.lv2Id, note, velocity);
                 }
             }
+            pianoK.noteOn(note % 12, velocity);
         }
 
         onNoteReleased : {
@@ -453,6 +533,16 @@ ColumnLayout {
                     lv2Host.noteOff(cur.lv2Id, note);
                 }
             }
+            pianoK.noteOff(note % 12);
+        }
+
+        onOctaveUp : {
+            piano.octave += 1;
+        }
+        onOctaveDown : {
+            piano.octave -= 1;
+            if (piano.octave < 0)
+                piano.octave = 0;
         }
     }
 
