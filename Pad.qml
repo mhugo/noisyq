@@ -4,15 +4,17 @@ import QtQuick.Layouts 1.11
 
 Item {
     id: root
-    width: 64
-    height: 64
+
+    property real size: 64
+    implicitWidth: root.size
+    implicitHeight: root.size
 
     property string color : "black"
     Rectangle
     {
-        width: root.width
-        height: root.height
-        radius: 6
+        width: root.size
+        height: root.size
+        radius: root.size/10
         color: {
             if (parent.color == "red") {
                 "#d90243"
@@ -28,11 +30,11 @@ Item {
             }
         }
         Image {
-            y: parent.y + 6
-            x: parent.x + 6
+            y: parent.y + parent.radius
+            x: parent.x + parent.radius
             source: "pad.svg"
-            sourceSize.width: root.width - 12
-            sourceSize.height: root.height - 12
+            sourceSize.width: root.size - parent.radius*2
+            sourceSize.height: root.size - parent.radius*2
         }
     }
 }

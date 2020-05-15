@@ -136,6 +136,7 @@ qmlRegisterSingletonType(Utils, 'Utils', 1, 0, "Utils", lambda engine, script_en
 
 view = QQuickView()
 view.setResizeMode(QQuickView.SizeViewToRootObject)
+#view.setResizeMode(QQuickView.SizeRootObjectToView)
 
 view.rootContext().setContextProperty("lv2Host", lv2Host)
 

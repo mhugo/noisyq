@@ -22,6 +22,8 @@ GridLayout {
 
     property string name: "Helm"
 
+    property int unitSize: 100
+
     // shortcut
     function _setLV2(obj, value) {
         console.log("_setLV2", obj, value);
@@ -154,7 +156,8 @@ GridLayout {
         from: 0.0
         to: 16.0
         orientation: Qt.Vertical
-        Layout.maximumHeight: 64
+        Layout.maximumWidth: root.unitSize
+        Layout.maximumHeight: root.unitSize
 
         onValueChanged: {
             _setLV2(this, value);
@@ -177,7 +180,8 @@ GridLayout {
         property bool isInteger: true
 
         Layout.fillHeight: true
-        Layout.maximumWidth: 64
+        Layout.maximumWidth: root.unitSize
+        Layout.maximumHeight: root.unitSize
         Repeater {
             id: rep
             model: waveEnum
@@ -200,8 +204,8 @@ GridLayout {
         property bool saveState: true
         from: -48
         to: 48
-        Layout.maximumHeight: 64
-        Layout.maximumWidth: 64
+        Layout.maximumHeight: root.unitSize
+        Layout.maximumWidth: root.unitSize
 
         property string controllerType: "knob"
         property int controllerNumber: 2
@@ -221,8 +225,8 @@ GridLayout {
         property bool saveState: true
         from: -100
         to: 100
-        Layout.maximumHeight: 64
-        Layout.maximumWidth: 64
+        Layout.maximumHeight: root.unitSize
+        Layout.maximumWidth: root.unitSize
 
         property string controllerType: "knob"
         property int controllerNumber: 3
@@ -242,8 +246,8 @@ GridLayout {
         property bool saveState: true
         from: 1
         to: 15
-        Layout.maximumHeight: 64
-        Layout.maximumWidth: 64
+        Layout.maximumHeight: root.unitSize
+        Layout.maximumWidth: root.unitSize
 
         property string controllerType: "knob"
         property int controllerNumber: 4
@@ -263,8 +267,8 @@ GridLayout {
         property bool saveState: true
         from: 1
         to: 15
-        Layout.maximumHeight: 64
-        Layout.maximumWidth: 64
+        Layout.maximumHeight: root.unitSize
+        Layout.maximumWidth: root.unitSize
 
         property string controllerType: "knob"
         property int controllerNumber: 5
@@ -291,7 +295,8 @@ GridLayout {
         from: 0.0
         to: 16.0
         orientation: Qt.Vertical
-        Layout.maximumHeight: 64
+        Layout.maximumWidth: root.unitSize
+        Layout.maximumHeight: root.unitSize
 
         onValueChanged: {
             _setLV2(this, value);
@@ -314,7 +319,8 @@ GridLayout {
         from: 0.0
         to: 16.0
         orientation: Qt.Vertical
-        Layout.maximumHeight: 64
+        Layout.maximumWidth: root.unitSize
+        Layout.maximumHeight: root.unitSize
 
         onValueChanged: {
             _setLV2(this, value);
@@ -340,7 +346,8 @@ GridLayout {
         from: 0.0
         to: 16.0
         orientation: Qt.Vertical
-        Layout.maximumHeight: 64
+        Layout.maximumWidth: root.unitSize
+        Layout.maximumHeight: root.unitSize
 
         onValueChanged: {
             _setLV2(this, value);
@@ -363,7 +370,8 @@ GridLayout {
         property bool isInteger: true
 
         Layout.fillHeight: true
-        Layout.maximumWidth: 64
+        Layout.maximumWidth: root.unitSize
+        Layout.maximumHeight: root.unitSize
         Repeater {
             id: rep2
             model: waveEnum
@@ -386,8 +394,8 @@ GridLayout {
         property bool saveState: true
         from: -48
         to: 48
-        Layout.maximumHeight: 64
-        Layout.maximumWidth: 64
+        Layout.maximumHeight: root.unitSize
+        Layout.maximumWidth: root.unitSize
 
         property string controllerType: "knob"
         property int controllerNumber: 10
@@ -407,8 +415,8 @@ GridLayout {
         property bool saveState: true
         from: -100
         to: 100
-        Layout.maximumHeight: 64
-        Layout.maximumWidth: 64
+        Layout.maximumHeight: root.unitSize
+        Layout.maximumWidth: root.unitSize
 
         property string controllerType: "knob"
         property int controllerNumber: 11
@@ -428,8 +436,8 @@ GridLayout {
         property bool saveState: true
         from: 1
         to: 15
-        Layout.maximumHeight: 64
-        Layout.maximumWidth: 64
+        Layout.maximumHeight: root.unitSize
+        Layout.maximumWidth: root.unitSize
 
         property string controllerType: "knob"
         property int controllerNumber: 12
@@ -449,8 +457,8 @@ GridLayout {
         property bool saveState: true
         from: 1
         to: 15
-        Layout.maximumHeight: 64
-        Layout.maximumWidth: 64
+        Layout.maximumHeight: root.unitSize
+        Layout.maximumWidth: root.unitSize
 
         property string controllerType: "knob"
         property int controllerNumber: 13
@@ -477,7 +485,8 @@ GridLayout {
         property bool isInteger: true
 
         Layout.fillHeight: true
-        Layout.maximumWidth: 64
+        Layout.maximumWidth: root.unitSize
+        Layout.maximumHeight: root.unitSize
         Repeater {
             id: rep3
             model: waveEnum
@@ -500,8 +509,8 @@ GridLayout {
         property bool saveState: true
         from: 0
         to: 100
-        Layout.maximumHeight: 64
-        Layout.maximumWidth: 64
+        Layout.maximumHeight: root.unitSize
+        Layout.maximumWidth: root.unitSize
 
         property string controllerType: "knob"
         property int controllerNumber: 15

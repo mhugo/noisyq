@@ -11,9 +11,13 @@ import Utils 1.0
 //   - add slider
 //   - add pitch bend
 
+
 ColumnLayout {
-    id: root
-    width: 68*8
+    id: main
+
+    readonly property int unitSize: 120
+
+    width: unitSize*8
 
     function quit()
     {
@@ -238,7 +242,7 @@ ColumnLayout {
     StackLayout {
         id: canvas
         width: parent.width
-        height: 64*3
+        height: main.unitSize*3
 
         function saveState() {
             // save the state of each instrument
@@ -312,9 +316,10 @@ ColumnLayout {
             let obj = null;
             for (var i in instrumentComponents) {
                 if (instrumentComponents[i].name == name) {
-                    obj = instrumentComponents[i].component.createObject(root, {});
+                    obj = instrumentComponents[i].component.createObject(main, {});
                     let lv2Id = lv2Host.addInstance(instrumentComponents[i].lv2Url);
                     obj.lv2Id = lv2Id;
+                    obj.unitSize = main.unitSize;
                     obj.init();
                     console.log("lv2id", obj.lv2Id);
                     break;
@@ -380,11 +385,13 @@ ColumnLayout {
     RowLayout {
         id: padMenu
         property alias texts: padRep.model
+        spacing: 0
         Repeater {
             id: padRep
             model: ["", "", "", "", "", "", "", ""]
             Pad {
                 color: board.padColor(index)
+                size: main.unitSize
                 Text {
                     width: parent.width
                     height: parent.height
@@ -409,9 +416,9 @@ ColumnLayout {
         }
         Item {
             id: pianoK
-            width: root.width
-            height: 100
-            property real keyWidth: (root.width - octaveText.width) / 15
+            width: main.width
+            height: main.unitSize*1.5
+            property real keyWidth: (main.width - octaveText.width) / 15
 
             // note index -> corresponding Rectangle for key
             property var keyForNote: ({})
