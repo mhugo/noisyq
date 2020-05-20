@@ -30,6 +30,7 @@ Rectangle {
                     root.value + root.unit;
             }
             font.pixelSize: parent.height / 3
+            font.family: monoFont.name
             x: (parent.width - width) / 2
             y: (parent.height - height) / 3
         }

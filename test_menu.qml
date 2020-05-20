@@ -71,6 +71,11 @@ ColumnLayout {
         id: pixelFont
         source: "fonts/Pixeled.ttf"
     }
+    FontLoader {
+        id: monoFont
+        //source: "fonts/MoonGlossDisplayThin.ttf"
+        source: "fonts/Oxanium-Regular.ttf"
+    }
     RowLayout {
         // simulate knobs and pads activations
         Text {
