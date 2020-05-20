@@ -12,6 +12,7 @@ import Utils 1.0
 // - add other tabs (enveloppes, etc.)
 // - handle modulation
 
+
 GridLayout {
     id: root
     // Used by the host to look for an LV2 plugin
@@ -75,34 +76,36 @@ GridLayout {
 
     columns: 8
 
-    property var waveEnum : ["sin",
-                             "triangle",
-                             "square",
-                             "saw up",
-                             "saw down",
-                             "3 step",
-                             "4 step",
-                             "8 step",
-                             "3 pyramid",
-                             "5 pyramid",
-                             "9 pyramid"]
+    columnSpacing: 0
 
     // First row
     RowLayout {
+        spacing: 0
         Layout.columnSpan: 6
         Layout.fillWidth: true
         Rectangle {
             Layout.fillWidth: true
             height: 4
-            color: "black"
+            color: "#fcba03"
         }
         Text {
-            text: "[ OSC 1 ]"
+            text: "OSC 1"
+            font.bold: true
+            color: "white"
+            Rectangle {
+                color: "#fcba03"
+                width: parent.width + 16
+                height: parent.height + 4
+                y: - 2
+                x: - 8
+                radius: 5
+                z: -1
+            }
         }
         Rectangle {
             Layout.fillWidth: true
             height: 4
-            color: "black"
+            color: "#fcba03"
         }
     }
 
@@ -120,11 +123,11 @@ GridLayout {
     }
 
     Text {
-        text: "Tune"
+        text: "Transp."
     }
 
     Text {
-        text: "Transp."
+        text: "Tune"
     }
 
     Text {
@@ -159,6 +162,8 @@ GridLayout {
         Layout.maximumWidth: root.unitSize
         Layout.maximumHeight: root.unitSize
 
+        implicitWidth: root.unitSize
+
         onValueChanged: {
             _setLV2(this, value);
         }
@@ -168,66 +173,50 @@ GridLayout {
         }
     }
 
-    StackLayout {
+    WaveForm {
         id: osc_1_waveform
         property bool saveState: true
-        property alias value: osc_1_waveform.currentIndex
 
         property string controllerType: "knob"
         property int controllerNumber: 1
-        property int from: 0
-        property int to: rep.count
         property bool isInteger: true
+        size: main.unitSize
 
-        Layout.fillHeight: true
-        Layout.maximumWidth: root.unitSize
-        Layout.maximumHeight: root.unitSize
-        Repeater {
-            id: rep
-            model: waveEnum
-            Text {
-                text: modelData
-            }
-        }
-
-        onCurrentIndexChanged: {
-            _setLV2(this, currentIndex / (rep.count - 1));
+        onValueChanged: {
+            _setLV2(this, value / (count - 1));
         }
 
         function setFromLV2(v) {
-            value = ~~(v * (to - from) + from);
+            value = Math.round(v * (to - from) + from);
         }
     }
 
-    Dial {
-        id: osc_1_tune
-        property bool saveState: true
-        from: -48
-        to: 48
-        Layout.maximumHeight: root.unitSize
-        Layout.maximumWidth: root.unitSize
+    NumberFrame {
+        id: osc_1_transpose
+        text: "semis"
 
+        property bool saveState: true
+        property real from: -48
+        property real to: 48
         property string controllerType: "knob"
         property int controllerNumber: 2
         property bool isInteger: true
-
         onValueChanged: {
             _setLV2(this, (value - from) / (to - from));
         }
 
         function setFromLV2(v) {
-            value = v * (to - from) + from;
+            value = Math.round(v * (to - from) + from);
         }
     }
 
-    Dial {
-        id: osc_1_transpose
-        property bool saveState: true
-        from: -100
-        to: 100
-        Layout.maximumHeight: root.unitSize
-        Layout.maximumWidth: root.unitSize
+    NumberFrame {
+        id: osc_1_tune
+        text: "cents"
 
+        property bool saveState: true
+        property real from: -100
+        property real to: 100
         property string controllerType: "knob"
         property int controllerNumber: 3
         property bool isInteger: true
@@ -237,17 +226,15 @@ GridLayout {
         }
 
         function setFromLV2(v) {
-            value = v * (to - from) + from;
+            value = Math.round(v * (to - from) + from);
         }
     }
-    
-    Dial {
+
+    NumberFrame {
         id: osc_1_unison_voices
         property bool saveState: true
-        from: 1
-        to: 15
-        Layout.maximumHeight: root.unitSize
-        Layout.maximumWidth: root.unitSize
+        property real from: 1
+        property real to: 15
 
         property string controllerType: "knob"
         property int controllerNumber: 4
@@ -258,17 +245,18 @@ GridLayout {
         }
 
         function setFromLV2(v) {
-            value = v * (to - from) + from;
+            value = Math.round(v * (to - from) + from);
         }
+
+        text: "voices"
+        displaySign: false
     }
 
-    Dial {
+    NumberFrame {
         id: osc_1_unison_detune
         property bool saveState: true
-        from: 1
-        to: 15
-        Layout.maximumHeight: root.unitSize
-        Layout.maximumWidth: root.unitSize
+        property real from: 0
+        property real to: 100
 
         property string controllerType: "knob"
         property int controllerNumber: 5
@@ -279,8 +267,11 @@ GridLayout {
         }
 
         function setFromLV2(v) {
-            value = v * (to - from) + from;
+            value = Math.round(v * (to - from) + from);
         }
+
+        text: "cents"
+        displaySign: false
     }
 
     Slider {
@@ -358,66 +349,52 @@ GridLayout {
         }
     }
 
-    StackLayout {
+    WaveForm {
         id: osc_2_waveform
         property bool saveState: true
-        property alias value: osc_2_waveform.currentIndex
 
         property string controllerType: "knob"
         property int controllerNumber: 9
-        property int from: 0
-        property int to: rep.count
         property bool isInteger: true
 
-        Layout.fillHeight: true
-        Layout.maximumWidth: root.unitSize
-        Layout.maximumHeight: root.unitSize
-        Repeater {
-            id: rep2
-            model: waveEnum
-            Text {
-                text: modelData
-            }
-        }
+        size: main.unitSize
 
-        onCurrentIndexChanged: {
-            _setLV2(this, currentIndex / (rep2.count - 1));
+        onValueChanged: {
+            _setLV2(this, value / (count - 1));
         }
 
         function setFromLV2(v) {
-            value = v * (to - from) + from;
+            value = Math.round(v * (to - from) + from);
         }
     }
 
-    Dial {
-        id: osc_2_tune
-        property bool saveState: true
-        from: -48
-        to: 48
-        Layout.maximumHeight: root.unitSize
-        Layout.maximumWidth: root.unitSize
+    NumberFrame {
+        id: osc_2_transpose
+        text: "semis"
 
+        property bool saveState: true
+        property real from: -48
+        property real to: 48
         property string controllerType: "knob"
         property int controllerNumber: 10
         property bool isInteger: true
-
         onValueChanged: {
             _setLV2(this, (value - from) / (to - from));
         }
 
         function setFromLV2(v) {
-            value = v * (to - from) + from;
+            value = Math.round(v * (to - from) + from);
+            console.log("osc_2_transpose", value);
         }
     }
 
-    Dial {
-        id: osc_2_transpose
-        property bool saveState: true
-        from: -100
-        to: 100
-        Layout.maximumHeight: root.unitSize
-        Layout.maximumWidth: root.unitSize
+    NumberFrame {
+        id: osc_2_tune
+        text: "cents"
 
+        property bool saveState: true
+        property real from: -100
+        property real to: 100
         property string controllerType: "knob"
         property int controllerNumber: 11
         property bool isInteger: true
@@ -427,17 +404,16 @@ GridLayout {
         }
 
         function setFromLV2(v) {
-            value = v * (to - from) + from;
+            value = Math.round(v * (to - from) + from);
+            console.log("osc_2_tune", value);
         }
     }
-    
-    Dial {
+
+    NumberFrame {
         id: osc_2_unison_voices
         property bool saveState: true
-        from: 1
-        to: 15
-        Layout.maximumHeight: root.unitSize
-        Layout.maximumWidth: root.unitSize
+        property real from: 1
+        property real to: 15
 
         property string controllerType: "knob"
         property int controllerNumber: 12
@@ -448,17 +424,18 @@ GridLayout {
         }
 
         function setFromLV2(v) {
-            value = v * (to - from) + from;
+            value = Math.round(v * (to - from) + from);
         }
+
+        text: "voices"
+        displaySign: false
     }
 
-    Dial {
+    NumberFrame {
         id: osc_2_unison_detune
         property bool saveState: true
-        from: 1
-        to: 15
-        Layout.maximumHeight: root.unitSize
-        Layout.maximumWidth: root.unitSize
+        property real from: 0
+        property real to: 100
 
         property string controllerType: "knob"
         property int controllerNumber: 13
@@ -469,61 +446,49 @@ GridLayout {
         }
 
         function setFromLV2(v) {
-            value = v * (to - from) + from;
+            value = Math.round(v * (to - from) + from);
         }
+
+        text: "cents"
+        displaySign: false
     }
 
-    StackLayout {
+    WaveForm {
         id: sub_waveform
-        property bool saveState: true
-        property alias value: sub_waveform.currentIndex
-
         property string controllerType: "knob"
         property int controllerNumber: 14
-        property int from: 0
-        property int to: rep.count
         property bool isInteger: true
 
-        Layout.fillHeight: true
-        Layout.maximumWidth: root.unitSize
-        Layout.maximumHeight: root.unitSize
-        Repeater {
-            id: rep3
-            model: waveEnum
-            Text {
-                text: modelData
-            }
-        }
+        size: main.unitSize
 
-        onCurrentIndexChanged: {
-            _setLV2(this, currentIndex / (rep3.count - 1));
+        onValueChanged: {
+            _setLV2(this, value / (count - 1));
         }
 
         function setFromLV2(v) {
-            value = v * (to - from) + from;
+            value = Math.round(v * (to - from) + from);
         }
     }
 
-    Dial {
+    NumberFrame {
         id: sub_shuffle
-        property bool saveState: true
-        from: 0
-        to: 100
-        Layout.maximumHeight: root.unitSize
-        Layout.maximumWidth: root.unitSize
+        unit: "%"
 
+        property bool saveState: true
+        property real from: 0
+        property real to: 100
         property string controllerType: "knob"
         property int controllerNumber: 15
-        property bool isInteger: true
-
+        property bool isInteger: false
         onValueChanged: {
             _setLV2(this, (value - from) / (to - from));
         }
 
         function setFromLV2(v) {
-            value = v * (to - from) + from;
+            value = Math.round(v * (to - from) + from);
         }
     }
+
 
     // Text of second knob row
 
@@ -560,20 +525,32 @@ GridLayout {
 
     
     RowLayout {
+        spacing: 0
         Layout.columnSpan: 6
         Layout.fillWidth: true
         Rectangle {
             Layout.fillWidth: true
             height: 4
-            color: "black"
+            color: "#fcba03"
         }
         Text {
-            text: "[ OSC 2 ]"
+            text: "OSC 2"
+            font.bold: true
+            color: "white"
+            Rectangle {
+                color: "#fcba03"
+                width: parent.width + 16
+                height: parent.height + 4
+                x: - 8
+                y: - 2
+                radius: 5
+                z: -1
+            }
         }
         Rectangle {
             Layout.fillWidth: true
             height: 4
-            color: "black"
+            color: "#fcba03"
         }
     }
 
