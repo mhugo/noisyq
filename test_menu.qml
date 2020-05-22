@@ -76,7 +76,7 @@ ColumnLayout {
         //source: "fonts/MoonGlossDisplayThin.ttf"
         source: "fonts/Oxanium-Regular.ttf"
     }
-    RowLayout {
+/*    RowLayout {
         // simulate knobs and pads activations
         Text {
             id: board
@@ -223,7 +223,7 @@ ColumnLayout {
                 }
             }
         }
-    }
+    }*/
 
     Rectangle {
         id: infoScreen
@@ -498,6 +498,9 @@ ColumnLayout {
                 case 1:
                     state = "instrMenu";
                     break;
+                case 7:
+                    quit();
+                    break;
                 }
             }
                 break;
@@ -563,7 +566,7 @@ ColumnLayout {
             name: "rootMenu"
             PropertyChanges {
                 target: padMenu
-                texts: ["Project", "Instr.", "", "", "", "", "", ""]
+                texts: ["Project", "Instr.", "", "", "", "", "", "Quit"]
             }
             PropertyChanges {
                 target: canvas
