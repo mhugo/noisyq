@@ -1,18 +1,18 @@
 from PyQt5.QtCore import (
-    QUrl, pyqtSignal, pyqtProperty, pyqtSlot, QObject, QTimer,
-    QMetaObject
+    QUrl, pyqtSignal, pyqtSlot, QObject
 )
 from PyQt5.QtWidgets import QApplication
-from PyQt5.QtQuick import QQuickView, QQuickItem
+from PyQt5.QtQuick import QQuickView
 from PyQt5.QtQml import QQmlEngine, qmlRegisterSingletonType
 
 import sys
 
 import os
 
-from jalv_wrapper import JALVInstance
-from rtmidi.midiutil import open_midioutput
 import rtmidi
+
+#from jalv2_host import JALVHost
+from carla_host import CarlaHost
 
 app = QApplication(sys.argv)
 app.setApplicationDisplayName("HOST")
@@ -43,50 +43,6 @@ class Utils(QObject):
         with open(file_name, "w") as fo:
             fo.write(content)
 
-class LV2Host(QObject):
-    def __init__(self, parent=None):
-        super().__init__(parent)
-
-        # str -> JALVInstance
-        self.__instances = {}
-
-        self.__next_id = 0
-
-        self.__midi_out, _ = open_midioutput(api=rtmidi.API_UNIX_JACK, use_virtual=True, client_name="midi_out")
-
-    @pyqtSlot(str, result=str)
-    def addInstance(self, lv2_name):
-        print(">>> addInstance", lv2_name)
-        lv2_id = "jalv{}".format(self.__next_id)
-        self.__next_id += 1
-        instance = JALVInstance(lv2_name, lv2_id)
-        self.__instances[lv2_id] = instance
-        return lv2_id
-
-    @pyqtSlot(str, str, float)
-    def setParameterValue(self, lv2_id, parameter_name, value):
-        print(">>> setParameterValue", lv2_id, parameter_name, value)
-        instance = self.__instances[lv2_id]
-        instance.set_control(parameter_name, value)
-
-    @pyqtSlot(str, str, result=float)
-    def getParameterValue(self, lv2_id, parameter_name):
-        instance = self.__instances[lv2_id]
-        value = instance.get_control(parameter_name)
-        print(">>> getParameterValue", lv2_id, parameter_name, value)
-        return value
-
-    @pyqtSlot(str, int, int)
-    def noteOn(self, lv2_id, note, velocity):
-        print(">>> Note ON", lv2_id, note, velocity)
-        channel = 0
-        self.__midi_out.send_message([0x90+channel, note, velocity])
-
-    @pyqtSlot(str, int)
-    def noteOff(self, lv2_id, note):
-        print(">>> Note OFF", lv2_id, note)
-        channel = 0
-        self.__midi_out.send_message([0x80+channel, note, 0])
 
 class StubHost(QObject):
     def __init__(self, parent=None):
@@ -207,7 +163,7 @@ class MyGear(QObject):
             self.notePressed.emit(msg[1], msg[2])
         elif msg[0] & 0xF0 == 0x80: # NOTE_OFF
             self.noteReleased.emit(msg[1])
-        elif msg[0] & 0xF0 == 0xB0: # ??
+        elif msg[0] & 0xF0 == 0xB0: # CC
             cc = msg[1]
             v = msg[2]
             if cc in self.__cc_knob:
@@ -280,13 +236,14 @@ print(sys.argv)
 if "--help" in sys.argv:
     print("Arguments:")
     print("\t--help\tThis help screen")
-    print("\t--stub\tStub LV2 host")
+    print("\t--host-stub\tStub LV2 host")
     sys.exit(0)
 
-if "--stub" in sys.argv:
+if "--host-stub" in sys.argv:
     lv2Host = StubHost()
 else:
-    lv2Host = LV2Host()
+    #lv2Host = JALVHost()
+    lv2Host = CarlaHost("/usr/local")
 
 ## FIXME
 gear = MyGear(rtmidi.API_LINUX_ALSA, "Arturia")

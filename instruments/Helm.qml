@@ -165,7 +165,7 @@ GridLayout {
         implicitWidth: root.unitSize
 
         onValueChanged: {
-            _setLV2(this, value);
+            _setLV2(this, value / to);
         }
 
         function setFromLV2(v) {
@@ -290,7 +290,7 @@ GridLayout {
         Layout.maximumHeight: root.unitSize
 
         onValueChanged: {
-            _setLV2(this, value);
+            _setLV2(this, value / to);
         }
 
         function setFromLV2(v) {
@@ -314,7 +314,7 @@ GridLayout {
         Layout.maximumHeight: root.unitSize
 
         onValueChanged: {
-            _setLV2(this, value);
+            _setLV2(this, value / to);
         }
 
         function setFromLV2(v) {
@@ -341,7 +341,7 @@ GridLayout {
         Layout.maximumHeight: root.unitSize
 
         onValueChanged: {
-            _setLV2(this, value);
+            _setLV2(this, value / to);
         }
 
         function setFromLV2(v) {

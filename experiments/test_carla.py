@@ -41,22 +41,28 @@ if not host.add_plugin(BINARY_NATIVE, PLUGIN_LV2, "", "", lv2_uri, 0, None, PLUG
     host.engine_close()
     exit(1)
 
+print("## PLUGIN INFO")
 plugin_info = host.get_plugin_info(0)
 print(plugin_info)
 
+print("## PARAMETERS")
 pcount = host.get_parameter_count_info(0)
 print(pcount)
 for i in range(pcount["ins"]):
     pinfo = host.get_parameter_info(0, i)
-    print(pinfo)
+    print(i, pinfo)
+    print("Data", host.get_parameter_data(0, i))
+    print("Value", host.get_current_parameter_value(0, i))
+    print("Range", host.get_parameter_ranges(0, i))
 
+print("## MIDI PROGRAMS")
 midip_count = host.get_midi_program_count(0)
 for i in range(midip_count):
     print(host.get_midi_program_name(0, i))
     print(host.get_midi_program_data(0, i))
 print(midip_count)
 
-host.show_custom_ui(0, True)
+#host.show_custom_ui(0, True)
 
 host.save_plugin_state(0, "/tmp/state")
 
