@@ -76,7 +76,7 @@ ColumnLayout {
         //source: "fonts/MoonGlossDisplayThin.ttf"
         source: "fonts/Oxanium-Regular.ttf"
     }
-/*    RowLayout {
+    RowLayout {
         // simulate knobs and pads activations
         Text {
             id: board
@@ -222,8 +222,20 @@ ColumnLayout {
                     noteReleased(key);
                 }
             }
+
+            // transfer all signals coming from the gear
+            Connections {
+                target: gear
+                onPadPressed : board.padPressed(padNumber)
+                onPadReleased: board.padReleased(padNumber)
+                onKnobMoved: board.knobMoved(knobNumber, amount)
+                onNotePressed: board.notePressed(note, velocity)
+                onNoteReleased: board.noteReleased(note)
+                onOctaveUp: board.octaveUp()
+                onOctaveDown: board.octaveDown()
+            }
         }
-    }*/
+    }
 
     Rectangle {
         id: infoScreen
@@ -309,6 +321,12 @@ ColumnLayout {
             else {
                 currentIndex = instrumentStackIndex[currentInstrument];
             }
+        }
+
+        function endEditInstrument() {
+            console.log("** end edit instrument");
+            main.state = "instrMenu";
+            canvas.currentIndex = 0;
         }
 
         function currentInstrumentObject() {
@@ -486,6 +504,13 @@ ColumnLayout {
         target: board
         onPadPressed : {
             padRep.itemAt(padNumber).color = "red";
+            if (state == "instrEditMenu") {
+                // forward signals to instrument
+                let cur = canvas.currentInstrumentObject();
+                if (cur != null && cur.padPressed !== undefined) {
+                    cur.padPressed(padNumber);
+                }
+            }
         }
         onPadReleased : {
             padRep.itemAt(padNumber).color = board.padColor(padNumber);
@@ -522,9 +547,10 @@ ColumnLayout {
             }
                 break;
             case "instrEditMenu": {
-                if (padNumber == 7) {
-                    state = "instrMenu";
-                    canvas.currentIndex = 0;
+                // forward signals to instrument
+                let cur = canvas.currentInstrumentObject();
+                if (cur != null && cur.padReleased !== undefined) {
+                    cur.padReleased(padNumber);
                 }
             }
                 break;
@@ -538,7 +564,7 @@ ColumnLayout {
                     lv2Host.noteOn(cur.lv2Id, note, velocity);
                 }
             }
-            pianoK.noteOn(note % 12, velocity);
+            pianoK.noteOn(note - piano.octave * 12, velocity);
         }
 
         onNoteReleased : {
@@ -548,7 +574,17 @@ ColumnLayout {
                     lv2Host.noteOff(cur.lv2Id, note);
                 }
             }
-            pianoK.noteOff(note % 12);
+            pianoK.noteOff(note - piano.octave * 12);
+        }
+
+        onKnobMoved : {
+            if (state == "instrEditMenu") {
+                // forward signals to instrument
+                let cur = canvas.currentInstrumentObject();
+                if (cur != null && cur.knobMoved !== undefined) {
+                    cur.knobMoved(knobNumber, amount);
+                }
+            }
         }
 
         onOctaveUp : {
@@ -597,13 +633,6 @@ ColumnLayout {
             PropertyChanges {
                 target: infoScreen
                 text: "Instrument"
-            }
-        },
-        State {
-            name: "instrEditMenu"
-            PropertyChanges {
-                target: padMenu
-                texts: ["", "", "", "", "", "", "", "Back"]
             }
         }
     ]

@@ -2,7 +2,7 @@ from PyQt5.QtCore import (
     QUrl, pyqtSignal, pyqtSlot, QObject
 )
 from PyQt5.QtWidgets import QApplication
-from PyQt5.QtQuick import QQuickView
+from PyQt5.QtQuick import QQuickView, QQuickItem
 from PyQt5.QtQml import QQmlEngine, qmlRegisterSingletonType
 
 import sys
@@ -42,6 +42,10 @@ class Utils(QObject):
     def saveFile(self, file_name, content):
         with open(file_name, "w") as fo:
             fo.write(content)
+
+    @pyqtSlot(QObject, result=list)
+    def findChildren(self, item):
+        return item.findChildren(QObject)
 
 
 class StubHost(QObject):
@@ -151,13 +155,13 @@ class MyGear(QObject):
     def set_debug(self, debug):
         self.__debug = debug
 
-    def __to_hex(msg):
+    def __to_hex(self, msg):
         return " ".join(["%02x" % c for c in msg])
     def __on_midi_msg(self, event, data=None):
         self.__received_message = event
         msg, ts = event
         if self.__debug:
-            print("Received", self.__to_hex(msg))
+            print("MIDI Received", self.__to_hex(msg))
 
         if msg[0] & 0xF0 == 0x90: # NOTE_ON
             self.notePressed.emit(msg[1], msg[2])
@@ -183,10 +187,17 @@ class MyGear(QObject):
                     self.padPressed.emit(pad)
                 else:
                     self.padReleased.emit(pad)
+        elif msg[0] == 0xF0 and msg[-1] == 0xF7: # SYSEX
+            sysex = msg[1:-1]
+            sysex_prefix = [0x00, 0x20, 0x6b, 0x7f, 0x42]
+            if sysex == sysex_prefix + [0x02, 0x00, 0x00, 0x10, 0x7F]:
+                self.octaveDown.emit()
+            elif sysex == sysex_prefix + [0x02, 0x00, 0x00, 0x11, 0x7F]:
+                self.octaveUp.emit()
 
     def send_message(self, msg):
         if self.__debug:
-            print("Send    ", self.__to_hex(msg))
+            print("MIDI Send    ", self.__to_hex(msg))
         self.__port_out.send_message(msg)
 
     def receive_message(self):
@@ -229,6 +240,43 @@ class MyGear(QObject):
     @pyqtSlot(int, str)
     def setPadColor(self, padNumber, color):
         self.__pad[padNumber].color = color
+
+class NullGear(QObject):
+    def __init__(self):
+        super().__init__(None)
+
+    padPressed = pyqtSignal(int, arguments=["padNumber"])
+    padReleased = pyqtSignal(int, arguments=["padNumber"])
+    knobMoved = pyqtSignal(int, float, arguments=["knobNumber", "amount"])
+    notePressed = pyqtSignal(int, int, arguments=["note", "velocity"])
+    noteReleased = pyqtSignal(int, arguments=["note"])
+
+    octaveUp = pyqtSignal()
+    octaveDown = pyqtSignal()
+
+    @pyqtSlot(int, result=float)
+    def knobValue(self, knobNumber):
+        return 0.0
+
+    @pyqtSlot(int, int)
+    def setKnobValue(self, knobNumber, value):
+        pass
+
+    @pyqtSlot(int, float, float)
+    def setKnobMinMax(self, knobNumber, min, max):
+        pass
+
+    @pyqtSlot(int, bool)
+    def setKnobIsInteger(self, knobNumber, isInteger):
+        pass
+
+    @pyqtSlot(int, result=str)
+    def padColor(self, padNumber):
+        return "white"
+
+    @pyqtSlot(int, str)
+    def setPadColor(self, padNumber, color):
+        pass
         
     
 
@@ -245,8 +293,11 @@ else:
     #lv2Host = JALVHost()
     lv2Host = CarlaHost("/usr/local")
 
-## FIXME
-gear = MyGear(rtmidi.API_LINUX_ALSA, "Arturia")
+if "--gear-dev" in sys.argv:
+    gear = MyGear(rtmidi.API_LINUX_ALSA, "Arturia")
+    gear.set_debug(True)
+else:
+    gear = NullGear()
         
 qmlRegisterSingletonType(Utils, 'Utils', 1, 0, "Utils", lambda engine, script_engine: Utils())
 
@@ -255,7 +306,7 @@ view.setResizeMode(QQuickView.SizeViewToRootObject)
 #view.setResizeMode(QQuickView.SizeRootObjectToView)
 
 view.rootContext().setContextProperty("lv2Host", lv2Host)
-view.rootContext().setContextProperty("board", gear)
+view.rootContext().setContextProperty("gear", gear)
 
 view.setSource(QUrl.fromLocalFile(qml_file))
 view.engine().quit.connect(app.quit)
