@@ -75,22 +75,95 @@ StackLayout {
                 child.setFromLV2(lv2Host.getParameterValue(lv2Id, parameterName));
             }
         }
+
+        // populate programs
+        if (program_panel.programs == undefined) {
+            program_panel.programs = lv2Host.programs(lv2Id);
+        }
     }
 
-    RowLayout {
+    ColumnLayout {
         id: program_panel
-        Text { text: "Bank" }
-        ComboBox {
-        }
-        Text { text: "Program" }
-        ComboBox {
-        }
+        RowLayout {
+            property string controllerType: "knob"
+            property int controllerNumber: 0
+            property bool isInteger: true
+            property int from: 0
+            property int to: 1 // will be updated
+            property alias value: bank_combo.currentIndex
 
+            Text { text: "Bank" }
+            ComboBox {
+                id: bank_combo
+                model: []
+
+                onCurrentIndexChanged : {
+                    let bank = model[currentIndex];
+                    let l = [];
+                    for (var i = 0; i < program_panel.programs.length; i++) {
+                        let p = program_panel.programs[i];
+                        if (p.bank == bank) {
+                            l.push({name: p.name, programId: i});
+                        }
+                    }
+                    program_combo.model = l;
+                    // update knob min / max for program
+                    board.setKnobMinMax(8, 0, l.length-1);
+                }
+            }
+        }
+        RowLayout {
+            property string controllerType: "knob"
+            property int controllerNumber: 8
+            property bool isInteger: true
+            property int from: 0
+            property int to: 1 // will be updated
+            property alias value: program_combo.currentIndex
+
+            Text { text: "Program" }
+            ComboBox {
+                id: program_combo
+                textRole: "name"
+                model: ListModel {
+                    ListElement {
+                        name: "test"
+                        programId: 0
+                    }
+                }
+
+                onCurrentIndexChanged : {
+                    console.log("program id", model[currentIndex].programId);
+                    lv2Host.set_program(lv2Id, model[currentIndex].programId);
+                    // read back parameters from the host
+                    root.init();
+                }
+            }
+        }
         onVisibleChanged : {
             if (visible) {
                 padMenu.texts = ["Osc", "", "", "", "", "", "", "Back"];
             }
         }
+
+        property var programs
+
+        property int currentBank
+        property int currentProgram
+        property string currentProgramName
+
+        onProgramsChanged : {
+            let l = [];
+            for (var i = 0; i < programs.length; i++) {
+                let p = programs[i];
+                if (l.indexOf(p.bank) == -1) {
+                    l.push(p.bank);
+                }
+            }
+            program_combo.model = [];
+            bank_combo.model = l;
+            // update knob min / max for bank
+            board.setKnobMinMax(0, 0, l.length-1);
+        }        
     }
 
     GridLayout {
@@ -661,7 +734,9 @@ StackLayout {
 
     // will be called by main
     function knobMoved(knobNumber, amount) {
+        console.log("knobNumber", knobNumber, amount);
         if (knobNumber in knobToItem) {
+            console.log("in knobToItem");
             knobToItem[knobNumber].value = amount;
         }
     }

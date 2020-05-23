@@ -78,7 +78,7 @@ class CarlaHost(QObject):
             return
 
         # DEBUG
-        self.__host.show_custom_ui(self.__next_id, True)
+        #self.__host.show_custom_ui(self.__next_id, True)
 
         instance = CarlaHost.Instance()
         instance.id = self.__next_id
@@ -138,3 +138,19 @@ class CarlaHost(QObject):
             note,
             0
         )
+
+    @pyqtSlot(str, result=list)
+    def programs(self, lv2_id):
+        id = self.__instances[lv2_id].id
+        p = []
+        for i in range(self.__host.get_midi_program_count(id)):
+            prog = self.__host.get_midi_program_data(id, i)
+            p.append(prog)
+        return p
+
+    @pyqtSlot(str, int)
+    def set_program(self, lv2_id, program_id):
+        id = self.__instances[lv2_id].id
+        self.__host.set_midi_program(id, program_id)
+        
+
