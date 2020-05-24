@@ -82,7 +82,31 @@ StackLayout {
         }
     }
 
-    ColumnLayout {
+    Item {
+        id: debug_grid
+        Repeater {
+            model: 8
+            Rectangle {
+                x: index * main.unitSize
+                y: 0
+                width: main.unitSize
+                height: main.unitSize
+                border.color: "red"
+                border.width: 1
+            }
+        }
+        Repeater {
+            model: 8
+            Rectangle {
+                x: index * main.unitSize
+                y: main.unitSize
+                width: main.unitSize
+                height: main.unitSize
+                border.color: "red"
+                border.width: 1
+            }
+        }
+        ColumnLayout {
         id: program_panel
         RowLayout {
             Text { text: "Bank" }
@@ -165,6 +189,7 @@ StackLayout {
                     program_combo.currentIndex = ~~amount;
                 }
             }
+        }
         }
     }
 
