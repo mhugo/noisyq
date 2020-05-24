@@ -85,13 +85,6 @@ StackLayout {
     ColumnLayout {
         id: program_panel
         RowLayout {
-            property string controllerType: "knob"
-            property int controllerNumber: 0
-            property bool isInteger: true
-            property int from: 0
-            property int to: 1 // will be updated
-            property alias value: bank_combo.currentIndex
-
             Text { text: "Bank" }
             ComboBox {
                 id: bank_combo
@@ -109,17 +102,11 @@ StackLayout {
                     program_combo.model = l;
                     // update knob min / max for program
                     board.setKnobMinMax(8, 0, l.length-1);
+                    board.setKnobValue(8,0);
                 }
             }
         }
         RowLayout {
-            property string controllerType: "knob"
-            property int controllerNumber: 8
-            property bool isInteger: true
-            property int from: 0
-            property int to: 1 // will be updated
-            property alias value: program_combo.currentIndex
-
             Text { text: "Program" }
             ComboBox {
                 id: program_combo
@@ -142,6 +129,9 @@ StackLayout {
         onVisibleChanged : {
             if (visible) {
                 padMenu.texts = ["Osc", "", "", "", "", "", "", "Back"];
+                board.setKnobIsInteger(0, true);
+                board.setKnobIsInteger(8, true);
+                board.setKnobValue(0,0);
             }
         }
 
@@ -163,7 +153,19 @@ StackLayout {
             bank_combo.model = l;
             // update knob min / max for bank
             board.setKnobMinMax(0, 0, l.length-1);
-        }        
+        }
+
+        Connections {
+            target: board
+            onKnobMoved: {
+                if (knobNumber == 0) {
+                    bank_combo.currentIndex = ~~amount;
+                }
+                else if (knobNumber == 8) {
+                    program_combo.currentIndex = ~~amount;
+                }
+            }
+        }
     }
 
     GridLayout {
