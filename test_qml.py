@@ -297,7 +297,7 @@ if "--gear-dev" in sys.argv:
     gear = MyGear(rtmidi.API_LINUX_ALSA, "Arturia")
     gear.set_debug(True)
 else:
-    #gear = NullGear()
+    gear = NullGear()
     gear = None
         
 qmlRegisterSingletonType(Utils, 'Utils', 1, 0, "Utils", lambda engine, script_engine: Utils())
@@ -307,8 +307,7 @@ view.setResizeMode(QQuickView.SizeViewToRootObject)
 #view.setResizeMode(QQuickView.SizeRootObjectToView)
 
 view.rootContext().setContextProperty("lv2Host", lv2Host)
-if gear:
-    view.rootContext().setContextProperty("board", gear)
+view.rootContext().setContextProperty("gear", gear)
 
 view.setSource(QUrl.fromLocalFile(qml_file))
 view.engine().quit.connect(app.quit)

@@ -76,7 +76,7 @@ ColumnLayout {
         //source: "fonts/MoonGlossDisplayThin.ttf"
         source: "fonts/Oxanium-Regular.ttf"
     }
-/*    RowLayout {
+    RowLayout {
         // simulate knobs and pads activations
         Text {
             id: board
@@ -235,7 +235,7 @@ ColumnLayout {
                 onOctaveDown: board.octaveDown()
             }
         }
-    }*/
+    }
 
     Rectangle {
         id: infoScreen
