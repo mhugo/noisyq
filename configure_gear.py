@@ -259,7 +259,7 @@ try:
         write_control(knob_id[i], GET_SET_VALUE_2, knob_cc[i])
         # set relative
         write_control(knob_id[i], GET_SET_OPTION, OPTION_RELATIVE_1)
-    time.sleep(0.1)
+    time.sleep(0.2)
 
     for i in range(16):
         mode = read_control(knob_id[i], GET_SET_MODE)
@@ -274,17 +274,21 @@ try:
         write_control(pad_id[i], GET_SET_VALUE_2, pad_cc[i])
         write_control(pad_id[i], GET_SET_OPTION, OPTION_GATE)
         write_control(pad_id[i], GET_SET_TOGGLE_COLOR, COLOR_RED)
-    time.sleep(0.1)
+    time.sleep(0.2)
 
     for i in range(16):
         mode = read_control(pad_id[i], GET_SET_MODE)
         option = read_control(pad_id[i], GET_SET_OPTION)
         print("Pad", i, "mode", mode, "option", option)
 
-    midi.set_debug(True)
-    while True:
-        time.sleep(1)
-        
+    # suspicious values
+    # control, param, current value
+    # 27 64 2
+    # 80 1 8
+    # 80 2 65
+    # 80 3 64
+    # 80 5 127
+    # 80 6 1
 
     print("End")
 except KeyboardInterrupt:

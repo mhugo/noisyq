@@ -34,8 +34,8 @@ if not host.engine_init("JACK", "test_carla"):
     print("Engine failed to initialize, possible reasons:\n%s" % host.get_last_error())
     sys.exit(1)
 
-#lv2_uri = "http://tytel.org/helm"
-lv2_uri = "http://samplv1.sourceforge.net/lv2"
+lv2_uri = "http://tytel.org/helm"
+#lv2_uri = "http://samplv1.sourceforge.net/lv2"
 if not host.add_plugin(BINARY_NATIVE, PLUGIN_LV2, "", "", lv2_uri, 0, None, PLUGIN_OPTION_USE_CHUNKS):
     print("Failed to load plugin, possible reasons:\n%s" % host.get_last_error())
     host.engine_close()
@@ -57,10 +57,15 @@ for i in range(pcount["ins"]):
 
 print("## MIDI PROGRAMS")
 midip_count = host.get_midi_program_count(0)
+print("midi programs", midip_count)
 for i in range(midip_count):
     print(host.get_midi_program_name(0, i))
     print(host.get_midi_program_data(0, i))
-print(midip_count)
+print("programs", host.get_program_count(0))
+for i in range(host.get_program_count(0)):
+    print(host.get_program_name(0, i))
+
+sys.exit(0)
 
 #host.show_custom_ui(0, True)
 
