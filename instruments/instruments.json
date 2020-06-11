@@ -1,4 +1,5 @@
 [
-    {"name": "Helm", "qml": "Helm.qml", "url": "http://tytel.org/helm"}
+    {"name": "Helm", "qml": "Helm.qml", "url": "http://tytel.org/helm"},
+    {"name": "Samplv1", "qml": "Samplv1.qml", "url": "http://samplv1.sourceforge.net/lv2"}
 ]
 

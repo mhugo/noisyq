@@ -8,6 +8,9 @@ import rtmidi
 import os
 import sys
 
+import xml.etree.ElementTree as ET
+import json
+
 class CarlaHost(QObject):
     class Instance:
         def __init__(self):
@@ -78,6 +81,7 @@ class CarlaHost(QObject):
             return
 
         # DEBUG
+        # FIXME: SAMPLV1 does not accept very well state restore when UI is shown !!
         #self.__host.show_custom_ui(self.__next_id, True)
 
         instance = CarlaHost.Instance()
@@ -152,5 +156,74 @@ class CarlaHost(QObject):
     def set_program(self, lv2_id, program_id):
         id = self.__instances[lv2_id].id
         self.__host.set_midi_program(id, program_id)
-        
 
+    @pyqtSlot(str, str, str, result=str)
+    def custom_data(self, lv2_id, data_type, data_id):
+        id = self.__instances[lv2_id].id
+        self.__host.prepare_for_save(id)
+        return self.__host.get_custom_data_value(id, data_type, data_id)
+
+    @pyqtSlot(str, str, str, str)
+    def set_custom_data(self, lv2_id, data_type, data_id, data_value):
+        id = self.__instances[lv2_id].id
+        return self.__host.set_custom_data(id, data_type, data_id, data_value)
+
+    @pyqtSlot(str, str, str, int)
+    def set_custom_int_data(self, lv2_id, data_type, data_id, data_value):
+        import base64
+        import struct
+        id = self.__instances[lv2_id].id
+        d = base64.b64encode(struct.pack("i", data_value)).decode("utf-8")
+        return self.__host.set_custom_data(id, data_type, data_id, d)
+
+    @pyqtSlot(str, result=str)
+    @pyqtSlot(str, bool, result=str)
+    def save_state(self, lv2_id, convert_xml_to_json=False):
+        id = self.__instances[lv2_id].id
+        fn = "/tmp/save_state_tmp"
+        self.__host.prepare_for_save(id)
+        self.__host.save_plugin_state(id, fn)
+
+        def tree_to_python(tree):
+            p = {}
+            p["tag"] = tree.tag
+            if tree.text.strip():
+                p["text"] = tree.text.strip()
+            if tree.attrib:
+                p["attrib"] = dict(tree.attrib)
+            children = [tree_to_python(child) for child in tree]
+            if children:
+                p["children"] = children
+            return p
+
+        if convert_xml_to_json:
+            tree = ET.parse(fn)
+            return json.dumps(tree_to_python(tree.getroot()))
+        else:
+            fi = open(fn, "rb")
+            return fi.read().decode('utf-8')
+
+    @pyqtSlot(str, str)
+    @pyqtSlot(str, str, bool)
+    def load_state(self, lv2_id, state, convert_json_to_xml=False):
+        id = self.__instances[lv2_id].id
+        fn = "/tmp/load_state_tmp"
+
+        def python_to_tree(p):
+            elt = ET.Element(p["tag"])
+            if "text" in p:
+                elt.text = p["text"]
+            if "attrib" in p:
+                elt.attrib = p["attrib"]
+            if "children" in p:
+                for child in p["children"]:
+                    elt.append(python_to_tree(child))
+            return elt
+        if convert_json_to_xml:
+            root = python_to_tree(json.loads(state))
+            tree = ET.ElementTree(root)
+            tree.write(fn, encoding="utf-8")
+        else:
+            with open(fn, "wb") as fo:
+                fo.write(state.encode("utf-8"))
+        self.__host.load_plugin_state(id, fn)

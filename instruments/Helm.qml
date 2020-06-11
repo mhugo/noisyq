@@ -189,6 +189,7 @@ StackLayout {
                     program_combo.currentIndex = ~~amount;
                 }
             }
+            enabled: program_panel.visible
         }
         }
     }
