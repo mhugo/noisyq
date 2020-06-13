@@ -103,13 +103,13 @@ ColumnLayout {
                     property real max: 1.0
 
                     function increment() {
-                        value = value + (isInteger ? 1 : (max - min) / 10.0);
+                        value = value + (isInteger ? 1 : (max - min) / 50.0);
                         if (value > max) {
                             value = max;
                         }
                     }
                     function decrement() {
-                        value = value - (isInteger ? 1 : (max - min) / 10.0);
+                        value = value - (isInteger ? 1 : (max - min) / 50.0);
                         if (value < min) {
                             value = min;
                         }
@@ -228,7 +228,18 @@ ColumnLayout {
                 target: gear
                 onPadPressed : board.padPressed(padNumber)
                 onPadReleased: board.padReleased(padNumber)
-                onKnobMoved: board.knobMoved(knobNumber, amount)
+                onKnobMoved: {
+                    if (amount > 0) {
+                        for (var i = 0; i < amount; i++)
+                            knobs.itemAt(knobNumber).increment();
+                        board.knobMoved(knobNumber, knobs.itemAt(knobNumber).value);
+                    }
+                    else if (amount < 0) {
+                        for (var i = 0; i < -amount; i++)
+                            knobs.itemAt(knobNumber).decrement();
+                        board.knobMoved(knobNumber, knobs.itemAt(knobNumber).value);
+                    }
+                }
                 onNotePressed: board.notePressed(note, velocity)
                 onNoteReleased: board.noteReleased(note)
                 onOctaveUp: board.octaveUp()

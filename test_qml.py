@@ -174,13 +174,7 @@ class MyGear(QObject):
                 if v != 0x40:
                     knob = self.__cc_knob[cc]
                     amplitude = v - 0x40
-                    if amplitude < 0:
-                        for i in range(-amplitude):
-                            self.__knob[knob].decrement()
-                    else:
-                        for i in range(amplitude):
-                            self.__knob[knob].increment()
-                    self.knobMoved.emit(knob, self.__knob[knob].value)
+                    self.knobMoved.emit(knob, amplitude)
             elif cc in self.__cc_pad:
                 pad = self.__cc_pad[cc]
                 if v == 0x7F:
