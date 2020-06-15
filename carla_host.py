@@ -23,6 +23,12 @@ class CarlaHost(QObject):
         def __init__(self):
             self.name = ""
             self.id = 0
+
+    class PatchBayPort:
+        __slots__ = ["id", "group_id", "name", "type"]
+
+    class PatchBayClient:
+        __slots__ = ["id", "name", "input_ports", "output_ports"]
         
     def __init__(self, carla_install_path, parent=None):
         super().__init__(parent)
@@ -46,6 +52,14 @@ class CarlaHost(QObject):
         )
         self.__host.set_engine_option(ENGINE_OPTION_PATH_BINARIES, 0, binary_dir)
 
+        # Patchbay clients and ports
+        # Dict[Int, PatchBayClient]
+        # id -> PatchBayClient
+        self.__patchbay_clients = {}
+        self.__last_client_added = None
+
+        self.__host.set_engine_callback(self.callback)
+
         if not self.__host.engine_init("JACK", "carla_client"):
             print("Engine failed to initialize, possible reasons:\n%s" % self.__host.get_last_error())
             sys.exit(1)
@@ -56,6 +70,51 @@ class CarlaHost(QObject):
 
         # name -> Instance
         self.__instances = {}
+
+
+    def callback(self, none, type, pluginId, value1, value2, value3, value4, valueStr):
+        from carla_backend import (
+            ENGINE_CALLBACK_PATCHBAY_CLIENT_ADDED,
+            ENGINE_CALLBACK_PATCHBAY_PORT_ADDED,
+            PATCHBAY_PORT_TYPE_AUDIO,
+            PATCHBAY_PORT_IS_INPUT
+        )
+        if type == ENGINE_CALLBACK_PATCHBAY_CLIENT_ADDED:
+            print("*** CLIENT ADDED ***")
+            print("client id", pluginId)
+            print("client icon", value1)
+            print("plugin id", value2)
+            print("client name", valueStr)
+            cli = self.PatchBayClient()
+            cli.id = pluginId
+            cli.name = valueStr
+            cli.input_ports = []
+            cli.output_ports = []
+            self.__patchbay_clients[cli.id] = cli
+            self.__last_client_added = pluginId
+
+        elif type == ENGINE_CALLBACK_PATCHBAY_PORT_ADDED:
+            print("*** PORT ADDED ***")
+            print("client id", pluginId)
+            print("port id", value1)
+            print("port hints", value2)
+            print("port group id", value3)
+            print("port name", valueStr)
+
+            port = self.PatchBayPort()
+            port.id = value1
+            port.name = valueStr
+            port.group_id = value3
+            if value2 & PATCHBAY_PORT_TYPE_AUDIO:
+                port.type = "audio"
+            else:
+                port.type = "midi"
+
+            cli = self.__patchbay_clients[pluginId]
+            if value2 & PATCHBAY_PORT_IS_INPUT:
+                cli.input_ports.append(port)
+            else:
+                cli.output_ports.append(port)
 
     @pyqtSlot(str, result=str)
     def addInstance(self, lv2_name):
@@ -97,6 +156,30 @@ class CarlaHost(QObject):
             instance.parameters[p.name] = p
 
         self.__instances[lv2_id] = instance
+
+        # FIXME: ports can be created longer after instanciation
+        # For autoconnection, we have to wait for ports to be created
+        #
+        # print("****************")
+        # print("last_client_added", self.__last_client_added, self.__patchbay_clients[self.__last_client_added].name)
+        # # port connections
+        # # "midi_out" to "midi_in" of the new client
+        # midi_out_port = None
+        # for client_id, client in self.__patchbay_clients.items():
+        #     print("client", client.name)
+        #     if client.name == b"midi_out":
+        #         midi_out_port = client.output_ports[0]
+        #         print("midi_out_port", midi_out_port)
+        #         break
+        # for port in self.__patchbay_clients[self.__last_client_added].input_ports:
+        #     if port.type == "midi":
+        #         self.__host.patchbay_connect(
+        #             False,
+        #             midi_out_port.group_id,
+        #             midi_out_port.id,
+        #             port.group_id,
+        #             port.id
+        #         )
 
         self.__next_id += 1
         return lv2_id
