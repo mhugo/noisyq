@@ -38,15 +38,38 @@ ColumnLayout {
     ColumnLayout {
         ListView {
             id: sampleFileList
-            width: 100
-            height: 100
+            width: main.unitSize * 2
+            height: main.unitSize
             model: FolderListModel {
                 rootFolder: "/home/hme/perso/music/samples"
                 folder: "/home/hme/perso/music/samples"
                 nameFilters: ["*.wav", "*.aif", "*.flac"]
+
+                onStatusChanged: {
+                    if (status == FolderListModel.Ready) {
+                        board.setKnobMinMax(0, 0, sampleFileList.count - 1);
+                        board.setKnobIsInteger(0, true);
+                        board.setKnobValue(0, 0);
+                    }
+                }
             }
-            delegate : Text {
-                text: fileName
+            delegate : RowLayout {
+                width: sampleFileList.width
+                Text {
+                    text: fileIsDir ? "D" : "F"
+                }
+                Text {
+                    elide: Text.ElideMiddle
+                    // width does not work with RowLayout
+                    Layout.preferredWidth: parent.width * 0.8
+                    text: fileName
+                }
+                Item {
+                    Layout.fillWidth:true
+                }
+                Text {
+                    text: fileIsDir ? "" : ~~(fileSize / 1024) + "kB"
+                }
             }
             highlight: Rectangle {
                 border.color: "red"
@@ -63,24 +86,24 @@ ColumnLayout {
     onVisibleChanged : {
         if (visible) {
             padMenu.texts = ["Load", "", "", "", "", "", "", "Back"];
-
-            board.setKnobMinMax(0, 0, sampleFileList.count);
-            board.setKnobIsInteger(0, true);
         }
     }
 
     // will be called by main
     function padReleased(padNumber) {
         if (padNumber == 0) {
+            // enter a directory
+            if (sampleFileList.model.isFolder(sampleFileList.currentIndex)) {
+                sampleFileList.model.folder += "/" + sampleFileList.model.get(sampleFileList.currentIndex, "fileName");
+                sampleFileList.currentIndex = 0;
+                return;
+            }
             let sampleFile = sampleFileList.model.folder + "/" + sampleFileList.model.get(sampleFileList.currentIndex, "fileName");
             // remove "file://"
             sampleFile = sampleFile.slice(7);
-            console.log("smplaFile", sampleFile);
-            console.log(sampleFileList.currentItem);
 
-
-            console.log("save_state");
-            // FIXME: need to manipulate the JSON state !
+            // manipulate the state in order to include the sample file
+            const sample_file_key = "http://samplv1.sourceforge.net/lv2#P101_SAMPLE_FILE";
             let state_str = lv2Host.save_state(lv2Id, /* convert_xml_to_json */ true);
             let state = JSON.parse(state_str);
             let children = state.children[1].children;
@@ -88,7 +111,7 @@ ColumnLayout {
                 let child = children[i];
                 if (child.tag == "CustomData") {
                     let key = child.children[1].text;
-                    if (key == "http://samplv1.sourceforge.net/lv2#P101_SAMPLE_FILE") {
+                    if (key == sample_file_key) {
                         // remove
                         children.splice(i, 1);
                         break;
@@ -105,7 +128,7 @@ ColumnLayout {
                     },
                     {
                         "tag": "Key",
-                        "text": "http://samplv1.sourceforge.net/lv2#P101_SAMPLE_FILE"
+                        "text": sample_file_key
                     },
                     {
                         "tag": "Value",

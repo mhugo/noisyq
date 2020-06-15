@@ -395,7 +395,7 @@ ColumnLayout {
 
                 onKnobMoved : {
                     if (knobNumber == 0) {
-                        instrCombo.currentIndex = ~~(amount * (instrCombo.count-1));
+                        instrCombo.currentIndex = ~~amount;
                     }
                 }
 
@@ -411,6 +411,8 @@ ColumnLayout {
             onVisibleChanged : {
                 if (visible) {
                     padMenu.texts = ["Assign"].concat(padMenu.texts.slice(1));
+                    board.setKnobIsInteger(0, true);
+                    board.setKnobMinMax(0, 0, instrCombo.count-1);
                 }
             }
         }
