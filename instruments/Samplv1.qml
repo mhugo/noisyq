@@ -91,7 +91,11 @@ ColumnLayout {
 
     // will be called by main
     function padReleased(padNumber) {
-        if (padNumber == 0) {
+        if (padNumber == 16) {
+            // knob 1 switch
+            sampleFileList.visible = true;
+        }
+        else if (padNumber == 0) {
             // enter a directory
             if (sampleFileList.model.isFolder(sampleFileList.currentIndex)) {
                 sampleFileList.model.folder += "/" + sampleFileList.model.get(sampleFileList.currentIndex, "fileName");

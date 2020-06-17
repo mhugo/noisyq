@@ -149,7 +149,10 @@ class MyGear(QObject):
         self.__knob_cc = [7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22]
         self.__cc_knob = {cc: k for k, cc in enumerate(self.__knob_cc)}
         # CC numbers for pads
-        self.__pad_cc = [23,24,25,26,27,28,29,30,31,64,65,66,67,68,69,70]
+        self.__pad_cc = [
+            23,24,25,26,27,28,29,30,31,64,65,66,67,68,69,70,
+            71, 72
+        ]
         self.__cc_pad = {cc: k for k, cc in enumerate(self.__pad_cc)}
 
     def set_debug(self, debug):

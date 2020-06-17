@@ -7,8 +7,6 @@ import argparse
 
 api = rtmidi.API_LINUX_ALSA
 
-import argparse
-
 parser = argparse.ArgumentParser(description='Configure a MIDI controller.')
 parser.add_argument('--alsa', action="store_true",
                     help='Use ALSA MIDI')
@@ -161,7 +159,9 @@ pad_id = [
     PAD_13,
     PAD_14,
     PAD_15,
-    PAD_16
+    PAD_16,
+    KNOB_1_BUTTON,
+    KNOB_9_BUTTON
 ]
 
 BTN_OCTAVE_DOWN = 0x10
@@ -242,10 +242,13 @@ def write_control(control, operation, value):
 # CC numbers for knobs
 knob_cc = [7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22]
 # CC numbers for pads
-pad_cc = [23,24,25,26,27,28,29,30,31, 64,65,66,67,68,69,70]
+pad_cc = [
+    23,24,25,26,27,28,29,30,31, 64,65,66,67,68,69,70,
+    71, # knob 1 switch
+    72, # knob 9 switch
+]
 
 assert len(knob_cc) == 16
-assert len(pad_cc) == 16
     
 try:
     # ask sysexid
@@ -269,16 +272,16 @@ try:
         print("Knob", i, "mode", mode, "value", value, "value_2", value_2, "option", option)
 
     # set pads
-    for i in range(16):
-        write_control(pad_id[i], GET_SET_MODE, MODE_SWITCHED)
-        write_control(pad_id[i], GET_SET_VALUE_2, pad_cc[i])
-        write_control(pad_id[i], GET_SET_OPTION, OPTION_GATE)
-        write_control(pad_id[i], GET_SET_TOGGLE_COLOR, COLOR_RED)
+    for i, pad in enumerate(pad_id):
+        write_control(pad, GET_SET_MODE, MODE_SWITCHED)
+        write_control(pad, GET_SET_VALUE_2, pad_cc[i])
+        write_control(pad, GET_SET_OPTION, OPTION_GATE)
+        write_control(pad, GET_SET_TOGGLE_COLOR, COLOR_RED)
     time.sleep(0.2)
 
-    for i in range(16):
-        mode = read_control(pad_id[i], GET_SET_MODE)
-        option = read_control(pad_id[i], GET_SET_OPTION)
+    for i, pad in enumerate(pad_id):
+        mode = read_control(pad, GET_SET_MODE)
+        option = read_control(pad, GET_SET_OPTION)
         print("Pad", i, "mode", mode, "option", option)
 
     # suspicious values

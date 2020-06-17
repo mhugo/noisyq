@@ -516,7 +516,8 @@ ColumnLayout {
     Connections {
         target: board
         onPadPressed : {
-            padRep.itemAt(padNumber).color = "red";
+            if (padNumber < 16)
+                padRep.itemAt(padNumber).color = "red";
             if (state == "instrEditMenu") {
                 // forward signals to instrument
                 let cur = canvas.currentInstrumentObject();
@@ -526,7 +527,8 @@ ColumnLayout {
             }
         }
         onPadReleased : {
-            padRep.itemAt(padNumber).color = board.padColor(padNumber);
+            if (padNumber < 16)
+                padRep.itemAt(padNumber).color = board.padColor(padNumber);
             switch (state) {
             case "rootMenu": {
                 switch (padNumber) {
