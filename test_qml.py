@@ -11,6 +11,8 @@ import os
 
 import rtmidi
 
+import argparse
+
 #from jalv2_host import JALVHost
 from carla_host import CarlaHost
 
@@ -276,22 +278,22 @@ class NullGear(QObject):
         pass
         
     
+parser = argparse.ArgumentParser(description='MIDI-controlled audio station.')
+parser.add_argument('--host-stub', action="store_true",
+                    help="Stub LV2 host")
+parser.add_argument('--dev', action="store",
+                    help="MIDI device to use (pattern)")
 
-print(sys.argv)
-if "--help" in sys.argv:
-    print("Arguments:")
-    print("\t--help\tThis help screen")
-    print("\t--host-stub\tStub LV2 host")
-    sys.exit(0)
+args = parser.parse_args()
 
-if "--host-stub" in sys.argv:
+if args.host_stub:
     lv2Host = StubHost()
 else:
     #lv2Host = JALVHost()
     lv2Host = CarlaHost("/usr/local")
 
-if "--gear-dev" in sys.argv:
-    gear = MyGear(rtmidi.API_LINUX_ALSA, "Arturia")
+if args.dev:
+    gear = MyGear(rtmidi.API_LINUX_ALSA, args.dev)
     gear.set_debug(True)
 else:
     gear = NullGear()
