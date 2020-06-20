@@ -49,6 +49,40 @@ class Utils(QObject):
     def findChildren(self, item):
         return item.findChildren(QObject)
 
+    @pyqtSlot(str, int, int, result=str)
+    def getAudioWaveformImage(self, file_name, output_width, output_height):
+        """Compute the waveform image of an audio file.
+
+        Arguments
+        ---------
+        file_name: str
+          The input audio file name
+        output_width: int
+          The desired output image width
+        output_height: int
+          The desired output image height
+        Returns
+        -------
+          A temporary filename that stores the audio waveform
+        """
+
+        import subprocess
+        import tempfile
+
+        fo = tempfile.NamedTemporaryFile(suffix=".png")
+        tmp_file = fo.name
+        fo.close()
+
+        subprocess.call([
+            "ffmpeg",
+            "-i",
+            file_name,
+            "-filter_complex",
+            "showwavespic=s={}x{}:colors=black".format(output_width, output_height),
+            tmp_file]
+        )
+        return tmp_file
+
 
 class StubHost(QObject):
     def __init__(self, parent=None):
