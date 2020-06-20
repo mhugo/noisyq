@@ -26,12 +26,12 @@ Item {
 
     property string sampleFileName
 
-    // Automatically save values of objects with "saveState" property defined
-    // Use its id as parameter name
     function saveState() {
+        return {"sampleFileName" : sampleFileName};
     }
 
     function loadState(state) {
+        _loadSample(state.sampleFileName);
     }
 
     // Initialize a state, reading from the living LV2 process
@@ -102,7 +102,13 @@ Item {
         }
 
         Text {
-            text: (sampleFileName ? sampleFileName : "<None>")
+            text: {
+                if (sampleFileName) {
+                    let splitFileName = sampleFileName.split("/");
+                    return splitFileName[splitFileName.length - 1];
+                }
+                return "<None>";
+            }
             x: 0
             y: 0
         }
@@ -162,24 +168,11 @@ Item {
 
     onVisibleChanged : {
         if (visible) {
-            padMenu.texts = ["", "", "", "", "", "", "", "Back"];
+            padMenu.texts = ["Bang!", "", "", "", "", "", "", "Back"];
         }
     }
 
-    // if a file is selected, load it, and returns true
-    // if a folder is selected, enter it, and returns false
-    function _acceptListEntry() {
-        // enter a directory
-        if (sampleFileList.model.isFolder(sampleFileList.currentIndex)) {
-            sampleFileList.model.folder += "/" + sampleFileList.model.get(sampleFileList.currentIndex, "fileName");
-            sampleFileList.currentIndex = 0;
-            return false;
-        }
-        root.sampleFileName = sampleFileList.model.get(sampleFileList.currentIndex, "fileName");
-        let sampleFile = sampleFileList.model.folder + "/" + root.sampleFileName;
-        // remove "file://"
-        sampleFile = sampleFile.slice(7);
-
+    function _loadSample(sampleFile) {
         // manipulate the state in order to include the sample file
         const sample_file_key = "http://samplv1.sourceforge.net/lv2#P101_SAMPLE_FILE";
         let state_str = lv2Host.save_state(lv2Id, /* convert_xml_to_json */ true);
@@ -225,13 +218,43 @@ Item {
         let waveformFile = Utils.getAudioWaveformImage(sampleFile, 4*root.unitSize, unitSize);
         waveformImage.source = waveformFile;
 
+        // update sample file name
+        root.sampleFileName = sampleFile;
+    }
+
+    // if a file is selected, load it, and returns true
+    // if a folder is selected, enter it, and returns false
+    function _acceptListEntry() {
+        // enter a directory
+        if (sampleFileList.model.isFolder(sampleFileList.currentIndex)) {
+            sampleFileList.model.folder += "/" + sampleFileList.model.get(sampleFileList.currentIndex, "fileName");
+            sampleFileList.currentIndex = 0;
+            return false;
+        }
+        let sampleFile = sampleFileList.model.folder + "/" + sampleFileList.model.get(sampleFileList.currentIndex, "fileName");
+        // remove "file://"
+        sampleFile = sampleFile.slice(7);
+
+        _loadSample(sampleFile);
+
         return true;
+    }
+
+    function padPressed(padNumber) {
+        if (padNumber == 0) {
+            // BANG !
+            lv2Host.noteOn(lv2Id, 60, 127);
+        }
     }
 
     // will be called by main
     function padReleased(padNumber) {
         console.log("pad pressed", padNumber);
-        if (padNumber == 16) {
+        if (padNumber == 0) {
+            // BANG !
+            lv2Host.noteOff(lv2Id, 60);
+        }
+        else if (padNumber == 16) {
             // knob 1 switch
             if (sampleFileList.visible) {
                 // the list is visible, we load a file / enter a directory
