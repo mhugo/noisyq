@@ -116,6 +116,16 @@ class StubHost(QObject):
     def noteOff(self, lv2_id, note):
         print(">>> Note OFF", lv2_id, note)
 
+    @pyqtSlot(str, result=str)
+    @pyqtSlot(str, bool, result=str)
+    def save_state(self, lv2_id, convert_xml_to_json=False):
+        return ""
+
+    @pyqtSlot(str, str)
+    @pyqtSlot(str, str, bool)
+    def load_state(self, lv2_id, state, convert_json_to_xml=False):
+        pass
+
 class MyGear(QObject):
     class Knob:
         def __init__(self):

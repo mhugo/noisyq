@@ -178,10 +178,19 @@ ColumnLayout {
                 if (event.isAutoRepeat) {
                     return;
                 }
-                console.log(event.nativeScanCode, event.key);
+                console.log("key", "scan code", event.nativeScanCode, "key", event.key, "modifier", event.modifiers);
                 let value;
+                // ctrl + 0 => knob 1 switch
+                if ((event.nativeScanCode == 10) && (event.modifiers & Qt.ControlModifier)) {
+                    console.log("knob 1 switch");
+                    padPressed(16);           
+                }
+                // ctrl + a => knob 9 switch
+                else if ((event.nativeScanCode == 24) && (event.modifiers & Qt.ControlModifier)) {
+                    padPressed(17);
+                }
                 // 12345...
-                if (event.nativeScanCode >= 10 && event.nativeScanCode < 18) {
+                else if (event.nativeScanCode >= 10 && event.nativeScanCode < 18) {
                     selectedKnob = event.nativeScanCode - 10;
                 }
                 // azerty..
@@ -213,7 +222,16 @@ ColumnLayout {
                 if (event.isAutoRepeat) {
                     return;
                 }
-                if (event.nativeScanCode >= 38 && event.nativeScanCode < 46) {
+                // ctrl + 0 => knob 1 switch
+                if ((event.nativeScanCode == 10) && (event.modifiers & Qt.ControlModifier)) {
+                    console.log("knob 1 switch");
+                    padReleased(16);           
+                }
+                // ctrl + a => knob 9 switch
+                else if ((event.nativeScanCode == 24) && (event.modifiers & Qt.ControlModifier)) {
+                    padReleased(17);
+                }
+                else if (event.nativeScanCode >= 38 && event.nativeScanCode < 46) {
                     let padNumber = event.nativeScanCode - 38;
                     padReleased(padNumber);
                 }

@@ -6,7 +6,7 @@ import Utils 1.0
 
 import Qt.labs.folderlistmodel 2.11
 
-ColumnLayout {
+Item {
     id: root
     // Used by the host to look for an LV2 plugin
     property string lv2Url: "http://samplv1.sourceforge.net/lv2"
@@ -16,7 +16,11 @@ ColumnLayout {
 
     property string name: "Samplv1"
 
+    // Set by the host
     property int unitSize: 100
+
+    implicitWidth: unitSize * 8
+    implicitHeight: unitSize * 2
 
     //------------------ custom properties
 
@@ -35,15 +39,92 @@ ColumnLayout {
         console.log("samplv1 init");
     }
 
-    ColumnLayout {
+    Item {
+        id: debug_grid
+        Repeater {
+            model: 8
+            Rectangle {
+                x: index * root.unitSize
+                y: 0
+                width: root.unitSize
+                height: root.unitSize
+                border.color: "red"
+                border.width: 1
+            }
+        }
+        Repeater {
+            model: 8
+            Rectangle {
+                x: index * root.unitSize
+                y: root.unitSize
+                width: root.unitSize
+                height: root.unitSize
+                border.color: "red"
+                border.width: 1
+            }
+        }
+
+        Rectangle {
+            border.width: 1
+            border.color: "black"
+            width: root.unitSize * 4
+            height: root.unitSize
+        }
+
+        Text {
+            text: "Start"
+            x : (root.unitSize - width) / 2
+            y : root.unitSize - height
+        }
+
+        Text {
+            text: "End"
+            x : root.unitSize + (root.unitSize - width) / 2
+            y : root.unitSize - height
+        }
+
+        Text {
+            text: "Loop start"
+            x : 2 * root.unitSize + (root.unitSize - width) / 2
+            y : root.unitSize - height
+        }
+
+        Text {
+            text: "Loop end"
+            x : 3 * root.unitSize + (root.unitSize - width) / 2;
+            y : root.unitSize - height
+        }
+
+        Image {
+            id: waveformImage
+            x: 0
+            y: 0
+        }
+
+        Text {
+            text: (sampleFileName ? sampleFileName : "<None>")
+            x: 0
+            y: 0
+        }
+                
         ListView {
             id: sampleFileList
-            width: main.unitSize * 2
-            height: main.unitSize
+            visible: false
+            width: root.unitSize * 4
+            height: root.unitSize
+            clip: true
+            x: 0
+            y: 0
+            Rectangle {
+                anchors.fill: parent
+                z: -1
+            }
             model: FolderListModel {
                 rootFolder: "/home/hme/perso/music/samples"
                 folder: "/home/hme/perso/music/samples"
                 nameFilters: ["*.wav", "*.aif", "*.flac"]
+                showDirsFirst: true
+                showDotAndDotDot: true
 
                 onStatusChanged: {
                     if (status == FolderListModel.Ready) {
@@ -77,38 +158,33 @@ ColumnLayout {
             }
             currentIndex: 0
         }
-
-        Text {
-            text: "Sample " + sampleFileName
-        }
     }
 
     onVisibleChanged : {
         if (visible) {
-            padMenu.texts = ["Load", "", "", "", "", "", "", "Back"];
+            padMenu.texts = ["", "", "", "", "", "", "", "Back"];
         }
     }
 
-    // will be called by main
-    function padReleased(padNumber) {
-        if (padNumber == 16) {
-            // knob 1 switch
-            sampleFileList.visible = true;
+    // if a file is selected, load it, and returns true
+    // if a folder is selected, enter it, and returns false
+    function _acceptListEntry() {
+        // enter a directory
+        if (sampleFileList.model.isFolder(sampleFileList.currentIndex)) {
+            sampleFileList.model.folder += "/" + sampleFileList.model.get(sampleFileList.currentIndex, "fileName");
+            sampleFileList.currentIndex = 0;
+            return false;
         }
-        else if (padNumber == 0) {
-            // enter a directory
-            if (sampleFileList.model.isFolder(sampleFileList.currentIndex)) {
-                sampleFileList.model.folder += "/" + sampleFileList.model.get(sampleFileList.currentIndex, "fileName");
-                sampleFileList.currentIndex = 0;
-                return;
-            }
-            let sampleFile = sampleFileList.model.folder + "/" + sampleFileList.model.get(sampleFileList.currentIndex, "fileName");
-            // remove "file://"
-            sampleFile = sampleFile.slice(7);
+        root.sampleFileName = sampleFileList.model.get(sampleFileList.currentIndex, "fileName");
+        let sampleFile = sampleFileList.model.folder + "/" + root.sampleFileName;
+        // remove "file://"
+        sampleFile = sampleFile.slice(7);
 
-            // manipulate the state in order to include the sample file
-            const sample_file_key = "http://samplv1.sourceforge.net/lv2#P101_SAMPLE_FILE";
-            let state_str = lv2Host.save_state(lv2Id, /* convert_xml_to_json */ true);
+        // manipulate the state in order to include the sample file
+        const sample_file_key = "http://samplv1.sourceforge.net/lv2#P101_SAMPLE_FILE";
+        let state_str = lv2Host.save_state(lv2Id, /* convert_xml_to_json */ true);
+        
+        if (state_str) {
             let state = JSON.parse(state_str);
             let children = state.children[1].children;
             for (var i=0; i < children.length; i++) {
@@ -144,6 +220,31 @@ ColumnLayout {
             // force state update
             lv2Host.load_state(lv2Id, state_str, /*convert_json_to_xml*/ true);
         }
+
+        // update graph
+        let waveformFile = Utils.getAudioWaveformImage(sampleFile, 4*root.unitSize, unitSize);
+        waveformImage.source = waveformFile;
+
+        return true;
+    }
+
+    // will be called by main
+    function padReleased(padNumber) {
+        console.log("pad pressed", padNumber);
+        if (padNumber == 16) {
+            // knob 1 switch
+            if (sampleFileList.visible) {
+                // the list is visible, we load a file / enter a directory
+                if (_acceptListEntry()) {
+                    // done
+                    sampleFileList.visible = false;
+                }
+            }
+            else {
+                // the list is not visible yet, make it visible
+                sampleFileList.visible = true;
+            }
+        }
         else if (padNumber == 7) {
             // end of editing
             canvas.endEditInstrument();
@@ -152,7 +253,8 @@ ColumnLayout {
 
     function knobMoved(knobNumber, amount) {
         if (knobNumber==0) {
-            sampleFileList.currentIndex = amount;
+            if (sampleFileList.visible)
+                sampleFileList.currentIndex = amount;
         }
     }
 
