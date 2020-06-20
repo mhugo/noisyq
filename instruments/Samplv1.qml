@@ -37,6 +37,15 @@ Item {
     // Initialize a state, reading from the living LV2 process
     function init() {
         console.log("samplv1 init");
+        // enable offseting
+        lv2Host.setParameterValue(lv2Id, "GEN1_OFFSET", 1.0);
+
+        board.setKnobMinMax(0, 0.0, 1.0);
+        board.setKnobIsInteger(0, false);
+        board.setKnobValue(0, 0);
+        board.setKnobMinMax(1, 0.0, 1.0);
+        board.setKnobIsInteger(1, false);
+        board.setKnobValue(1, 1.0);
     }
 
     Item {
@@ -99,6 +108,31 @@ Item {
             id: waveformImage
             x: 0
             y: 0
+
+            // range before offset start
+            Rectangle {
+                width: offsetStart.value * parent.width
+                border.width: 1
+                border.color: "red"
+                height: parent.height
+                y: 0
+                z: 1
+                x: 0
+                color: "grey"
+                opacity: 0.5
+            }
+            // range after offset end
+            Rectangle {
+                width: (1.0 - offsetEnd.value) * parent.width
+                border.width: 1
+                border.color: "red"
+                height: parent.height
+                y: 0
+                z: 1
+                x: offsetEnd.value * parent.width
+                color: "grey"
+                opacity: 0.5
+            }
         }
 
         Text {
@@ -163,6 +197,29 @@ Item {
                 border.width: 1
             }
             currentIndex: 0
+        }
+    }
+
+    QtObject {
+        id: offsetStart
+        // between 0 and 1
+        property real value: 0
+
+        onValueChanged: {
+            if (lv2Id) {
+                lv2Host.setParameterValue(lv2Id, "GEN1_OFFSET_1", value);
+            }
+        }
+    }
+    QtObject {
+        id: offsetEnd
+        // between 0 and 1
+        property real value: 1.0
+
+        onValueChanged: {
+            if (lv2Id) {
+                lv2Host.setParameterValue(lv2Id, "GEN1_OFFSET_2", value);
+            }
         }
     }
 
@@ -261,6 +318,10 @@ Item {
                 if (_acceptListEntry()) {
                     // done
                     sampleFileList.visible = false;
+                    // restore knob 0 state
+                    board.setKnobMinMax(0, 0.0, 1.0);
+                    board.setKnobIsInteger(0, false);
+                    board.setKnobValue(0, 0);
                 }
             }
             else {
@@ -276,8 +337,17 @@ Item {
 
     function knobMoved(knobNumber, amount) {
         if (knobNumber==0) {
-            if (sampleFileList.visible)
+            if (sampleFileList.visible) {
+                // move file selection list
                 sampleFileList.currentIndex = amount;
+            }
+            else {
+                // offset start
+                offsetStart.value = amount;
+            }
+        }
+        else if (knobNumber==1) {
+            offsetEnd.value = amount;
         }
     }
 
