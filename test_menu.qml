@@ -439,6 +439,12 @@ ColumnLayout {
     RowLayout {
         id: padMenu
         property alias texts: padRep.model
+
+        // update one particular pad text
+        function updateText(padNumber, newText) {
+            texts = texts.slice(0, padNumber).concat([newText].concat(texts.slice(padNumber+1)));            
+        }
+        
         spacing: 0
         Repeater {
             id: padRep

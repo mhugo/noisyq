@@ -43,9 +43,18 @@ Item {
         board.setKnobMinMax(0, 0.0, 1.0);
         board.setKnobIsInteger(0, false);
         board.setKnobValue(0, 0);
+
         board.setKnobMinMax(1, 0.0, 1.0);
         board.setKnobIsInteger(1, false);
         board.setKnobValue(1, 1.0);
+
+        board.setKnobMinMax(2, 0.0, 1.0);
+        board.setKnobIsInteger(2, false);
+        board.setKnobValue(2, 0.0);
+
+        board.setKnobMinMax(3, 0.0, 1.0);
+        board.setKnobIsInteger(3, false);
+        board.setKnobValue(3, 1.0);
     }
 
     Item {
@@ -96,12 +105,14 @@ Item {
             text: "Loop start"
             x : 2 * root.unitSize + (root.unitSize - width) / 2
             y : root.unitSize - height
+            color: loopEnabled.value ? "black" : "grey"
         }
 
         Text {
             text: "Loop end"
             x : 3 * root.unitSize + (root.unitSize - width) / 2;
             y : root.unitSize - height
+            color: loopEnabled.value ? "black" : "grey"
         }
 
         Image {
@@ -132,6 +143,17 @@ Item {
                 x: offsetEnd.value * parent.width
                 color: "grey"
                 opacity: 0.5
+            }
+            // loop range
+            Rectangle {
+                width: (loopEnd.value - loopStart.value) * parent.width
+                height: parent.height
+                y: 0
+                z: 1
+                x: loopStart.value * parent.width
+                color: "yellow"
+                opacity: 0.5
+                visible: loopEnabled.value
             }
         }
 
@@ -167,9 +189,8 @@ Item {
                 showDotAndDotDot: true
 
                 onStatusChanged: {
-                    if (status == FolderListModel.Ready) {
+                    if (sampleFileList.visible && (status == FolderListModel.Ready)) {
                         board.setKnobMinMax(0, 0, sampleFileList.count - 1);
-                        board.setKnobIsInteger(0, true);
                         board.setKnobValue(0, 0);
                     }
                 }
@@ -222,10 +243,42 @@ Item {
             }
         }
     }
+    QtObject {
+        id: loopEnabled
+        property bool value: false
+
+        onValueChanged: {
+            if (lv2Id) {
+                lv2Host.setParameterValue(lv2Id, "GEN1_LOOP", value ? 1.0 : 0.0);
+            }
+        }
+    }
+    QtObject {
+        id: loopStart
+        // between 0 and 1
+        property real value: 0
+
+        onValueChanged: {
+            if (lv2Id) {
+                lv2Host.setParameterValue(lv2Id, "GEN1_LOOP_1", value);
+            }
+        }
+    }
+    QtObject {
+        id: loopEnd
+        // between 0 and 1
+        property real value: 1.0
+
+        onValueChanged: {
+            if (lv2Id) {
+                lv2Host.setParameterValue(lv2Id, "GEN1_LOOP_2", value);
+            }
+        }
+    }
 
     onVisibleChanged : {
         if (visible) {
-            padMenu.texts = ["Bang!", "", "", "", "", "", "", "Back"];
+            padMenu.texts = ["", "Play", loopEnabled.value ? "Loop\onOn" : "Loop\nOff", "", "", "", "", "Back"];
         }
     }
 
@@ -298,7 +351,7 @@ Item {
     }
 
     function padPressed(padNumber) {
-        if (padNumber == 0) {
+        if (padNumber == 1) {
             // BANG !
             lv2Host.noteOn(lv2Id, 60, 127);
         }
@@ -307,9 +360,14 @@ Item {
     // will be called by main
     function padReleased(padNumber) {
         console.log("pad pressed", padNumber);
-        if (padNumber == 0) {
+        if (padNumber == 1) {
             // BANG !
             lv2Host.noteOff(lv2Id, 60);
+        }
+        else if (padNumber == 2) {
+            loopEnabled.value = !loopEnabled.value;
+            board.setPadColor(2, loopEnabled.value ? "green" : "white");
+            padMenu.updateText(2, loopEnabled.value ? "Loop\nOn" : "Loop\nOff");
         }
         else if (padNumber == 16) {
             // knob 1 switch
@@ -327,6 +385,10 @@ Item {
             else {
                 // the list is not visible yet, make it visible
                 sampleFileList.visible = true;
+
+                board.setKnobMinMax(0, 0, sampleFileList.count - 1);
+                board.setKnobIsInteger(0, true);
+                board.setKnobValue(0, 0);
             }
         }
         else if (padNumber == 7) {
@@ -344,10 +406,35 @@ Item {
             else {
                 // offset start
                 offsetStart.value = amount;
+                if (loopStart.value < offsetStart.value)
+                    loopStart.value = offsetStart.value;
+                infoScreen.text = "Start offset " + (amount * 100).toFixed(2) + "%";
+                // restrict offset end and loop end
+                board.setKnobMinMax(1, offsetStart.value, 1.0);
+                board.setKnobMinMax(2, offsetStart.value, loopEnd.value);
+                board.setKnobValue(2, loopStart.value);
             }
         }
         else if (knobNumber==1) {
+            // offset end
             offsetEnd.value = amount;
+            if (loopEnd.value > offsetEnd.value)
+                loopEnd.value = offsetEnd.value;
+            infoScreen.text = "End offset " + (amount * 100).toFixed(2) + "%";
+            // restrict offset start and loop start
+            board.setKnobMinMax(0, 0.0, offsetEnd.value);
+            board.setKnobMinMax(3, loopStart.value, offsetEnd.value);
+            board.setKnobValue(3, loopEnd.value);
+        }
+        else if (knobNumber==2) {
+            // loop start
+            loopStart.value = amount;
+            infoScreen.text = "Loop start " + (amount * 100).toFixed(2) + "%";
+        }
+        else if (knobNumber==3) {
+            // loop end
+            loopEnd.value = amount;
+            infoScreen.text = "Loop end " + (amount * 100).toFixed(2) + "%";
         }
     }
 
