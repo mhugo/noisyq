@@ -275,10 +275,28 @@ Item {
             }
         }
     }
+    QtObject {
+        id: genReverse
+        property bool value: false
+
+        onValueChanged: {
+            if (lv2Id) {
+                lv2Host.setParameterValue(lv2Id, "GEN1_REVERSE", value ? 1.0 : 0.0);
+            }
+        }
+    }
 
     onVisibleChanged : {
         if (visible) {
-            padMenu.texts = ["", "Play", loopEnabled.value ? "Loop\onOn" : "Loop\nOff", "", "", "", "", "Back"];
+            padMenu.texts = [
+                "",
+                "Play",
+                loopEnabled.value ? "Loop\nOn" : "Loop\nOff",
+                genReverse.value ? "Reversed\nOn" : "Reversed\nOff",
+                "",
+                "",
+                "",
+                "Back"];
         }
     }
 
@@ -368,6 +386,11 @@ Item {
             loopEnabled.value = !loopEnabled.value;
             board.setPadColor(2, loopEnabled.value ? "green" : "white");
             padMenu.updateText(2, loopEnabled.value ? "Loop\nOn" : "Loop\nOff");
+        }
+        else if (padNumber == 3) {
+            genReverse.value = !genReverse.value;
+            board.setPadColor(3, genReverse.value ? "green" : "white");
+            padMenu.updateText(3, genReverse.value ? "Reversed\nOn" : "Reversed\nOff");
         }
         else if (padNumber == 16) {
             // knob 1 switch
