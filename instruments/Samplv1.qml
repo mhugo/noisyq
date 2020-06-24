@@ -19,8 +19,12 @@ Item {
     // Set by the host
     property int unitSize: 100
 
+    readonly property int legendSize: 0.3 * unitSize
+
     implicitWidth: unitSize * 8
-    implicitHeight: unitSize * 2
+    implicitHeight: unitSize * 2 + legendSize * 2
+
+    
 
     //------------------ custom properties
 
@@ -74,34 +78,50 @@ Item {
 
     Item {
         id: debug_grid
-        Repeater {
-            model: 8
-            Rectangle {
-                x: index * root.unitSize
-                y: 0
-                width: root.unitSize
-                height: root.unitSize
-                border.color: "red"
-                border.width: 1
+        GridLayout {
+            columns: 8
+            columnSpacing: 0
+            rowSpacing: 0
+            // first knob block
+            Repeater {
+                model: 8
+                Rectangle {
+                    implicitWidth: unitSize
+                    implicitHeight: unitSize
+                    border.color: "red"
+                    border.width: 1
+                }
             }
-        }
-        Repeater {
-            model: 8
-            Rectangle {
-                x: index * root.unitSize
-                y: root.unitSize
-                width: root.unitSize
-                height: root.unitSize
-                border.color: "red"
-                border.width: 1
+            // first legend block
+            Repeater {
+                model: 8
+                Rectangle {
+                    implicitWidth: unitSize
+                    implicitHeight: legendSize
+                    border.color: "red"
+                    border.width: 1
+                }
             }
-        }
-
-        Rectangle {
-            border.width: 1
-            border.color: "black"
-            width: root.unitSize * 4
-            height: root.unitSize
+            // second knob block
+            Repeater {
+                model: 8
+                Rectangle {
+                    implicitWidth: unitSize
+                    implicitHeight: unitSize
+                    border.color: "red"
+                    border.width: 1
+                }
+            }
+            // second legend block
+            Repeater {
+                model: 8
+                Rectangle {
+                    implicitWidth: unitSize
+                    implicitHeight: legendSize
+                    border.color: "red"
+                    border.width: 1
+                }
+            }
         }
     }
 
@@ -193,14 +213,14 @@ Item {
 
                 Text {
                     text: "Start"
-                    x : (root.unitSize - width) / 2
-                    y : root.unitSize - height
+                    x : (unitSize - width) / 2
+                    y : unitSize + (legendSize - height) / 2
                 }
             }
 
             KnobMapping {
                 id: offsetEnd
-                x: root.unitSize
+                x: unitSize
                 y: 0
                 // between 0 and 1
                 value: 1.0
@@ -224,14 +244,14 @@ Item {
 
                 Text {
                     text: "End"
-                    x : (root.unitSize - width) / 2
-                    y : root.unitSize - height
+                    x : (unitSize - width) / 2
+                    y : unitSize + (legendSize - height) / 2
                 }
             }
 
             KnobMapping {
                 id: loopStart
-                x: 2 * root.unitSize
+                x: 2 * unitSize
                 y: 0
                 // between 0 and 1
                 value: 0
@@ -244,15 +264,15 @@ Item {
 
                 Text {
                     text: "Loop start"
-                    x : (root.unitSize - width) / 2
-                    y : root.unitSize - height
+                    x : (unitSize - width) / 2
+                    y : unitSize + (legendSize - height) / 2
                     color: loopEnabled.value ? "black" : "grey"
                 }
             }
 
             KnobMapping {
                 id: loopEnd
-                x: 3 * root.unitSize
+                x: 3 * unitSize
                 y: 0
                 // between 0 and 1
                 value: 1.0
@@ -266,8 +286,8 @@ Item {
 
                 Text {
                     text: "Loop end"
-                    x : (root.unitSize - width) / 2
-                    y : root.unitSize - height
+                    x : (unitSize - width) / 2
+                    y : unitSize + (legendSize - height) / 2
                     color: loopEnabled.value ? "black" : "grey"
                 }
             }
@@ -276,8 +296,8 @@ Item {
         ListView { // sample file selection
             id: sampleFileList
             visible: false
-            width: root.unitSize * 4
-            height: root.unitSize
+            width: unitSize * 4
+            height: unitSize
             clip: true
             x: 0
             y: 0
@@ -345,7 +365,7 @@ Item {
                 }
             }
             onPadReleased: {
-                if (padNumber==16) {
+                if (padNumber==board.knob1SwitchId) {
                     // knob1 switch
                     if (waveform.children[0].visible) { // the waveform plot is visible
                         // the list is not visible yet, make it visible
@@ -361,22 +381,25 @@ Item {
                         }
                     }
                 }
+                else if (padNumber==board.knob9SwitchId) {
+                    if (waveform.children[1].visible) { // the list is visible
+                        // cancel
+                        waveform.children[1].visible = false;
+                        waveform.children[0].visible = true;
+                    }
+                }
             }
         }
     }
 
     PadSwitchMapping {
         id: loopEnabled
-        x: root.unitSize * 2
-        y: root.unitSize * 1
+        x: unitSize * 2
+        y: unitSize * 1
         padNumber: 2
 
         parameterName: "GEN1_LOOP"
-        parameterDisplay: "Loop enabled"
-
-        onValueChanged: {
-            padMenu.updateText(2, value ? "Loop\nOn" : "Loop\nOff");
-        }
+        parameterDisplay: "Loop"
     }
 
     PadSwitchMapping {
@@ -385,13 +408,10 @@ Item {
 
         parameterName: "GEN1_REVERSE"
         parameterDisplay: "Reversed"
-        onValueChanged: {
-            padMenu.updateText(3, value ? "Reversed\nOn" : "Reversed\nOff");
-        }
     }
 
     KnobMapping {
-        x: 4 * root.unitSize
+        x: 4 * unitSize
         y: 0
 
         // midi note
@@ -407,8 +427,8 @@ Item {
         }
 
         Text {
-            y: 0.3 * root.unitSize
-            x: (root.unitSize - width) / 2
+            y: legendSize
+            x: (unitSize - width) / 2
             font.pixelSize: 16
             font.family: monoFont.name
             text: parent.valueToString(parent.value)
@@ -416,13 +436,13 @@ Item {
 
         Text {
             text: "Base note"
-            y: root.unitSize - height
-            x: (root.unitSize - width) / 2
+            y : unitSize + (legendSize - height) / 2
+            x: (unitSize - width) / 2
         }
     }
 
     KnobMapping {
-        x: 5 * root.unitSize
+        x: 5 * unitSize
         y: 0
 
         // cents, between -1 (-100 cents) and 1 (+100 cents)
@@ -444,26 +464,20 @@ Item {
             value: ~~(parent.value * 100)
             displaySign: true
             text: "cents"
+            size: unitSize
         }
 
         Text {
             text: "Tuning"
-            y: root.unitSize - height
-            x: (root.unitSize - width) / 2
+            y : unitSize + (legendSize - height) / 2
+            x: (unitSize - width) / 2
         }
     }
 
     onVisibleChanged : {
         if (visible) {
-            padMenu.texts = [
-                "",
-                "Play",
-                "Loop\nOff",
-                "Reversed\nOff",
-                "",
-                "",
-                "",
-                "Back"];
+            padMenu.updateText(1, "Play");
+            padMenu.updateText(7, "Back");
         }
     }
 
@@ -512,7 +526,7 @@ Item {
         }
 
         // update graph
-        let waveformFile = Utils.getAudioWaveformImage(sampleFile, 4*root.unitSize, unitSize);
+        let waveformFile = Utils.getAudioWaveformImage(sampleFile, 4*unitSize, unitSize);
         waveformImage.source = waveformFile;
 
         // update sample file name

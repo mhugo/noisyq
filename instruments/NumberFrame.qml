@@ -14,8 +14,8 @@ Rectangle {
     height: size
 
     Rectangle {
-        width: root.size * 0.9
-        height: root.size * 0.9
+        width: root.width * 0.9
+        height: root.height * 0.9
         x: root.size * 0.05
         y: root.size * 0.05
         border.color: "black"

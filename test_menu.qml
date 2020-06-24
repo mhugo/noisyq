@@ -125,6 +125,9 @@ ColumnLayout {
                 }
             }
 
+            readonly property int knob1SwitchId : 16
+            readonly property int knob9SwitchId : 17
+
             function knobValue(knobNumber) {
                 return knobs.itemAt(knobNumber).value;
             }
@@ -176,12 +179,11 @@ ColumnLayout {
                 let value;
                 // ctrl + 0 => knob 1 switch
                 if ((event.nativeScanCode == 10) && (event.modifiers & Qt.ControlModifier)) {
-                    console.log("knob 1 switch");
-                    padPressed(16);           
+                    padPressed(knob1SwitchId);
                 }
                 // ctrl + a => knob 9 switch
                 else if ((event.nativeScanCode == 24) && (event.modifiers & Qt.ControlModifier)) {
-                    padPressed(17);
+                    padPressed(knob9SwitchId);
                 }
                 // 12345...
                 else if (event.nativeScanCode >= 10 && event.nativeScanCode < 18) {
@@ -219,11 +221,11 @@ ColumnLayout {
                 // ctrl + 0 => knob 1 switch
                 if ((event.nativeScanCode == 10) && (event.modifiers & Qt.ControlModifier)) {
                     console.log("knob 1 switch");
-                    padReleased(16);           
+                    padReleased(knob1SwitchId);           
                 }
                 // ctrl + a => knob 9 switch
                 else if ((event.nativeScanCode == 24) && (event.modifiers & Qt.ControlModifier)) {
-                    padReleased(17);
+                    padReleased(knob9SwitchId);
                 }
                 else if (event.nativeScanCode >= 38 && event.nativeScanCode < 46) {
                     let padNumber = event.nativeScanCode - 38;

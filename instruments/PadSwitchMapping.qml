@@ -36,12 +36,20 @@ Item {
         return v ? "ON" : "OFF";
     }
 
+    function _updatePad() {
+        board.setPadColor(root.padNumber, root.value ? "green" : "white");
+        padMenu.updateText(
+            root.padNumber,
+            root.parameterDisplay + "\n" + valueToString(root.value)
+        );
+    }
+
     Connections {
         target: board
         onPadReleased: {
             if (padNumber == root.padNumber) {
                 root.value = ! root.value;
-                board.setPadColor(root.padNumber, root.value ? "green" : "white");
+                _updatePad();
                 infoScreen.text = root.parameterDisplay + " = " + valueToString(root.value);
                 lv2Host.setParameterValue(lv2Id, root.parameterName, toParameter(root.value));
             }
@@ -51,7 +59,7 @@ Item {
 
     onVisibleChanged: {
         if (visible) {
-            board.setPadColor(root.padNumber, root.value ? "green" : "white");
+            _updatePad();
         }
     }
 }
