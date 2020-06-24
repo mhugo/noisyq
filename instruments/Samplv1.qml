@@ -1,6 +1,7 @@
 import QtQuick 2.0
 import QtQuick.Controls 2.4
 import QtQuick.Layouts 1.11
+import QtQuick.Shapes 1.11
 
 import Utils 1.0
 
@@ -471,6 +472,84 @@ Item {
             text: "Tuning"
             y : unitSize + (legendSize - height) / 2
             x: (unitSize - width) / 2
+        }
+    }
+
+    Item {
+        id: ampEnvelope
+        x: 0
+        y: unitSize + legendSize
+        
+        KnobMapping {
+            id: ampAttack
+            knobNumber: 8
+            parameterName: "DCA1_ATTACK"
+
+            Text {
+                text: "Attack"
+                x: (unitSize - width) / 2
+                y: unitSize + (legendSize - height) / 2
+            }
+        }
+        KnobMapping {
+            id: ampDecay
+            knobNumber: 9
+            parameterName: "DCA1_DECAY"
+
+            Text {
+                text: "Decay"
+                x: unitSize + (unitSize - width) / 2
+                y: unitSize + (legendSize - height) / 2
+            }
+        }
+        KnobMapping {
+            id: ampSustain
+            knobNumber: 10
+            parameterName: "DCA1_SUSTAIN"
+
+            Text {
+                text: "Sustain"
+                x: unitSize * 2 + (unitSize - width) / 2
+                y: unitSize + (legendSize - height) / 2
+            }
+        }
+        KnobMapping {
+            id: ampRelease
+            knobNumber: 11
+            parameterName: "DCA1_RELEASE"
+
+            Text {
+                text: "Release"
+                x: unitSize * 3 + (unitSize - width) / 2
+                y: unitSize + (legendSize - height) / 2
+            }
+        }
+        Shape {
+            width: 4 * unitSize
+            height: unitSize
+
+            ShapePath {
+                strokeWidth: 2
+                strokeColor: "black"
+                startX: 0
+                startY: unitSize
+                PathLine {
+                    x: unitSize * ampAttack.value
+                    y: 0
+                }
+                PathLine {
+                    x: unitSize * ampAttack.value + unitSize * ampDecay.value
+                    y: unitSize * (1 - ampSustain.value)
+                }
+                PathLine {
+                    x: unitSize * ampAttack.value + unitSize * ampDecay.value + unitSize
+                    y: unitSize * (1 - ampSustain.value)
+                }
+                PathLine {
+                    x: unitSize * ampAttack.value + unitSize * ampDecay.value + unitSize + unitSize * ampRelease.value
+                    y: unitSize
+                }
+            }
         }
     }
 
