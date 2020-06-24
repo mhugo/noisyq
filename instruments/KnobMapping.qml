@@ -1,10 +1,7 @@
 import QtQuick 2.0
 
 //
-// Helper to declare a knob mapping. It must be a direct child of the parameter it maps.
-// The parent item must have the following properties defined:
-// - value: the "internal" value, that can be different from the value manipulated by the knob.
-//          For instance a knob with integer values can be mapped to a real value in [0,1]
+// Helper to declare a knob mapping.
 Item {
     id: root
 

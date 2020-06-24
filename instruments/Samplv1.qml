@@ -365,25 +365,28 @@ Item {
         }
     }
 
-    QtObject {
+    PadSwitchMapping {
         id: loopEnabled
-        property bool value: false
+        x: root.unitSize * 2
+        y: root.unitSize * 1
+        padNumber: 2
+
+        parameterName: "GEN1_LOOP"
+        parameterDisplay: "Loop enabled"
 
         onValueChanged: {
-            if (lv2Id) {
-                lv2Host.setParameterValue(lv2Id, "GEN1_LOOP", value ? 1.0 : 0.0);
-            }
+            padMenu.updateText(2, value ? "Loop\nOn" : "Loop\nOff");
         }
     }
 
-    QtObject {
+    PadSwitchMapping {
         id: genReverse
-        property bool value: false
+        padNumber: 3
 
+        parameterName: "GEN1_REVERSE"
+        parameterDisplay: "Reversed"
         onValueChanged: {
-            if (lv2Id) {
-                lv2Host.setParameterValue(lv2Id, "GEN1_REVERSE", value ? 1.0 : 0.0);
-            }
+            padMenu.updateText(3, value ? "Reversed\nOn" : "Reversed\nOff");
         }
     }
 
@@ -455,8 +458,8 @@ Item {
             padMenu.texts = [
                 "",
                 "Play",
-                loopEnabled.value ? "Loop\nOn" : "Loop\nOff",
-                genReverse.value ? "Reversed\nOn" : "Reversed\nOff",
+                "Loop\nOff",
+                "Reversed\nOff",
                 "",
                 "",
                 "",
@@ -547,16 +550,6 @@ Item {
         if (padNumber == 1) {
             // BANG !
             lv2Host.noteOff(lv2Id, 60);
-        }
-        else if (padNumber == 2) {
-            loopEnabled.value = !loopEnabled.value;
-            board.setPadColor(2, loopEnabled.value ? "green" : "white");
-            padMenu.updateText(2, loopEnabled.value ? "Loop\nOn" : "Loop\nOff");
-        }
-        else if (padNumber == 3) {
-            genReverse.value = !genReverse.value;
-            board.setPadColor(3, genReverse.value ? "green" : "white");
-            padMenu.updateText(3, genReverse.value ? "Reversed\nOn" : "Reversed\nOff");
         }
         else if (padNumber == 7) {
             // end of editing
