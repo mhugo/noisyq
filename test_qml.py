@@ -83,6 +83,12 @@ class Utils(QObject):
         )
         return tmp_file
 
+    @pyqtSlot(int, result=str)
+    def midiNoteName(self, note):
+        name_en = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"] 
+        #name_fr = ["Do", "Do#", "Ré", "Ré#", "Mi", "Fa", "Fa#", "Sol", "Sol#", "La", "La#", "Si"]
+        return "{} {}".format(name_en[note % 12], (note // 12)-1)
+
 
 class StubHost(QObject):
     def __init__(self, parent=None):

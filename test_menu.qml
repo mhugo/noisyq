@@ -126,20 +126,14 @@ ColumnLayout {
             }
 
             function knobValue(knobNumber) {
-                console.log("knobValue", knobs, knobs.count);
                 return knobs.itemAt(knobNumber).value;
             }
 
             function setKnobValue(knobNumber, value) {
                 knobs.itemAt(knobNumber).value = value;
-                // manually trigger the change signal
-                // since modification of only one term of an array
-                // does not trigger it
-                //knobValueChanged(knobValue);
             }
 
             function setKnobMinMax(knobNumber, min, max) {
-                console.log("min max", knobNumber, min, max);
                 knobs.itemAt(knobNumber).min = min;
                 knobs.itemAt(knobNumber).max = max;
             }
