@@ -524,30 +524,55 @@ Item {
                 y: unitSize + (legendSize - height) / 2
             }
         }
-        Shape {
+
+        Canvas {
+            id: canvas
             width: 4 * unitSize
             height: unitSize
+            onPaint: {
+                var ctx = getContext("2d");
+                ctx.reset();
+                ctx.lineWidth = 2.0;
+                ctx.moveTo(0, unitSize);
+                ctx.lineTo(unitSize * ampAttack.value, 0);
+                ctx.lineTo(unitSize * ampAttack.value + unitSize * ampDecay.value, ampSustain.value * unitSize);
+                ctx.lineTo(unitSize * ampAttack.value + unitSize * ampDecay.value + unitSize, ampSustain.value * unitSize);
+                ctx.lineTo(unitSize * ampAttack.value + unitSize * ampDecay.value + unitSize + ampRelease.value * unitSize, unitSize);
+                ctx.lineTo(0, unitSize);
+                ctx.stroke();
 
-            ShapePath {
-                strokeWidth: 2
-                strokeColor: "black"
-                startX: 0
-                startY: unitSize
-                PathLine {
-                    x: unitSize * ampAttack.value
-                    y: 0
+                ctx.lineWidth = 1.0;
+                ctx.moveTo(unitSize * ampAttack.value, 0);
+                ctx.lineTo(unitSize * ampAttack.value, unitSize);
+                ctx.moveTo(unitSize * ampAttack.value + unitSize * ampDecay.value, ampSustain.value * unitSize);
+                ctx.lineTo(unitSize * ampAttack.value + unitSize * ampDecay.value, unitSize);
+                ctx.moveTo(unitSize * ampAttack.value + unitSize * ampDecay.value + unitSize, ampSustain.value * unitSize);
+                ctx.lineTo(unitSize * ampAttack.value + unitSize * ampDecay.value + unitSize, unitSize);
+                ctx.stroke();
+            }
+
+            Connections {
+                target: ampAttack
+                onValueChanged: {
+                    canvas.requestPaint();
                 }
-                PathLine {
-                    x: unitSize * ampAttack.value + unitSize * ampDecay.value
-                    y: unitSize * (1 - ampSustain.value)
+            }
+            Connections {
+                target: ampDecay
+                onValueChanged: {
+                    canvas.requestPaint();
                 }
-                PathLine {
-                    x: unitSize * ampAttack.value + unitSize * ampDecay.value + unitSize
-                    y: unitSize * (1 - ampSustain.value)
+            }
+            Connections {
+                target: ampSustain
+                onValueChanged: {
+                    canvas.requestPaint();
                 }
-                PathLine {
-                    x: unitSize * ampAttack.value + unitSize * ampDecay.value + unitSize + unitSize * ampRelease.value
-                    y: unitSize
+            }
+            Connections {
+                target: ampRelease
+                onValueChanged: {
+                    canvas.requestPaint();
                 }
             }
         }
