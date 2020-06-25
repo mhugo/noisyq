@@ -578,6 +578,30 @@ Item {
         }
     }
 
+    KnobMapping {
+        x: 4 * unitSize
+        y: unitSize + legendSize
+        parameterName: "GEN1_ENVTIME"
+        knobNumber: 12
+
+        Text {
+            x: (unitSize - width) / 2
+            y: (unitSize - height) / 2
+            text: {
+                if (parent.value < 0.01)
+                    return "Auto";
+                let ms = ~~((parent.value - 0.01) / (1 - 0.01) * (5000 - 5) + 5);
+                return ms + " ms\nper stage";
+            }
+        }
+
+        Text {
+            x: (unitSize - width) / 2
+            y: unitSize + (legendSize - height) / 2
+            text: "Env. Time"
+        }
+    }
+
     onVisibleChanged : {
         if (visible) {
             padMenu.updateText(1, "Play");
