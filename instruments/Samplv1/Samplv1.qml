@@ -5,6 +5,8 @@ import QtQuick.Shapes 1.11
 
 import Utils 1.0
 
+import "../common"
+
 import Qt.labs.folderlistmodel 2.11
 
 Item {

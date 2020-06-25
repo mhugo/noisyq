@@ -4,6 +4,8 @@ import QtQuick.Layouts 1.11
 
 import Utils 1.0
 
+import "../common"
+
 // TODO
 // - better alignment of widgets
 // - widgets: text rather than knobs for most integer parameters (tune, transpose, etc.)
