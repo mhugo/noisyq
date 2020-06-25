@@ -20,7 +20,7 @@ app = QApplication(sys.argv)
 app.setApplicationDisplayName("HOST")
 
 current_path = os.path.abspath(os.path.dirname(__file__))
-qml_file = os.path.join(current_path, 'test_menu.qml')
+qml_file = os.path.join(current_path, 'main.qml')
 
 # TODO
 # - replace rtmidi with calls to jack via ctypes ?
