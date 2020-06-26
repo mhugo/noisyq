@@ -528,7 +528,7 @@ Item {
         }
 
         Canvas {
-            id: canvas
+            id: envCanvas
             width: 4 * unitSize
             height: unitSize
             onPaint: {
@@ -556,25 +556,25 @@ Item {
             Connections {
                 target: ampAttack
                 onValueChanged: {
-                    canvas.requestPaint();
+                    envCanvas.requestPaint();
                 }
             }
             Connections {
                 target: ampDecay
                 onValueChanged: {
-                    canvas.requestPaint();
+                    envCanvas.requestPaint();
                 }
             }
             Connections {
                 target: ampSustain
                 onValueChanged: {
-                    canvas.requestPaint();
+                    envCanvas.requestPaint();
                 }
             }
             Connections {
                 target: ampRelease
                 onValueChanged: {
-                    canvas.requestPaint();
+                    envCanvas.requestPaint();
                 }
             }
         }

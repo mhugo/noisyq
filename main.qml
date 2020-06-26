@@ -440,7 +440,7 @@ ColumnLayout {
         function updateText(padNumber, newText) {
             texts = texts.slice(0, padNumber).concat([newText].concat(texts.slice(padNumber+1)));            
         }
-        
+
         spacing: 0
         Repeater {
             id: padRep
@@ -663,7 +663,20 @@ ColumnLayout {
             name: "instrMenu"
             PropertyChanges {
                 target: padMenu
-                texts: ["0", "1", "2", "3", "4", "5", "6", "Back"]
+                texts: {
+                    let newPadMenu = [];
+                    for (var i=0; i < 7; i++) {
+                        board.setPadColor(i, canvas.instruments[i] ? "green" : "white");
+                        if (canvas.instruments[i]) {
+                            newPadMenu.push("<" + i.toString() + ">\n" + canvas.instruments[i].name);
+                        }
+                        else {
+                            newPadMenu.push("<" + i.toString() + ">");
+                        }
+                    }
+                    newPadMenu.push("Back");
+                    return newPadMenu;
+                }
             }
             PropertyChanges {
                 target: infoScreen
@@ -671,13 +684,4 @@ ColumnLayout {
             }
         }
     ]
-
-    onStateChanged : {
-        if (state == "instrMenu") {
-            // green = an instrument is assigned, white otherwise
-            for (var i=0; i < 7; i++) {
-                board.setPadColor(i, canvas.instruments[i] != null ? "green" : "white");
-            }
-        }
-    }
 }
