@@ -19,9 +19,6 @@ from carla_host import CarlaHost
 app = QApplication(sys.argv)
 app.setApplicationDisplayName("HOST")
 
-current_path = os.path.abspath(os.path.dirname(__file__))
-qml_file = os.path.join(current_path, 'main.qml')
-
 # TODO
 # - replace rtmidi with calls to jack via ctypes ?
 
@@ -358,6 +355,8 @@ view.setResizeMode(QQuickView.SizeViewToRootObject)
 view.rootContext().setContextProperty("lv2Host", lv2Host)
 view.rootContext().setContextProperty("gear", gear)
 
+current_path = os.path.abspath(os.path.dirname(__file__))
+qml_file = os.path.join(current_path, 'arturia_minilab_mk2.qml')
 view.setSource(QUrl.fromLocalFile(qml_file))
 view.engine().quit.connect(app.quit)
 view.show()
