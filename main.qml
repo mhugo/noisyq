@@ -119,7 +119,7 @@ ColumnLayout {
 
             Repeater {
                 id: pads
-                model: 8
+                model: 16
                 Item {
                     property string color: "white"
                 }
@@ -196,7 +196,12 @@ ColumnLayout {
                 // qsdfg...
                 else if (event.nativeScanCode >= 38 && event.nativeScanCode < 46) {
                     let padNumber = event.nativeScanCode - 38;
-                    padPressed(padNumber);
+                    if (event.modifiers & Qt.ControlModifier) {
+                        padPressed(padNumber + 8);
+                    }
+                    else {
+                        padPressed(padNumber);
+                    }
                 }
                 // wxcvbn.. => piano
                 else if (event.nativeScanCode >= 52 && event.nativeScanCode < 62) {
@@ -229,7 +234,12 @@ ColumnLayout {
                 }
                 else if (event.nativeScanCode >= 38 && event.nativeScanCode < 46) {
                     let padNumber = event.nativeScanCode - 38;
-                    padReleased(padNumber);
+                    if (event.modifiers & Qt.ControlModifier) {
+                        padReleased(padNumber + 8);
+                    }
+                    else {
+                        padReleased(padNumber);
+                    }
                 }
                 else if (event.nativeScanCode >= 52 && event.nativeScanCode < 62) {
                     let key = event.nativeScanCode - 52 + 60;
