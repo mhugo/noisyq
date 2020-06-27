@@ -432,20 +432,28 @@ ColumnLayout {
         }
     }
 
-    RowLayout {
+    Item {
         id: padMenu
         property alias texts: padRep.model
+
+        implicitWidth: 8 * unitSize
+        implicitHeight: 2 * unitSize
+        x: 0
+        y: 0
 
         // update one particular pad text
         function updateText(padNumber, newText) {
             texts = texts.slice(0, padNumber).concat([newText].concat(texts.slice(padNumber+1)));            
         }
 
-        spacing: 0
+        //spacing: 0
         Repeater {
             id: padRep
-            model: ["", "", "", "", "", "", "", ""]
+            model: ["", "", "", "", "", "", "", "",
+                    "", "", "", "", "", "", "", ""]
             Pad {
+                x: (index % 8) * unitSize
+                y: ~~(index / 8) * unitSize
                 color: board.padColor(index)
                 size: main.unitSize
                 Text {
@@ -637,7 +645,8 @@ ColumnLayout {
             name: "rootMenu"
             PropertyChanges {
                 target: padMenu
-                texts: ["Project", "Instr.", "", "", "", "", "", "Quit"]
+                texts: ["Project", "Instr.", "", "", "", "", "", "Quit",
+                       "", "", "", "", "", "", "", ""]
             }
             PropertyChanges {
                 target: canvas
@@ -652,7 +661,8 @@ ColumnLayout {
             name: "projectMenu"
             PropertyChanges {
                 target: padMenu
-                texts: ["", "", "", "", "", "", "", "Back"]
+                texts: ["", "", "", "", "", "", "", "Back",
+                       "", "", "", "", "", "", "", ""]
             }
             PropertyChanges {
                 target: infoScreen
@@ -675,6 +685,7 @@ ColumnLayout {
                         }
                     }
                     newPadMenu.push("Back");
+                    newPadMenu.push("", "", "", "", "", "", "", "");
                     return newPadMenu;
                 }
             }

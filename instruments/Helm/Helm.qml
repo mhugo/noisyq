@@ -154,7 +154,8 @@ StackLayout {
         }
         onVisibleChanged : {
             if (visible) {
-                padMenu.texts = ["Osc", "", "", "", "", "", "", "Back"];
+                padMenu.texts = ["Osc", "", "", "", "", "", "", "Back",
+                                 "", "", "", "", "", "", "", ""]
                 board.setKnobIsInteger(0, true);
                 board.setKnobIsInteger(8, true);
                 board.setKnobValue(0,0);
@@ -716,7 +717,8 @@ StackLayout {
         }
         onVisibleChanged : {
             if (visible) {
-                padMenu.texts = ["", "", "", "", "", "Osc 1 H", "Osc 2 H", "Back"];
+                padMenu.texts = ["", "", "", "", "", "Osc 1 H", "Osc 2 H", "Back",
+                                 "", "", "", "", "", "", "", ""];
             }
         }
 
