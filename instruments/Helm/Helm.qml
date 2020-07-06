@@ -15,7 +15,7 @@ import "../common"
 // - handle modulation
 
 
-StackLayout {
+Item {
     id: root
     // Used by the host to look for an LV2 plugin
     property string lv2Url: "http://tytel.org/helm"
@@ -26,6 +26,11 @@ StackLayout {
     property string name: "Helm"
 
     property int unitSize: 100
+
+    readonly property int legendSize: 0.3 * unitSize
+
+    implicitWidth: unitSize * 8
+    implicitHeight: unitSize * 2 + legendSize * 2
 
     // shortcut
     function _setLV2(obj, value) {
@@ -86,34 +91,67 @@ StackLayout {
 
     Item {
         id: debug_grid
-        Repeater {
-            model: 8
-            Rectangle {
-                x: index * main.unitSize
-                y: 0
-                width: main.unitSize
-                height: main.unitSize
-                border.color: "red"
-                border.width: 1
+        GridLayout {
+            columns: 8
+            columnSpacing: 0
+            rowSpacing: 0
+            // first knob block
+            Repeater {
+                model: 8
+                Rectangle {
+                    implicitWidth: unitSize
+                    implicitHeight: unitSize
+                    border.color: "red"
+                    border.width: 1
+                }
+            }
+            // first legend block
+            Repeater {
+                model: 8
+                Rectangle {
+                    implicitWidth: unitSize
+                    implicitHeight: legendSize
+                    border.color: "red"
+                    border.width: 1
+                }
+            }
+            // second knob block
+            Repeater {
+                model: 8
+                Rectangle {
+                    implicitWidth: unitSize
+                    implicitHeight: unitSize
+                    border.color: "red"
+                    border.width: 1
+                }
+            }
+            // second legend block
+            Repeater {
+                model: 8
+                Rectangle {
+                    implicitWidth: unitSize
+                    implicitHeight: legendSize
+                    border.color: "red"
+                    border.width: 1
+                }
             }
         }
-        Repeater {
-            model: 8
-            Rectangle {
-                x: index * main.unitSize
-                y: main.unitSize
-                width: main.unitSize
-                height: main.unitSize
-                border.color: "red"
-                border.width: 1
-            }
-        }
-        ColumnLayout {
-        id: program_panel
-        RowLayout {
-            Text { text: "Bank" }
+    }
+
+    StackLayout {
+        id: stackLayout
+
+        Item {
+            id: program_panel
+            x: 0
+            y: 0
+            
             ComboBox {
                 id: bank_combo
+                x: 0
+                y: (unitSize - height) / 2
+                width: unitSize * 2
+
                 model: []
 
                 onCurrentIndexChanged : {
@@ -131,11 +169,17 @@ StackLayout {
                     board.setKnobValue(8,0);
                 }
             }
-        }
-        RowLayout {
-            Text { text: "Program" }
+            Text {
+                text: "Bank"
+                x: (unitSize - width) / 2
+                y: unitSize + (legendSize - height) / 2
+            }
+
             ComboBox {
                 id: program_combo
+                x: 0
+                y: unitSize + legendSize + (unitSize - height) / 2
+                width: unitSize * 2
                 textRole: "name"
                 model: ListModel {
                     ListElement {
@@ -143,625 +187,634 @@ StackLayout {
                         programId: 0
                     }
                 }
+                currentIndex: 0
 
                 onCurrentIndexChanged : {
-                    console.log("program id", model[currentIndex].programId);
-                    lv2Host.set_program(lv2Id, model[currentIndex].programId);
-                    // read back parameters from the host
-                    root.init();
+                    if (currentIndex >= 0) {
+                        lv2Host.set_program(lv2Id, model[currentIndex].programId);
+                        // read back parameters from the host
+                        root.init();
+                    }
                 }
             }
-        }
-        onVisibleChanged : {
-            if (visible) {
-                padMenu.texts = ["Osc", "", "", "", "", "", "", "Back",
-                                 "", "", "", "", "", "", "", ""]
-                board.setKnobIsInteger(0, true);
-                board.setKnobIsInteger(8, true);
-                board.setKnobValue(0,0);
+
+            Text {
+                text: "Program"
+                x: (unitSize - width) / 2
+                y: 2 * unitSize + legendSize + (legendSize - height) / 2
+            }
+
+            onVisibleChanged : {
+                if (visible) {
+                    padMenu.texts = ["Osc", "", "", "", "", "", "", "Back",
+                                     "", "", "", "", "", "", "", ""]
+                    board.setKnobIsInteger(0, true);
+                    board.setKnobIsInteger(8, true);
+                    board.setKnobValue(0,0);
+                }
+            }
+
+            property var programs
+
+            property int currentBank
+            property int currentProgram
+            property string currentProgramName
+
+            onProgramsChanged : {
+                let l = [];
+                for (var i = 0; i < programs.length; i++) {
+                    let p = programs[i];
+                    if (l.indexOf(p.bank) == -1) {
+                        l.push(p.bank);
+                    }
+                }
+                program_combo.model = [];
+                bank_combo.model = l;
+                // update knob min / max for bank
+                board.setKnobMinMax(0, 0, l.length-1);
+            }
+
+            Connections {
+                target: board
+                onKnobMoved: {
+                    if (knobNumber == 0) {
+                        bank_combo.currentIndex = ~~amount;
+                    }
+                    else if (knobNumber == 8) {
+                        program_combo.currentIndex = ~~amount;
+                    }
+                }
+                enabled: program_panel.visible
             }
         }
 
-        property var programs
+        GridLayout {
+            id: osc_panel
 
-        property int currentBank
-        property int currentProgram
-        property string currentProgramName
+            columns: 8
 
-        onProgramsChanged : {
-            let l = [];
-            for (var i = 0; i < programs.length; i++) {
-                let p = programs[i];
-                if (l.indexOf(p.bank) == -1) {
-                    l.push(p.bank);
-                }
-            }
-            program_combo.model = [];
-            bank_combo.model = l;
-            // update knob min / max for bank
-            board.setKnobMinMax(0, 0, l.length-1);
-        }
+            columnSpacing: 0
 
-        Connections {
-            target: board
-            onKnobMoved: {
-                if (knobNumber == 0) {
-                    bank_combo.currentIndex = ~~amount;
-                }
-                else if (knobNumber == 8) {
-                    program_combo.currentIndex = ~~amount;
-                }
-            }
-            enabled: program_panel.visible
-        }
-        }
-    }
-
-    GridLayout {
-        id: osc_panel
-
-        columns: 8
-
-        columnSpacing: 0
-
-        // First row
-        RowLayout {
-            spacing: 0
-            Layout.columnSpan: 6
-            Layout.fillWidth: true
-            Rectangle {
+            // First row
+            RowLayout {
+                spacing: 0
+                Layout.columnSpan: 6
                 Layout.fillWidth: true
-                height: 4
-                color: "#fcba03"
+                Rectangle {
+                    Layout.fillWidth: true
+                    height: 4
+                    color: "#fcba03"
+                }
+                Text {
+                    text: "OSC 1"
+                    font.bold: true
+                    color: "white"
+                    Rectangle {
+                        color: "#fcba03"
+                        width: parent.width + 16
+                        height: parent.height + 4
+                        y: - 2
+                        x: - 8
+                        radius: 5
+                        z: -1
+                    }
+                }
+                Rectangle {
+                    Layout.fillWidth: true
+                    height: 4
+                    color: "#fcba03"
+                }
+            }
+
+            Text {
+                Layout.columnSpan: 2
+            }
+
+            // Second row
+            Text {
+                text: "Vol."
+            }
+
+            Text {
+                text: "Shape"
+            }
+
+            Text {
+                text: "Transp."
+            }
+
+            Text {
+                text: "Tune"
+            }
+
+            Text {
+                text: "Voices"
+            }
+
+            Text {
+                text: "V. detune"
+            }
+
+            Text {
+                text: "Sub. vol."
             }
             Text {
-                text: "OSC 1"
-                font.bold: true
-                color: "white"
-                Rectangle {
-                    color: "#fcba03"
-                    width: parent.width + 16
-                    height: parent.height + 4
-                    y: - 2
-                    x: - 8
-                    radius: 5
-                    z: -1
+                text: "Noise vol."
+            }
+
+            // Third row
+            Slider {
+                id: osc_1_volume
+
+                // If saveState is defined, the "value" property will be saved in state
+                property bool saveState: true
+
+                property string controllerType: "knob"
+                property int controllerNumber: 0
+                property bool isInteger: false
+
+                from: 0.0
+                to: 16.0
+                orientation: Qt.Vertical
+                Layout.maximumWidth: root.unitSize
+                Layout.maximumHeight: root.unitSize
+
+                implicitWidth: root.unitSize
+
+                onValueChanged: {
+                    _setLV2(this, value / to);
+                }
+
+                function setFromLV2(v) {
+                    value = v * (to - from) + from;
                 }
             }
-            Rectangle {
-                Layout.fillWidth: true
-                height: 4
-                color: "#fcba03"
-            }
-        }
 
-        Text {
-            Layout.columnSpan: 2
-        }
+            WaveForm {
+                id: osc_1_waveform
+                property bool saveState: true
 
-        // Second row
-        Text {
-            text: "Vol."
-        }
+                property string controllerType: "knob"
+                property int controllerNumber: 1
+                property bool isInteger: true
+                size: main.unitSize
 
-        Text {
-            text: "Shape"
-        }
+                onValueChanged: {
+                    _setLV2(this, value / (count - 1));
+                }
 
-        Text {
-            text: "Transp."
-        }
-
-        Text {
-            text: "Tune"
-        }
-
-        Text {
-            text: "Voices"
-        }
-
-        Text {
-            text: "V. detune"
-        }
-
-        Text {
-            text: "Sub. vol."
-        }
-        Text {
-            text: "Noise vol."
-        }
-
-        // Third row
-        Slider {
-            id: osc_1_volume
-
-            // If saveState is defined, the "value" property will be saved in state
-            property bool saveState: true
-
-            property string controllerType: "knob"
-            property int controllerNumber: 0
-            property bool isInteger: false
-
-            from: 0.0
-            to: 16.0
-            orientation: Qt.Vertical
-            Layout.maximumWidth: root.unitSize
-            Layout.maximumHeight: root.unitSize
-
-            implicitWidth: root.unitSize
-
-            onValueChanged: {
-                _setLV2(this, value / to);
+                function setFromLV2(v) {
+                    value = Math.round(v * (to - from) + from);
+                }
             }
 
-            function setFromLV2(v) {
-                value = v * (to - from) + from;
-            }
-        }
+            NumberFrame {
+                id: osc_1_transpose
+                text: "semis"
 
-        WaveForm {
-            id: osc_1_waveform
-            property bool saveState: true
+                property bool saveState: true
+                property real from: -48
+                property real to: 48
+                property string controllerType: "knob"
+                property int controllerNumber: 2
+                property bool isInteger: true
+                onValueChanged: {
+                    _setLV2(this, (value - from) / (to - from));
+                }
 
-            property string controllerType: "knob"
-            property int controllerNumber: 1
-            property bool isInteger: true
-            size: main.unitSize
-
-            onValueChanged: {
-                _setLV2(this, value / (count - 1));
-            }
-
-            function setFromLV2(v) {
-                value = Math.round(v * (to - from) + from);
-            }
-        }
-
-        NumberFrame {
-            id: osc_1_transpose
-            text: "semis"
-
-            property bool saveState: true
-            property real from: -48
-            property real to: 48
-            property string controllerType: "knob"
-            property int controllerNumber: 2
-            property bool isInteger: true
-            onValueChanged: {
-                _setLV2(this, (value - from) / (to - from));
+                function setFromLV2(v) {
+                    value = Math.round(v * (to - from) + from);
+                }
             }
 
-            function setFromLV2(v) {
-                value = Math.round(v * (to - from) + from);
-            }
-        }
+            NumberFrame {
+                id: osc_1_tune
+                text: "cents"
 
-        NumberFrame {
-            id: osc_1_tune
-            text: "cents"
+                property bool saveState: true
+                property real from: -100
+                property real to: 100
+                property string controllerType: "knob"
+                property int controllerNumber: 3
+                property bool isInteger: true
 
-            property bool saveState: true
-            property real from: -100
-            property real to: 100
-            property string controllerType: "knob"
-            property int controllerNumber: 3
-            property bool isInteger: true
+                onValueChanged: {
+                    _setLV2(this, (value - from) / (to - from));
+                }
 
-            onValueChanged: {
-                _setLV2(this, (value - from) / (to - from));
-            }
-
-            function setFromLV2(v) {
-                value = Math.round(v * (to - from) + from);
-            }
-        }
-
-        NumberFrame {
-            id: osc_1_unison_voices
-            property bool saveState: true
-            property real from: 1
-            property real to: 15
-
-            property string controllerType: "knob"
-            property int controllerNumber: 4
-            property bool isInteger: true
-
-            onValueChanged: {
-                _setLV2(this, (value - from) / (to - from));
+                function setFromLV2(v) {
+                    value = Math.round(v * (to - from) + from);
+                }
             }
 
-            function setFromLV2(v) {
-                value = Math.round(v * (to - from) + from);
+            NumberFrame {
+                id: osc_1_unison_voices
+                property bool saveState: true
+                property real from: 1
+                property real to: 15
+
+                property string controllerType: "knob"
+                property int controllerNumber: 4
+                property bool isInteger: true
+
+                onValueChanged: {
+                    _setLV2(this, (value - from) / (to - from));
+                }
+
+                function setFromLV2(v) {
+                    value = Math.round(v * (to - from) + from);
+                }
+
+                text: "voices"
+                displaySign: false
             }
 
-            text: "voices"
-            displaySign: false
-        }
+            NumberFrame {
+                id: osc_1_unison_detune
+                property bool saveState: true
+                property real from: 0
+                property real to: 100
 
-        NumberFrame {
-            id: osc_1_unison_detune
-            property bool saveState: true
-            property real from: 0
-            property real to: 100
+                property string controllerType: "knob"
+                property int controllerNumber: 5
+                property bool isInteger: true
 
-            property string controllerType: "knob"
-            property int controllerNumber: 5
-            property bool isInteger: true
+                onValueChanged: {
+                    _setLV2(this, (value - from) / (to - from));
+                }
 
-            onValueChanged: {
-                _setLV2(this, (value - from) / (to - from));
+                function setFromLV2(v) {
+                    value = Math.round(v * (to - from) + from);
+                }
+
+                text: "cents"
+                displaySign: false
             }
 
-            function setFromLV2(v) {
-                value = Math.round(v * (to - from) + from);
+            Slider {
+                id: sub_volume
+
+                property bool saveState: true
+
+                property string controllerType: "knob"
+                property int controllerNumber: 6
+                property bool isInteger: false
+
+                from: 0.0
+                to: 16.0
+                orientation: Qt.Vertical
+                Layout.maximumWidth: root.unitSize
+                Layout.maximumHeight: root.unitSize
+
+                onValueChanged: {
+                    _setLV2(this, value / to);
+                }
+
+                function setFromLV2(v) {
+                    value = v * (to - from) + from;
+                }
             }
 
-            text: "cents"
-            displaySign: false
-        }
+            Slider {
+                id: noise_volume
 
-        Slider {
-            id: sub_volume
+                property bool saveState: true
 
-            property bool saveState: true
+                property string controllerType: "knob"
+                property int controllerNumber: 7
+                property bool isInteger: false
 
-            property string controllerType: "knob"
-            property int controllerNumber: 6
-            property bool isInteger: false
+                from: 0.0
+                to: 16.0
+                orientation: Qt.Vertical
+                Layout.maximumWidth: root.unitSize
+                Layout.maximumHeight: root.unitSize
 
-            from: 0.0
-            to: 16.0
-            orientation: Qt.Vertical
-            Layout.maximumWidth: root.unitSize
-            Layout.maximumHeight: root.unitSize
+                onValueChanged: {
+                    _setLV2(this, value / to);
+                }
 
-            onValueChanged: {
-                _setLV2(this, value / to);
+                function setFromLV2(v) {
+                    value = v * (to - from) + from;
+                }
+            }
+            
+            // Fifth row
+
+            Slider {
+                id: osc_2_volume
+
+                // If saveState is defined, the "value" property will be saved in state
+                property bool saveState: true
+
+                property string controllerType: "knob"
+                property int controllerNumber: 8
+                property bool isInteger: false
+
+                from: 0.0
+                to: 16.0
+                orientation: Qt.Vertical
+                Layout.maximumWidth: root.unitSize
+                Layout.maximumHeight: root.unitSize
+
+                onValueChanged: {
+                    _setLV2(this, value / to);
+                }
+
+                function setFromLV2(v) {
+                    value = v * (to - from) + from;
+                }
             }
 
-            function setFromLV2(v) {
-                value = v * (to - from) + from;
-            }
-        }
+            WaveForm {
+                id: osc_2_waveform
+                property bool saveState: true
 
-        Slider {
-            id: noise_volume
+                property string controllerType: "knob"
+                property int controllerNumber: 9
+                property bool isInteger: true
 
-            property bool saveState: true
+                size: main.unitSize
 
-            property string controllerType: "knob"
-            property int controllerNumber: 7
-            property bool isInteger: false
+                onValueChanged: {
+                    _setLV2(this, value / (count - 1));
+                }
 
-            from: 0.0
-            to: 16.0
-            orientation: Qt.Vertical
-            Layout.maximumWidth: root.unitSize
-            Layout.maximumHeight: root.unitSize
-
-            onValueChanged: {
-                _setLV2(this, value / to);
+                function setFromLV2(v) {
+                    value = Math.round(v * (to - from) + from);
+                }
             }
 
-            function setFromLV2(v) {
-                value = v * (to - from) + from;
-            }
-        }
-        
-        // Fifth row
+            NumberFrame {
+                id: osc_2_transpose
+                text: "semis"
 
-        Slider {
-            id: osc_2_volume
+                property bool saveState: true
+                property real from: -48
+                property real to: 48
+                property string controllerType: "knob"
+                property int controllerNumber: 10
+                property bool isInteger: true
+                onValueChanged: {
+                    _setLV2(this, (value - from) / (to - from));
+                }
 
-            // If saveState is defined, the "value" property will be saved in state
-            property bool saveState: true
-
-            property string controllerType: "knob"
-            property int controllerNumber: 8
-            property bool isInteger: false
-
-            from: 0.0
-            to: 16.0
-            orientation: Qt.Vertical
-            Layout.maximumWidth: root.unitSize
-            Layout.maximumHeight: root.unitSize
-
-            onValueChanged: {
-                _setLV2(this, value / to);
+                function setFromLV2(v) {
+                    value = Math.round(v * (to - from) + from);
+                }
             }
 
-            function setFromLV2(v) {
-                value = v * (to - from) + from;
-            }
-        }
+            NumberFrame {
+                id: osc_2_tune
+                text: "cents"
 
-        WaveForm {
-            id: osc_2_waveform
-            property bool saveState: true
+                property bool saveState: true
+                property real from: -100
+                property real to: 100
+                property string controllerType: "knob"
+                property int controllerNumber: 11
+                property bool isInteger: true
 
-            property string controllerType: "knob"
-            property int controllerNumber: 9
-            property bool isInteger: true
+                onValueChanged: {
+                    _setLV2(this, (value - from) / (to - from));
+                }
 
-            size: main.unitSize
-
-            onValueChanged: {
-                _setLV2(this, value / (count - 1));
-            }
-
-            function setFromLV2(v) {
-                value = Math.round(v * (to - from) + from);
-            }
-        }
-
-        NumberFrame {
-            id: osc_2_transpose
-            text: "semis"
-
-            property bool saveState: true
-            property real from: -48
-            property real to: 48
-            property string controllerType: "knob"
-            property int controllerNumber: 10
-            property bool isInteger: true
-            onValueChanged: {
-                _setLV2(this, (value - from) / (to - from));
+                function setFromLV2(v) {
+                    value = Math.round(v * (to - from) + from);
+                }
             }
 
-            function setFromLV2(v) {
-                value = Math.round(v * (to - from) + from);
-            }
-        }
+            NumberFrame {
+                id: osc_2_unison_voices
+                property bool saveState: true
+                property real from: 1
+                property real to: 15
 
-        NumberFrame {
-            id: osc_2_tune
-            text: "cents"
+                property string controllerType: "knob"
+                property int controllerNumber: 12
+                property bool isInteger: true
 
-            property bool saveState: true
-            property real from: -100
-            property real to: 100
-            property string controllerType: "knob"
-            property int controllerNumber: 11
-            property bool isInteger: true
+                onValueChanged: {
+                    _setLV2(this, (value - from) / (to - from));
+                }
 
-            onValueChanged: {
-                _setLV2(this, (value - from) / (to - from));
-            }
+                function setFromLV2(v) {
+                    value = Math.round(v * (to - from) + from);
+                }
 
-            function setFromLV2(v) {
-                value = Math.round(v * (to - from) + from);
-            }
-        }
-
-        NumberFrame {
-            id: osc_2_unison_voices
-            property bool saveState: true
-            property real from: 1
-            property real to: 15
-
-            property string controllerType: "knob"
-            property int controllerNumber: 12
-            property bool isInteger: true
-
-            onValueChanged: {
-                _setLV2(this, (value - from) / (to - from));
+                text: "voices"
+                displaySign: false
             }
 
-            function setFromLV2(v) {
-                value = Math.round(v * (to - from) + from);
+            NumberFrame {
+                id: osc_2_unison_detune
+                property bool saveState: true
+                property real from: 0
+                property real to: 100
+
+                property string controllerType: "knob"
+                property int controllerNumber: 13
+                property bool isInteger: true
+
+                onValueChanged: {
+                    _setLV2(this, (value - from) / (to - from));
+                }
+
+                function setFromLV2(v) {
+                    value = Math.round(v * (to - from) + from);
+                }
+
+                text: "cents"
+                displaySign: false
             }
 
-            text: "voices"
-            displaySign: false
-        }
+            WaveForm {
+                id: sub_waveform
+                property string controllerType: "knob"
+                property int controllerNumber: 14
+                property bool isInteger: true
 
-        NumberFrame {
-            id: osc_2_unison_detune
-            property bool saveState: true
-            property real from: 0
-            property real to: 100
+                size: main.unitSize
 
-            property string controllerType: "knob"
-            property int controllerNumber: 13
-            property bool isInteger: true
+                onValueChanged: {
+                    _setLV2(this, value / (count - 1));
+                }
 
-            onValueChanged: {
-                _setLV2(this, (value - from) / (to - from));
+                function setFromLV2(v) {
+                    value = Math.round(v * (to - from) + from);
+                }
             }
 
-            function setFromLV2(v) {
-                value = Math.round(v * (to - from) + from);
+            NumberFrame {
+                id: sub_shuffle
+                unit: "%"
+
+                property bool saveState: true
+                property real from: 0
+                property real to: 100
+                property string controllerType: "knob"
+                property int controllerNumber: 15
+                property bool isInteger: false
+                onValueChanged: {
+                    _setLV2(this, (value - from) / (to - from));
+                }
+
+                function setFromLV2(v) {
+                    value = Math.round(v * (to - from) + from);
+                }
             }
 
-            text: "cents"
-            displaySign: false
-        }
 
-        WaveForm {
-            id: sub_waveform
-            property string controllerType: "knob"
-            property int controllerNumber: 14
-            property bool isInteger: true
+            // Text of second knob row
 
-            size: main.unitSize
-
-            onValueChanged: {
-                _setLV2(this, value / (count - 1));
+            Text {
+                text: "Vol."
             }
 
-            function setFromLV2(v) {
-                value = Math.round(v * (to - from) + from);
-            }
-        }
-
-        NumberFrame {
-            id: sub_shuffle
-            unit: "%"
-
-            property bool saveState: true
-            property real from: 0
-            property real to: 100
-            property string controllerType: "knob"
-            property int controllerNumber: 15
-            property bool isInteger: false
-            onValueChanged: {
-                _setLV2(this, (value - from) / (to - from));
+            Text {
+                text: "Shape"
             }
 
-            function setFromLV2(v) {
-                value = Math.round(v * (to - from) + from);
+            Text {
+                text: "Tune"
             }
-        }
 
+            Text {
+                text: "Transp."
+            }
 
-        // Text of second knob row
+            Text {
+                text: "Voices"
+            }
 
-        Text {
-            text: "Vol."
-        }
+            Text {
+                text: "V. detune"
+            }
 
-        Text {
-            text: "Shape"
-        }
-
-        Text {
-            text: "Tune"
-        }
-
-        Text {
-            text: "Transp."
-        }
-
-        Text {
-            text: "Voices"
-        }
-
-        Text {
-            text: "V. detune"
-        }
-
-        Text {
-            text: "Sub. shape."
-        }
-        Text {
-            text: "Sub. shuffle."
-        }
-
-        
-        RowLayout {
-            spacing: 0
-            Layout.columnSpan: 6
-            Layout.fillWidth: true
-            Rectangle {
-                Layout.fillWidth: true
-                height: 4
-                color: "#fcba03"
+            Text {
+                text: "Sub. shape."
             }
             Text {
-                text: "OSC 2"
-                font.bold: true
-                color: "white"
+                text: "Sub. shuffle."
+            }
+
+            
+            RowLayout {
+                spacing: 0
+                Layout.columnSpan: 6
+                Layout.fillWidth: true
                 Rectangle {
+                    Layout.fillWidth: true
+                    height: 4
                     color: "#fcba03"
-                    width: parent.width + 16
-                    height: parent.height + 4
-                    x: - 8
-                    y: - 2
-                    radius: 5
-                    z: -1
+                }
+                Text {
+                    text: "OSC 2"
+                    font.bold: true
+                    color: "white"
+                    Rectangle {
+                        color: "#fcba03"
+                        width: parent.width + 16
+                        height: parent.height + 4
+                        x: - 8
+                        y: - 2
+                        radius: 5
+                        z: -1
+                    }
+                }
+                Rectangle {
+                    Layout.fillWidth: true
+                    height: 4
+                    color: "#fcba03"
                 }
             }
-            Rectangle {
-                Layout.fillWidth: true
-                height: 4
-                color: "#fcba03"
+
+            Text {
+                Layout.columnSpan: 2
+            }
+
+            QtObject {
+                id: unison_1_harmonize
+                property bool saveState: true
+                property string controllerType: "pad"
+                property int controllerNumber: 5
+
+                property bool value: false
+
+                onValueChanged: {
+                    _setLV2(this, value ? 1.0 : 0.0);
+                }
+
+                function setFromLV2(v) {
+                    value = v;
+                }
+            }
+
+            QtObject {
+                id: unison_2_harmonize
+                property bool saveState: true
+                property string controllerType: "pad"
+                property int controllerNumber: 6
+
+                property bool value: false
+
+                onValueChanged: {
+                    _setLV2(this, value ? 1.0 : 0.0);
+                }
+
+                function setFromLV2(v) {
+                    value = v;
+                }
+            }
+            onVisibleChanged : {
+                if (visible) {
+                    padMenu.texts = ["", "", "", "", "", "Osc 1 H", "Osc 2 H", "Back",
+                                     "", "", "", "", "", "", "", ""];
+                }
             }
         }
-
-        Text {
-            Layout.columnSpan: 2
-        }
-
-        QtObject {
-            id: unison_1_harmonize
-            property bool saveState: true
-            property string controllerType: "pad"
-            property int controllerNumber: 5
-
-            property bool value: false
-
-            onValueChanged: {
-                _setLV2(this, value ? 1.0 : 0.0);
-            }
-
-            function setFromLV2(v) {
-                value = v;
-            }
-        }
-
-        QtObject {
-            id: unison_2_harmonize
-            property bool saveState: true
-            property string controllerType: "pad"
-            property int controllerNumber: 6
-
-            property bool value: false
-
-            onValueChanged: {
-                _setLV2(this, value ? 1.0 : 0.0);
-            }
-
-            function setFromLV2(v) {
-                value = v;
-            }
-        }
-        onVisibleChanged : {
-            if (visible) {
-                padMenu.texts = ["", "", "", "", "", "Osc 1 H", "Osc 2 H", "Back",
-                                 "", "", "", "", "", "", "", ""];
-            }
-        }
-
     }
 
     // Associates a controller number to an Item
     property var knobToItem : ({})
     property var padToItem : ({})
 
-    onCurrentIndexChanged : {
-        // Set controller options
-        // Also define a mapping between controller and Items
-        knobToItem = {};
-        padToItem = {};
-        let children = root.children[currentIndex].data;
-        for (var i = 0; i < children.length; i++) {
-            let child = children[i];
-            if (child.controllerType === "knob") {
-                if (child.controllerNumber == undefined) {
-                    console.log("Missing controllerNumber, object id", Utils.objectId(child));
-                }
-                else {
-                    knobToItem[child.controllerNumber] = child;
+    Connections {
+        target: stackLayout
+        onCurrentIndexChanged : {
+            // Set controller options
+            // Also define a mapping between controller and Items
+            knobToItem = {};
+            padToItem = {};
+            let children = root.children[stackLayout.currentIndex].data;
+            for (var i = 0; i < children.length; i++) {
+                let child = children[i];
+                if (child.controllerType === "knob") {
+                    if (child.controllerNumber == undefined) {
+                        console.log("Missing controllerNumber, object id", Utils.objectId(child));
+                    }
+                    else {
+                        knobToItem[child.controllerNumber] = child;
 
-                    if ((child.from != undefined) && (child.to != undefined)) {
-                        board.setKnobMinMax(child.controllerNumber, child.from, child.to);
+                        if ((child.from != undefined) && (child.to != undefined)) {
+                            board.setKnobMinMax(child.controllerNumber, child.from, child.to);
+                        }
+                        if (child.isInteger != undefined) {
+                            board.setKnobIsInteger(child.controllerNumber, child.isInteger);
+                        }
+                        board.setKnobValue(child.controllerNumber, child.value);
                     }
-                    if (child.isInteger != undefined) {
-                        board.setKnobIsInteger(child.controllerNumber, child.isInteger);
+                }
+                else if (child.controllerType === "pad") {
+                    if (child.controllerNumber == undefined) {
+                        console.log("Missing controllerNumber, object id", Utils.objectId(child));
                     }
-                    board.setKnobValue(child.controllerNumber, child.value);
-                }
-            }
-            else if (child.controllerType === "pad") {
-                if (child.controllerNumber == undefined) {
-                    console.log("Missing controllerNumber, object id", Utils.objectId(child));
-                }
-                else {
-                    padToItem[child.controllerNumber] = child;
+                    else {
+                        padToItem[child.controllerNumber] = child;
+                    }
                 }
             }
         }
-
     }
 
     // will be called by main
@@ -780,10 +833,10 @@ StackLayout {
             board.setPadColor(padNumber, padToItem[padNumber].value ? "red" : "white");
         }
         else {
-            if (currentIndex == 0) {
+            if (stackLayout.currentIndex == 0) {
                 if (padNumber == 0) {
                     // goto osc panel
-                    currentIndex = 1;
+                    stackLayout.currentIndex = 1;
                 }
                 else if (padNumber == 7) {
                     // end of editing
@@ -794,7 +847,7 @@ StackLayout {
                 // in osc panel
                 if (padNumber == 7) {
                     // back to main panel
-                    currentIndex = 0;
+                    stackLayout.currentIndex = 0;
                 }
             }
         }
