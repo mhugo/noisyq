@@ -83,6 +83,14 @@ Item {
             }
         }
 
+        const raw_state = Qt.atob(lv2Host.custom_data(lv2Id, "http://lv2plug.in/ns/ext/atom#Chunk", "urn:juce:stateBinary"));
+        let state = JSON.parse(raw_state);
+        let modulations = state.settings.modulations;
+        for (var i = 0; i < modulations.length; i++) {
+            let modulation = modulations[i];
+            console.log(modulation.source, modulation.destination, modulation.amount);
+        }
+
         // populate programs
         if (program_panel.programs == undefined) {
             program_panel.programs = lv2Host.programs(lv2Id);
