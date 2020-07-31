@@ -1,5 +1,5 @@
 from PyQt5.QtCore import (
-    QUrl, pyqtSignal, pyqtSlot, QObject
+    QUrl, pyqtSignal, pyqtSlot, QObject, QVariant
 )
 from PyQt5.QtWidgets import QApplication
 from PyQt5.QtQuick import QQuickView, QQuickItem
@@ -128,6 +128,63 @@ class StubHost(QObject):
     @pyqtSlot(str, str, bool)
     def load_state(self, lv2_id, state, convert_json_to_xml=False):
         pass
+
+class Midi(QObject):
+    midiReceived = pyqtSignal(QVariant, arguments=["message"])
+
+    def __init__(self, api, dev_pattern):
+        super().__init__(None)
+        self.__midi_in = rtmidi.MidiIn(api)
+        self.__midi_out = rtmidi.MidiOut(api)
+
+        port_in_idx = 0
+        port_out_idx = 0
+        for i, port in enumerate(self.__midi_in.get_ports()):
+            if dev_pattern.lower() in port.lower():
+                port_in_idx = i
+                break
+
+        for i, port in enumerate(self.__midi_out.get_ports()):
+            if dev_pattern.lower() in port.lower():
+                port_out_idx = i
+                break
+
+        print("Midi in:", self.__midi_in.get_port_name(port_in_idx))
+        print("Midi out:", self.__midi_out.get_port_name(port_out_idx))
+
+        self.__port_in = self.__midi_in.open_port(port_in_idx)
+        self.__port_out = self.__midi_out.open_port(port_out_idx)
+        self.__port_in.ignore_types(sysex=False)
+        self.__port_in.set_callback(self.__on_midi_msg)
+
+        self.__received_message = None
+        self.__debug = False
+
+    def set_debug(self, debug):
+        self.__debug = debug
+    def __to_hex(self, msg):
+        return " ".join(["%02x" % c for c in msg])
+
+    def __on_midi_msg(self, event, data=None):
+        self.__received_message = event
+        msg, ts = event
+        if self.__debug:
+            print("MIDI Received", self.__to_hex(msg))
+        self.midiReceived.emit(msg)
+
+    @pyqtSlot(QVariant)
+    def send_message(self, msg):
+        if self.__debug:
+            print("MIDI Send    ", self.__to_hex(msg))
+        self.__port_out.send_message(msg)
+
+    @pyqtSlot(result=QVariant)
+    def receive_message(self):
+        while not self.__received_message:
+            pass
+        msg = list(self.__received_message)
+        self.__received_message = None
+        return msg
 
 class MyGear(QObject):
     class Knob:
@@ -354,6 +411,9 @@ view.setResizeMode(QQuickView.SizeViewToRootObject)
 
 view.rootContext().setContextProperty("lv2Host", lv2Host)
 view.rootContext().setContextProperty("gear", gear)
+
+#midi = Midi(rtmidi.API_LINUX_ALSA, args.dev)
+#view.rootContext().setContextProperty("midi", midi)
 
 current_path = os.path.abspath(os.path.dirname(__file__))
 qml_file = os.path.join(current_path, 'arturia_minilab_mk2.qml')

@@ -61,6 +61,8 @@ ColumnLayout {
 
             canvas.loadState(state);
         }
+
+        //console.log("midi receive", midi.receive_message());
     }
 
     FontLoader {
@@ -246,6 +248,13 @@ ColumnLayout {
                     noteReleased(key);
                 }
             }
+
+            /*Connections {
+                target: midi
+                onMidiReceived: {
+                    console.log("+++ midi received", message);
+                }
+            }*/
 
             // transfer all signals coming from the gear
             Connections {

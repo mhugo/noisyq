@@ -1,5 +1,5 @@
 from PyQt5.QtCore import (
-    pyqtSlot, QObject, 
+    pyqtSlot, QObject
 )
 
 from rtmidi.midiutil import open_midioutput
@@ -145,6 +145,7 @@ class CarlaHost(QObject):
 
         instance = CarlaHost.Instance()
         instance.id = self.__next_id
+        instance.uri = lv2_name
 
         # collect parameters id
         pcount = self.__host.get_parameter_count_info(self.__next_id)
