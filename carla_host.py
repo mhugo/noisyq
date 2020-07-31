@@ -311,3 +311,51 @@ class CarlaHost(QObject):
             with open(fn, "wb") as fo:
                 fo.write(state.encode("utf-8"))
         self.__host.load_plugin_state(id, fn)
+
+    # FIXME to be tested
+    @pyqtSlot(str, list, list)
+    def set_state(self, lv2_id, parameter_values, custom_data):
+        instance = self.__instances[lv2_id]
+        id = instance.id
+        fn = "/tmp/load_state_tmp"
+        #self.__host.prepare_for_save(id)
+        self.__host.save_plugin_state(id, fn)
+        with open(fn, "rb") as fi:
+            state = fi.read()
+        #print(state)
+
+        cdata_map = {}
+        for cdata in custom_data:
+            cdata_map[cdata["key"]] = cdata
+
+        print("***cdata_map", repr(cdata_map))
+        
+        tree = ET.parse(fn)
+        root = tree.getroot()
+        data = root[1]
+        for child in data:
+            print(repr(child.tag))
+            if child.tag == "CustomData":
+                key = child[1]
+                print("****key_text", repr(key.text))
+                if key.text in cdata_map:
+                    data.remove(child)
+                    continue
+
+        # add custom data
+        for cdata in custom_data:
+            cdata_xml = ET.Element("CustomData")
+            ctype = ET.Element("Type")
+            ctype.text = cdata["type"]
+            ckey = ET.Element("Key")
+            ckey.text = cdata["key"]
+            cvalue = ET.Element("Value")
+            cvalue.text = cdata["value"]
+            cdata_xml.extend([ctype, ckey, cvalue])
+            data.append(cdata_xml)
+
+        state = ET.tostring(root)
+        print("***set_state", state)
+        with open(fn, "wb") as fo:
+            fo.write(state)
+        self.__host.load_plugin_state(instance.id, fn)
