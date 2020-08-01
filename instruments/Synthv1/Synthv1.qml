@@ -113,196 +113,83 @@ Item {
         }
     }
 
-    readonly property var _waveEnum: [
-        "Pulse",
-        "Saw",
-        "Sine",
-        "Rand",
-        "Noise"
-    ];
+    StackLayout {
+        id: mainLayout
+        x: 0
+        y: 0
 
-    PlacedKnobMapping {
-        legend: "Wave"
-        mapping.parameterName: "DCO1_SHAPE1"
-        mapping.knobNumber: 0
-        mapping.isInteger: true
-        mapping.min: 0
-        mapping.max: 4
-
-        onValueChanged: {
-            waveText1.text = _waveEnum[~~value];
-        }
-        Component.onCompleted: {
-            waveText1.text = _waveEnum[~~value];
-        }
-
-        Text {
-            id: waveText1
-            x: (unitSize - width) / 2
-            y: (unitSize - height) / 2
-            text: ""
-        }
+        OscPanel {}
+        FilterPanel {}
     }
 
-    PlacedKnobMapping {
-        legend: "Wave"
-        mapping.parameterName: "DCO1_SHAPE2"
-        mapping.knobNumber: 1
-        mapping.isInteger: true
-        mapping.min: 0
-        mapping.max: 4
-
-        onValueChanged: {
-            waveText2.text = _waveEnum[~~value];
-        }
-        Component.onCompleted: {
-            waveText2.text = _waveEnum[~~value];
-        }
-
-        Text {
-            id: waveText2
-            x: (unitSize - width) / 2
-            y: (unitSize - height) / 2
-            text: ""
-        }
+    function _updatePad() {
+        padMenu.updateText(0, ":menu:");
+        padMenu.updateText(7, "Back");
     }
-
-    PlacedKnobMapping {
-        legend: "Width"
-        mapping.parameterName: "DCO1_WIDTH1"
-        mapping.knobNumber: 8
-
-        Text {
-            x: (unitSize - width) / 2
-            y: (unitSize - height) / 2
-            text: ~~(parent.value * 100) + "%"
-        }
-    }
-
-    PlacedKnobMapping {
-        legend: "Width"
-        mapping.parameterName: "DCO1_WIDTH2"
-        mapping.knobNumber: 9
-
-        Text {
-            x: (unitSize - width) / 2
-            y: (unitSize - height) / 2
-            text: ~~(parent.value * 100) + "%"
-        }
-    }
-
-    PadSwitchMapping {
-        padNumber: 0
-        parameterName: "DCO1_BANDL1"
-        parameterDisplay: "Band\nLimited"
-    }
-    PadSwitchMapping {
-        padNumber: 8
-        parameterName: "DCO1_SYNC1"
-        parameterDisplay: "Sync"
-    }
-
-    PadSwitchMapping {
-        padNumber: 1
-        parameterName: "DCO1_BANDL2"
-        parameterDisplay: "Band\nLimited"
-    }
-    PadSwitchMapping {
-        padNumber: 9
-        parameterName: "DCO1_SYNC2"
-        parameterDisplay: "Sync"
-    }
-
-    PlacedKnobMapping {
-        legend: "Octave"
-        mapping.parameterName: "DCO1_OCTAVE"
-        mapping.knobNumber: 2
-        mapping.min: -4.0
-        mapping.max: 4.0
-
-        Text {
-            x: (unitSize - width) / 2
-            y: (unitSize - height) / 2
-            text: parent.value.toFixed(2)
-        }
-    }
-
-    PlacedKnobMapping {
-        legend: "Tuning"
-        mapping.parameterName: "DCO1_TUNING"
-        mapping.knobNumber: 10
-        mapping.min: -1.0
-        mapping.max: 1.0
-
-        Text {
-            x: (unitSize - width) / 2
-            y: (unitSize - height) / 2
-            text: parent.value.toFixed(2)
-        }
-    }
-
-    PlacedKnobMapping {
-        legend: "Balance"
-        mapping.parameterName: "DCO1_BALANCE"
-        mapping.knobNumber: 3
-        mapping.min: -1.0
-        mapping.max: 1.0
-
-        Text {
-            x: (unitSize - width) / 2
-            y: (unitSize - height) / 2
-            text: parent.value.toFixed(2)
-        }
-    }
-
-    PlacedKnobMapping {
-        legend: "Detune"
-        mapping.parameterName: "DCO1_DETUNE"
-        mapping.knobNumber: 4
-
-        Text {
-            x: (unitSize - width) / 2
-            y: (unitSize - height) / 2
-            text: parent.value.toFixed(2)
-        }
-    }
-
-    PlacedKnobMapping {
-        legend: "Phase"
-        mapping.parameterName: "DCO1_PHASE"
-        mapping.knobNumber: 12
-
-        Text {
-            x: (unitSize - width) / 2
-            y: (unitSize - height) / 2
-            text: parent.value.toFixed(2)
-        }
-    }
-
-    PlacedKnobMapping {
-        legend: "Ring Mod"
-        mapping.parameterName: "DCO1_RINGMOD"
-        mapping.knobNumber: 11
-
-        Text {
-            x: (unitSize - width) / 2
-            y: (unitSize - height) / 2
-            text: parent.value.toFixed(2)
-        }
-    }
-
     onVisibleChanged : {
         if (visible) {
-            padMenu.updateText(7, "Back");
+            _updatePad();
         }
     }
 
+    property bool _inSubMenu: false
+    
     // will be called by main
     function padPressed(padNumber) {
+        if (! _inSubMenu && padNumber == 0) {
+            // enter "menu"
+            console.log("push");
+            padMenu.pushState();
+            padMenu.clear();
+            padMenu.updateText(0, "");
+            padMenu.updateText(1, "OSC");
+            padMenu.updateText(2, "FILTER");
+            // disable the current item so that it does not grab the pad / knob focus
+            mainLayout.children[mainLayout.currentIndex].enabled = false;
+
+            _inSubMenu = true;
+            return;
+        }
+    }
+
+    function _enableChild(index) {
+        console.log("_enabledChild", index);
+        mainLayout.children[index].enabled = true;        
     }
 
     // will be called by main
     function padReleased(padNumber) {
+        console.log("main on padreleased");
+        if (_inSubMenu) {
+            let switchTo = mainLayout.currentIndex;
+            switch (padNumber) {
+            case 1:
+                console.log("**** OSC ****");
+                switchTo = 0;
+                break;
+            case 2:
+                console.log("**** FILTER ****");
+                switchTo = 1;
+                break;
+            }
+            _inSubMenu = false;
+            // switch to another tab, if needed
+            console.log("pop");
+            padMenu.popState();
+            if (switchTo != mainLayout.currentIndex) {
+                padMenu.clear();
+                _updatePad();
+            }
+            // restore the "enabled" state of the current item
+            // but do it after all events have been processed
+            // especially, PadSwitchMapping events
+            // that depend on this state
+            Qt.callLater(_enableChild, mainLayout.currentIndex);
+
+            mainLayout.currentIndex = switchTo;
+            return;
+        }
+        
         if (padNumber == 7) {
             // end of editing
             canvas.endEditInstrument();            

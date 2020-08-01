@@ -47,6 +47,7 @@ Item {
     Connections {
         target: board
         onPadReleased: {
+            console.log("padswitch on pad released");
             if (padNumber == root.padNumber) {
                 root.value = ! root.value;
                 _updatePad();
@@ -54,7 +55,7 @@ Item {
                 lv2Host.setParameterValue(lv2Id, root.parameterName, toParameter(root.value));
             }
         }
-        enabled: root.visible
+        enabled: root.visible && root.enabled
     }
 
     onVisibleChanged: {

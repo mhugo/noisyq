@@ -43,7 +43,7 @@ Item {
                 lv2Host.setParameterValue(lv2Id, root.parameterName, root.value);
             }
         }
-        enabled: root.visible
+        enabled: root.visible && root.enabled
     }
 
     onVisibleChanged: {

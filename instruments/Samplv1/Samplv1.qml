@@ -606,6 +606,7 @@ Item {
 
     onVisibleChanged : {
         if (visible) {
+            padMenu.updateText(0, ":menu:");
             padMenu.updateText(1, "Play");
             padMenu.updateText(7, "Back");
         }

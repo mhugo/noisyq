@@ -465,6 +465,24 @@ ColumnLayout {
             texts = texts.slice(0, padNumber).concat([newText].concat(texts.slice(padNumber+1)));            
         }
 
+        function clear() {
+            texts = ["", "", "", "", "", "", "", "",
+                     "", "", "", "", "", "", "", ""];
+        }
+
+        property var _saveStack : []
+        function pushState() {
+            _saveStack.push(texts);
+        }
+
+        function popState() {
+            let t = _saveStack.pop();
+            for (var i = 0; i < t.length; i++) {
+                console.log("pop", t[i]);
+            }
+            texts = t;
+        }
+
         //spacing: 0
         Repeater {
             id: padRep
@@ -484,6 +502,13 @@ ColumnLayout {
                     color: "white"
                     verticalAlignment: Text.AlignVCenter
                     horizontalAlignment: Text.AlignHCenter
+                    visible: ! modelData.startsWith(":")
+                }
+                Image {
+                    source: "white_menu.svg"
+                    width: parent.width
+                    height: parent.height
+                    visible: modelData == ":menu:"
                 }
             }
         }
