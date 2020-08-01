@@ -477,107 +477,12 @@ Item {
         }
     }
 
-    Item {
-        id: ampEnvelope
-        x: 0
-        y: unitSize + legendSize
-        
-        KnobMapping {
-            id: ampAttack
-            knobNumber: 8
-            parameterName: "DCA1_ATTACK"
-
-            Text {
-                text: "Attack"
-                x: (unitSize - width) / 2
-                y: unitSize + (legendSize - height) / 2
-            }
-        }
-        KnobMapping {
-            id: ampDecay
-            knobNumber: 9
-            parameterName: "DCA1_DECAY"
-
-            Text {
-                text: "Decay"
-                x: unitSize + (unitSize - width) / 2
-                y: unitSize + (legendSize - height) / 2
-            }
-        }
-        KnobMapping {
-            id: ampSustain
-            knobNumber: 10
-            parameterName: "DCA1_SUSTAIN"
-
-            Text {
-                text: "Sustain"
-                x: unitSize * 2 + (unitSize - width) / 2
-                y: unitSize + (legendSize - height) / 2
-            }
-        }
-        KnobMapping {
-            id: ampRelease
-            knobNumber: 11
-            parameterName: "DCA1_RELEASE"
-
-            Text {
-                text: "Release"
-                x: unitSize * 3 + (unitSize - width) / 2
-                y: unitSize + (legendSize - height) / 2
-            }
-        }
-
-        Canvas {
-            id: envCanvas
-            width: 4 * unitSize
-            height: unitSize
-            onPaint: {
-                var ctx = getContext("2d");
-                ctx.reset();
-                ctx.lineWidth = 2.0;
-                ctx.moveTo(0, unitSize);
-                ctx.lineTo(unitSize * ampAttack.value, 0);
-                ctx.lineTo(unitSize * ampAttack.value + unitSize * ampDecay.value, ampSustain.value * unitSize);
-                ctx.lineTo(unitSize * ampAttack.value + unitSize * ampDecay.value + unitSize, ampSustain.value * unitSize);
-                ctx.lineTo(unitSize * ampAttack.value + unitSize * ampDecay.value + unitSize + ampRelease.value * unitSize, unitSize);
-                ctx.lineTo(0, unitSize);
-                ctx.stroke();
-
-                ctx.lineWidth = 1.0;
-                ctx.moveTo(unitSize * ampAttack.value, 0);
-                ctx.lineTo(unitSize * ampAttack.value, unitSize);
-                ctx.moveTo(unitSize * ampAttack.value + unitSize * ampDecay.value, ampSustain.value * unitSize);
-                ctx.lineTo(unitSize * ampAttack.value + unitSize * ampDecay.value, unitSize);
-                ctx.moveTo(unitSize * ampAttack.value + unitSize * ampDecay.value + unitSize, ampSustain.value * unitSize);
-                ctx.lineTo(unitSize * ampAttack.value + unitSize * ampDecay.value + unitSize, unitSize);
-                ctx.stroke();
-            }
-
-            Connections {
-                target: ampAttack
-                onValueChanged: {
-                    envCanvas.requestPaint();
-                }
-            }
-            Connections {
-                target: ampDecay
-                onValueChanged: {
-                    envCanvas.requestPaint();
-                }
-            }
-            Connections {
-                target: ampSustain
-                onValueChanged: {
-                    envCanvas.requestPaint();
-                }
-            }
-            Connections {
-                target: ampRelease
-                onValueChanged: {
-                    envCanvas.requestPaint();
-                }
-            }
-        }
+    ADSRMapping {
+        startKnobNumber: 8
+        attackParameter: "DCA1_ATTACK"
+        decayParameter: "DCA1_DECAY"
+        sustainParameter: "DCA1_SUSTAIN"
+        releaseParameter: "DCA1_RELEASE"
     }
 
     KnobMapping {
