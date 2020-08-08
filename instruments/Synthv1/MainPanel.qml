@@ -6,10 +6,11 @@ import "../common"
 
 Item {
     id: root
+    property int synthNumber: 1
 
     PlacedKnobMapping {
         legend: "DCA Volume"
-        mapping.parameterName: "DCA1_VOLUME"
+        mapping.parameterName: "DCA" + root.synthNumber + "_VOLUME"
         mapping.knobNumber: 0
 
         Text {
@@ -21,15 +22,15 @@ Item {
 
     ADSRMapping {
         startKnobNumber: 4
-        attackParameter: "DCA1_ATTACK"
-        decayParameter: "DCA1_DECAY"
-        sustainParameter: "DCA1_SUSTAIN"
-        releaseParameter: "DCA1_RELEASE"
+        attackParameter: "DCA" + root.synthNumber + "_ATTACK"
+        decayParameter: "DCA" + root.synthNumber + "_DECAY"
+        sustainParameter: "DCA" + root.synthNumber + "_SUSTAIN"
+        releaseParameter: "DCA" + root.synthNumber + "_RELEASE"
     }
 
     PlacedKnobMapping {
         legend: "Velocity"
-        mapping.parameterName: "DEF1_VELOCITY"
+        mapping.parameterName: "DEF" + root.synthNumber + "_VELOCITY"
         mapping.knobNumber: 14
 
         Text {
@@ -40,7 +41,7 @@ Item {
     }
     PlacedKnobMapping {
         legend: "Mono / Poly"
-        mapping.parameterName: "DEF1_MONO"
+        mapping.parameterName: "DEF" + root.synthNumber + "_MONO"
         mapping.knobNumber: 15
         mapping.isInteger: true
         mapping.min: 0
@@ -64,7 +65,7 @@ Item {
 
     PlacedKnobMapping {
         legend: "OUT Volume"
-        mapping.parameterName: "OUT1_VOLUME"
+        mapping.parameterName: "OUT" + root.synthNumber + "_VOLUME"
         mapping.knobNumber: 8
 
         Text {
@@ -75,7 +76,7 @@ Item {
     }
     PlacedKnobMapping {
         legend: "Width"
-        mapping.parameterName: "OUT1_WIDTH"
+        mapping.parameterName: "OUT" + root.synthNumber + "_WIDTH"
         mapping.knobNumber: 9
         mapping.min: -1
         mapping.max: 1
@@ -88,7 +89,7 @@ Item {
     }
     PlacedKnobMapping {
         legend: "Panning"
-        mapping.parameterName: "OUT1_PANNING"
+        mapping.parameterName: "OUT" + root.synthNumber + "_PANNING"
         mapping.knobNumber: 10
         mapping.min: -1
         mapping.max: 1
@@ -101,7 +102,7 @@ Item {
     }
     PlacedKnobMapping {
         legend: "FX Send"
-        mapping.parameterName: "OUT1_FXSEND"
+        mapping.parameterName: "OUT" + root.synthNumber + "_FXSEND"
         mapping.knobNumber: 11
 
         Text {

@@ -6,10 +6,11 @@ import "../common"
 
 Item {
     id: root
+    property int synthNumber: 1
 
     PlacedKnobMapping {
         legend: "Wave"
-        mapping.parameterName: "LFO1_SHAPE"
+        mapping.parameterName: "LFO" + root.synthNumber + "_SHAPE"
         mapping.knobNumber: 0
         mapping.isInteger: true
         mapping.min: 0
@@ -37,7 +38,7 @@ Item {
 
     PlacedKnobMapping {
         legend: "Width"
-        mapping.parameterName: "LFO1_WIDTH"
+        mapping.parameterName: "LFO" + root.synthNumber + "_WIDTH"
         mapping.knobNumber: 1
 
         Text {
@@ -49,15 +50,15 @@ Item {
 
     ADSRMapping {
         startKnobNumber: 4
-        attackParameter: "LFO1_ATTACK"
-        decayParameter: "LFO1_DECAY"
-        sustainParameter: "LFO1_SUSTAIN"
-        releaseParameter: "LFO1_RELEASE"
+        attackParameter: "LFO" + root.synthNumber + "_ATTACK"
+        decayParameter: "LFO" + root.synthNumber + "_DECAY"
+        sustainParameter: "LFO" + root.synthNumber + "_SUSTAIN"
+        releaseParameter: "LFO" + root.synthNumber + "_RELEASE"
     }
 
     PlacedKnobMapping {
         legend: "BPM"
-        mapping.parameterName: "LFO1_BPM"
+        mapping.parameterName: "LFO" + root.synthNumber + "_BPM"
         mapping.knobNumber: 8
         mapping.isInteger: true
         mapping.min: 0
@@ -72,7 +73,7 @@ Item {
 
     PlacedKnobMapping {
         legend: "Rate"
-        mapping.parameterName: "LFO1_RATE"
+        mapping.parameterName: "LFO" + root.synthNumber + "_RATE"
         mapping.knobNumber: 9
 
         Text {
@@ -80,6 +81,12 @@ Item {
             y: (unitSize - height) / 2
             text: (parent.value * 100).toFixed(2) + "%"
         }
+    }
+
+    PadSwitchMapping {
+        padNumber: 1
+        parameterName: "LFO" + root.synthNumber + "_SYNC"
+        parameterDisplay: "Sync"
     }
 
     PlacedKnobMapping {
@@ -135,7 +142,7 @@ Item {
             ]
             PlacedKnobMapping {
                 legend: modelData
-                mapping.parameterName: "LFO1_" + modelData.toUpperCase()
+                mapping.parameterName: "LFO" + root.synthNumber + "_" + modelData.toUpperCase()
                 mapping.knobNumber: 15
                 mapping.min: -1
                 mapping.max: 1

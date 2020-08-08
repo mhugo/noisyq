@@ -6,10 +6,11 @@ import "../common"
 
 Item {
     id: root
+    property int synthNumber: 1
 
     PlacedKnobMapping {
         legend: "Cutoff"
-        mapping.parameterName: "DCF1_CUTOFF"
+        mapping.parameterName: "DCF" + root.synthNumber + "_CUTOFF"
         mapping.knobNumber: 2
 
         Text {
@@ -21,7 +22,7 @@ Item {
 
     PlacedKnobMapping {
         legend: "Reso"
-        mapping.parameterName: "DCF1_RESO"
+        mapping.parameterName: "DCF" + root.synthNumber + "_RESO"
         mapping.knobNumber: 10
 
         Text {
@@ -33,7 +34,7 @@ Item {
 
     PlacedKnobMapping {
         legend: "Type"
-        mapping.parameterName: "DCF1_TYPE"
+        mapping.parameterName: "DCF" + root.synthNumber + "_TYPE"
         mapping.knobNumber: 1
         mapping.min: 0
         mapping.max: 3
@@ -58,7 +59,7 @@ Item {
     }
     PlacedKnobMapping {
         legend: "Slope"
-        mapping.parameterName: "DCF1_SLOPE"
+        mapping.parameterName: "DCF" + root.synthNumber + "_SLOPE"
         mapping.knobNumber: 9
         mapping.min: 0
         mapping.max: 3
@@ -84,15 +85,15 @@ Item {
 
     ADSRMapping {
         startKnobNumber: 4
-        attackParameter: "DCF1_ATTACK"
-        decayParameter: "DCF1_DECAY"
-        sustainParameter: "DCF1_SUSTAIN"
-        releaseParameter: "DCF1_RELEASE"
+        attackParameter: "DCF" + root.synthNumber + "_ATTACK"
+        decayParameter: "DCF" + root.synthNumber + "_DECAY"
+        sustainParameter: "DCF" + root.synthNumber + "_SUSTAIN"
+        releaseParameter: "DCF" + root.synthNumber + "_RELEASE"
     }
 
     PlacedKnobMapping {
         legend: "Envelope (?)"
-        mapping.parameterName: "DCF1_ENVELOPE"
+        mapping.parameterName: "DCF" + root.synthNumber + "_ENVELOPE"
         mapping.knobNumber: 15
         mapping.min: -1
         mapping.max: 1

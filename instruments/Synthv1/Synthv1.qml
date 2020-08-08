@@ -8,6 +8,7 @@ import "../common"
 
 // TODO
 // Env. time
+// Effects
 
 Item {
     id: root
@@ -30,7 +31,7 @@ Item {
 
     //------------------ custom properties
 
-    property string sampleFileName
+    property int _currentSynthNumber: 0
 
     function saveState() {
         let d = {};
@@ -44,7 +45,6 @@ Item {
         }
         
         return {
-            "sampleFileName" : sampleFileName,
             "parameters" : d
         };
     }
@@ -121,10 +121,15 @@ Item {
         x: 0
         y: 0
 
-        MainPanel {}
-        OscPanel {}
-        FilterPanel {}
-        ModPanel {}
+        MainPanel { synthNumber: 1 }
+        OscPanel { synthNumber: 1 }
+        FilterPanel { synthNumber: 1 }
+        ModPanel { synthNumber: 1 }
+
+        MainPanel { synthNumber: 2 }
+        OscPanel { synthNumber: 2 }
+        FilterPanel { synthNumber: 2 }
+        ModPanel { synthNumber: 2 }
     }
 
     function _updatePad() {
@@ -151,6 +156,7 @@ Item {
             padMenu.updateText(2, "OSC");
             padMenu.updateText(3, "FILTER");
             padMenu.updateText(4, "MOD");
+            padMenu.updateText(7, "SYNTH 1/2");
             // disable the current item so that it does not grab the pad / knob focus
             mainLayout.children[mainLayout.currentIndex].enabled = false;
 
@@ -172,19 +178,26 @@ Item {
             switch (padNumber) {
             case 1:
                 console.log("**** MAIN ****");
-                switchTo = 0;
+                switchTo = 0 + 4 * _currentSynthNumber;
                 break;
             case 2:
                 console.log("**** OSC ****");
-                switchTo = 1;
+                switchTo = 1 + 4 * _currentSynthNumber;
                 break;
             case 3:
                 console.log("**** FILTER ****");
-                switchTo = 2;
+                switchTo = 2 + 4 * _currentSynthNumber;
                 break;
             case 4:
                 console.log("**** MOD ****");
-                switchTo = 3;
+                switchTo = 3 + 4 * _currentSynthNumber;
+                break;
+            case 7:
+                // synth 1/2 switch
+                _currentSynthNumber = 1 - _currentSynthNumber;
+                if (switchTo >= 0 && switchTo < 8) {
+                    switchTo = switchTo - 4 * (1 - _currentSynthNumber) + 4 * _currentSynthNumber;
+                }
                 break;
             }
             _inSubMenu = false;

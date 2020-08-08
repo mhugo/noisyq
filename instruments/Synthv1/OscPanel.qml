@@ -6,6 +6,7 @@ import "../common"
 
 Item {
     id: root
+    property int synthNumber: 1
 
     readonly property var _waveEnum: [
         "Pulse",
@@ -17,7 +18,7 @@ Item {
 
     PlacedKnobMapping {
         legend: "Wave"
-        mapping.parameterName: "DCO1_SHAPE1"
+        mapping.parameterName: "DCO" + root.synthNumber + "_SHAPE1"
         mapping.knobNumber: 1
         mapping.isInteger: true
         mapping.min: 0
@@ -40,7 +41,7 @@ Item {
 
     PlacedKnobMapping {
         legend: "Wave"
-        mapping.parameterName: "DCO1_SHAPE2"
+        mapping.parameterName: "DCO" + root.synthNumber + "_SHAPE2"
         mapping.knobNumber: 2
         mapping.isInteger: true
         mapping.min: 0
@@ -63,7 +64,7 @@ Item {
 
     PlacedKnobMapping {
         legend: "Width"
-        mapping.parameterName: "DCO1_WIDTH1"
+        mapping.parameterName: "DCO" + root.synthNumber + "_WIDTH1"
         mapping.knobNumber: 9
 
         Text {
@@ -75,7 +76,7 @@ Item {
 
     PlacedKnobMapping {
         legend: "Width"
-        mapping.parameterName: "DCO1_WIDTH2"
+        mapping.parameterName: "DCO" + root.synthNumber + "_WIDTH2"
         mapping.knobNumber: 10
 
         Text {
@@ -87,29 +88,29 @@ Item {
 
     PadSwitchMapping {
         padNumber: 1
-        parameterName: "DCO1_BANDL1"
+        parameterName: "DCO" + root.synthNumber + "_BANDL1"
         parameterDisplay: "Band\nLimited"
     }
     PadSwitchMapping {
         padNumber: 9
-        parameterName: "DCO1_SYNC1"
+        parameterName: "DCO" + root.synthNumber + "_SYNC1"
         parameterDisplay: "Sync"
     }
 
     PadSwitchMapping {
         padNumber: 2
-        parameterName: "DCO1_BANDL2"
+        parameterName: "DCO" + root.synthNumber + "_BANDL2"
         parameterDisplay: "Band\nLimited"
     }
     PadSwitchMapping {
         padNumber: 10
-        parameterName: "DCO1_SYNC2"
+        parameterName: "DCO" + root.synthNumber + "_SYNC2"
         parameterDisplay: "Sync"
     }
 
     PlacedKnobMapping {
         legend: "Octave"
-        mapping.parameterName: "DCO1_OCTAVE"
+        mapping.parameterName: "DCO" + root.synthNumber + "_OCTAVE"
         mapping.knobNumber: 3
         mapping.min: -4.0
         mapping.max: 4.0
@@ -123,7 +124,7 @@ Item {
 
     PlacedKnobMapping {
         legend: "Tuning"
-        mapping.parameterName: "DCO1_TUNING"
+        mapping.parameterName: "DCO" + root.synthNumber + "_TUNING"
         mapping.knobNumber: 11
         mapping.min: -1.0
         mapping.max: 1.0
@@ -137,7 +138,7 @@ Item {
 
     PlacedKnobMapping {
         legend: "Balance"
-        mapping.parameterName: "DCO1_BALANCE"
+        mapping.parameterName: "DCO" + root.synthNumber + "_BALANCE"
         mapping.knobNumber: 4
         mapping.min: -1.0
         mapping.max: 1.0
@@ -151,7 +152,7 @@ Item {
 
     PlacedKnobMapping {
         legend: "Detune"
-        mapping.parameterName: "DCO1_DETUNE"
+        mapping.parameterName: "DCO" + root.synthNumber + "_DETUNE"
         mapping.knobNumber: 5
 
         Text {
@@ -163,7 +164,7 @@ Item {
 
     PlacedKnobMapping {
         legend: "Phase"
-        mapping.parameterName: "DCO1_PHASE"
+        mapping.parameterName: "DCO" + root.synthNumber + "_PHASE"
         mapping.knobNumber: 13
 
         Text {
@@ -175,7 +176,7 @@ Item {
 
     PlacedKnobMapping {
         legend: "Ring Mod"
-        mapping.parameterName: "DCO1_RINGMOD"
+        mapping.parameterName: "DCO" + root.synthNumber + "_RINGMOD"
         mapping.knobNumber: 12
 
         Text {
