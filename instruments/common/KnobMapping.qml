@@ -40,7 +40,9 @@ Item {
                 root.value = toParameter(amount);
                 // TODO infoScreen
                 infoScreen.text = root.parameterDisplay + " = " + valueToString(amount);
-                lv2Host.setParameterValue(lv2Id, root.parameterName, root.value);
+                if (root.parameterName) {
+                    lv2Host.setParameterValue(lv2Id, root.parameterName, root.value);
+                }
             }
         }
         enabled: root.visible && root.enabled

@@ -6,6 +6,9 @@ import Utils 1.0
 
 import "../common"
 
+// TODO
+// Env. time
+
 Item {
     id: root
     // Used by the host to look for an LV2 plugin
@@ -118,8 +121,10 @@ Item {
         x: 0
         y: 0
 
+        MainPanel {}
         OscPanel {}
         FilterPanel {}
+        ModPanel {}
     }
 
     function _updatePad() {
@@ -142,8 +147,10 @@ Item {
             padMenu.pushState();
             padMenu.clear();
             padMenu.updateText(0, "");
-            padMenu.updateText(1, "OSC");
-            padMenu.updateText(2, "FILTER");
+            padMenu.updateText(1, "MAIN");
+            padMenu.updateText(2, "OSC");
+            padMenu.updateText(3, "FILTER");
+            padMenu.updateText(4, "MOD");
             // disable the current item so that it does not grab the pad / knob focus
             mainLayout.children[mainLayout.currentIndex].enabled = false;
 
@@ -164,12 +171,20 @@ Item {
             let switchTo = mainLayout.currentIndex;
             switch (padNumber) {
             case 1:
-                console.log("**** OSC ****");
+                console.log("**** MAIN ****");
                 switchTo = 0;
                 break;
             case 2:
-                console.log("**** FILTER ****");
+                console.log("**** OSC ****");
                 switchTo = 1;
+                break;
+            case 3:
+                console.log("**** FILTER ****");
+                switchTo = 2;
+                break;
+            case 4:
+                console.log("**** MOD ****");
+                switchTo = 3;
                 break;
             }
             _inSubMenu = false;

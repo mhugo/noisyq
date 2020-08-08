@@ -92,10 +92,12 @@ Item {
 
     PlacedKnobMapping {
         legend: "Envelope (?)"
-        parameterName: "DCF1_ENVELOPE"
-        knobNumber: 15
+        mapping.parameterName: "DCF1_ENVELOPE"
+        mapping.knobNumber: 15
+        mapping.min: -1
+        mapping.max: 1
 
-        Text: {
+        Text {
             x: (unitSize - width) / 2
             y: (unitSize - height) / 2
             text: parent.value.toFixed(2)
