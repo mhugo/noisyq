@@ -8,8 +8,8 @@ import "../common"
 
 // TODO
 // Display current synth number
-// init parameters
 // arturia: knob too fast
+// load presets
 
 Item {
     id: root
@@ -66,6 +66,14 @@ Item {
     // Initialize a state, reading from the living LV2 process
     function init() {
         console.log("synthv1 init");
+
+        let children = Utils.findChildren(root);
+        for (var i = 0; i < children.length; i++) {
+            let child = children[i];
+            if (child.parameterName) {
+                child.value = lv2Host.getParameterValue(lv2Id, child.parameterName);
+            }
+        }
     }
 
     Item {
