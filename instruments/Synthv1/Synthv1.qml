@@ -7,8 +7,8 @@ import Utils 1.0
 import "../common"
 
 // TODO
-// Env. time
-// Effects
+// Display current synth number
+// init parameters
 
 Item {
     id: root
@@ -130,6 +130,8 @@ Item {
         OscPanel { synthNumber: 2 }
         FilterPanel { synthNumber: 2 }
         ModPanel { synthNumber: 2 }
+
+        FXPanel {}
     }
 
     function _updatePad() {
@@ -156,6 +158,7 @@ Item {
             padMenu.updateText(2, "OSC");
             padMenu.updateText(3, "FILTER");
             padMenu.updateText(4, "MOD");
+            padMenu.updateText(5, "FX");
             padMenu.updateText(7, "SYNTH 1/2");
             // disable the current item so that it does not grab the pad / knob focus
             mainLayout.children[mainLayout.currentIndex].enabled = false;
@@ -192,6 +195,8 @@ Item {
                 console.log("**** MOD ****");
                 switchTo = 3 + 4 * _currentSynthNumber;
                 break;
+            case 5:
+                switchTo = 8;
             case 7:
                 // synth 1/2 switch
                 _currentSynthNumber = 1 - _currentSynthNumber;

@@ -20,6 +20,18 @@ Item {
         }
     }
 
+    PlacedKnobMapping {
+        legend: "Envelope time"
+        mapping.parameterName: "DCO" + root.synthNumber + "_ENVTIME"
+        mapping.knobNumber: 3
+
+        Text {
+            x: (unitSize - width) / 2
+            y: (unitSize - height) / 2
+            text: (parent.value * 10).toFixed(2) + "s"
+        }
+    }
+
     ADSRMapping {
         startKnobNumber: 4
         attackParameter: "DCA" + root.synthNumber + "_ATTACK"
