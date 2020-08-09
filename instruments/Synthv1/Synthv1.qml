@@ -9,6 +9,7 @@ import "../common"
 // TODO
 // Display current synth number
 // init parameters
+// arturia: knob too fast
 
 Item {
     id: root

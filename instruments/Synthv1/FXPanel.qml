@@ -311,6 +311,7 @@ Item {
             legend: "Compressor"
             mapping.knobNumber: 1
             mapping.parameterName: "DYN1_COMPRESS"
+            mapping.isInteger: true
             Text {
                 x: (unitSize - width) / 2
                 y: (unitSize - height) / 2
@@ -321,6 +322,7 @@ Item {
             legend: "Limiter"
             mapping.knobNumber: 1
             mapping.parameterName: "DYN1_LIMITER"
+            mapping.isInteger: true
             Text {
                 x: (unitSize - width) / 2
                 y: (unitSize - height) / 2
