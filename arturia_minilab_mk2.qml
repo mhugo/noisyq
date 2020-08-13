@@ -289,13 +289,31 @@ ColumnLayout {
 
         property alias text: text.text
 
+        function flash(msg) {
+            // display a message for some time, then disappear
+
+            if (! flashTimer.running)
+                _textBackup = text.text;
+            text.text = msg;
+            flashTimer.restart();
+            
+        }
+        property string _textBackup : ""
+        Timer {
+            id: flashTimer
+            interval: 1000
+            onTriggered: {
+                parent.text = parent._textBackup;
+            }
+        }
+
         Text {
             id: text
             anchors.fill: infoScreen
-            font.family: pixelFont.name
-            font.pointSize: 8
+            font.family: titleFont.name
+            font.pointSize: 14
             color: "white"
-            text: "Display"
+            text: ""
             verticalAlignment: Text.AlignVCenter
         }
     }

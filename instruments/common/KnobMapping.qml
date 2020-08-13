@@ -39,7 +39,7 @@ Item {
             if (knobNumber == root.knobNumber) {
                 root.value = toParameter(amount);
                 // TODO infoScreen
-                infoScreen.text = root.parameterDisplay + " = " + valueToString(amount);
+                infoScreen.flash(root.parameterDisplay + " = " + valueToString(amount));
                 if (root.parameterName) {
                     lv2Host.setParameterValue(lv2Id, root.parameterName, root.value);
                 }

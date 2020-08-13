@@ -51,7 +51,7 @@ Item {
             if (padNumber == root.padNumber) {
                 root.value = ! root.value;
                 _updatePad();
-                infoScreen.text = root.parameterDisplay + " = " + valueToString(root.value);
+                infoScreen.flash(root.parameterDisplay.replace('\n',' ') + " = " + valueToString(root.value));
                 lv2Host.setParameterValue(lv2Id, root.parameterName, toParameter(root.value));
             }
         }

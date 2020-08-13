@@ -7,7 +7,6 @@ import Utils 1.0
 import "../common"
 
 // TODO
-// Display current synth number
 // arturia: knob too fast
 // load presets
 
@@ -147,9 +146,13 @@ Item {
         padMenu.updateText(0, ":menu:");
         padMenu.updateText(7, "Back");
     }
+    function _updateInfo() {
+        infoScreen.text = "SynthV1 > synth " + (_currentSynthNumber + 1)
+    }
     onVisibleChanged : {
         if (visible) {
             _updatePad();
+            _updateInfo();
         }
     }
 
@@ -209,6 +212,7 @@ Item {
             case 7:
                 // synth 1/2 switch
                 _currentSynthNumber = 1 - _currentSynthNumber;
+                _updateInfo();
                 if (switchTo >= 0 && switchTo < 8) {
                     switchTo = switchTo - 4 * (1 - _currentSynthNumber) + 4 * _currentSynthNumber;
                 }
