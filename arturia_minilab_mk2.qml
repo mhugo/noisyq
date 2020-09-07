@@ -104,14 +104,22 @@ ColumnLayout {
                     property real min: 0.0
                     property real max: 1.0
 
+                    function _delta() {
+                        let d = max - min;
+                        if (isInteger) {
+                            return d < 128 ? d / 128 : 1;
+                        }
+                        return d / 128.0;
+                    }
+
                     function increment() {
-                        value = value + (isInteger ? 1 : (max - min) / 50.0);
+                        value = value + _delta();
                         if (value > max) {
                             value = max;
                         }
                     }
                     function decrement() {
-                        value = value - (isInteger ? 1 : (max - min) / 50.0);
+                        value = value - _delta();
                         if (value < min) {
                             value = min;
                         }
@@ -249,34 +257,85 @@ ColumnLayout {
                 }
             }
 
-            /*Connections {
+            Connections {
                 target: midi
                 onMidiReceived: {
+                    const cc_to_knob = {
+                        7: 0,
+                        8: 1,
+                        9: 2,
+                        10: 3,
+                        11: 4,
+                        12: 5,
+                        13: 6,
+                        14: 7,
+                        15: 8,
+                        16: 9,
+                        17: 10,
+                        18: 11,
+                        19: 12,
+                        20: 13,
+                        21: 14,
+                        22: 15
+                    };
+                    const cc_to_pad = {
+                        23: 0,
+                        24: 1,
+                        25: 2,
+                        26: 3,
+                        27: 4,
+                        28: 5,
+                        29: 6,
+                        30: 7,
+                        31: 8,
+                        64: 9,
+                        65: 10,
+                        66: 11,
+                        67: 12,
+                        68: 13,
+                        69: 14,
+                        70: 15,
+                        71: 16, // Knob 1 button
+                        72: 17  // Knob 9 button
+                    }
                     console.log("+++ midi received", message);
-                }
-            }*/
-
-            // transfer all signals coming from the gear
-            Connections {
-                target: gear
-                onPadPressed : board.padPressed(padNumber)
-                onPadReleased: board.padReleased(padNumber)
-                onKnobMoved: {
-                    if (amount > 0) {
-                        for (var i = 0; i < amount; i++)
-                            knobs.itemAt(knobNumber).increment();
-                        board.knobMoved(knobNumber, knobs.itemAt(knobNumber).value);
+                    if ((message[0] & 0xF0) == 0x90) {
+                        // NOTE_ON
+                        console.log("note on");
+                        board.notePressed(message[1], message[2]);
                     }
-                    else if (amount < 0) {
-                        for (var i = 0; i < -amount; i++)
-                            knobs.itemAt(knobNumber).decrement();
-                        board.knobMoved(knobNumber, knobs.itemAt(knobNumber).value);
+                    else if ((message[0] & 0xF0) == 0x80) {
+                        // NOTE_OFF
+                        board.noteReleased(message[1]);
                     }
+                    else if ((message[0] & 0xF0) == 0xB0) {
+                        // CC
+                        let cc = message[1];
+                        let v = message[2];
+                        if ((cc in cc_to_knob) && (v != 0x40)) {
+                            const knobNumber = cc_to_knob[cc];
+                            let amount = v - 0x40;
+                            if (amount > 0) {
+                                for (var i = 0; i < amount; i++)
+                                    knobs.itemAt(knobNumber).increment();
+                                board.knobMoved(knobNumber, knobs.itemAt(knobNumber).value);
+                            }
+                            else if (amount < 0) {
+                                for (var i = 0; i < -amount; i++)
+                                    knobs.itemAt(knobNumber).decrement();
+                                board.knobMoved(knobNumber, knobs.itemAt(knobNumber).value);
+                            }
+                        }
+                        if (cc in cc_to_pad) {
+                            const padNumber = cc_to_pad[cc];
+                            if (v == 0x7F)
+                                board.padPressed(padNumber);
+                            else
+                                board.padReleased(padNumber);
+                        }
+                    }
+                    // TODO SYSEX
                 }
-                onNotePressed: board.notePressed(note, velocity)
-                onNoteReleased: board.noteReleased(note)
-                onOctaveUp: board.octaveUp()
-                onOctaveDown: board.octaveDown()
             }
         }
     }
