@@ -121,6 +121,22 @@ class StubHost(QObject):
     def noteOff(self, lv2_id, note):
         print(">>> Note OFF", lv2_id, note)
 
+    @pyqtSlot(str, int)
+    def set_program(self, lv2_id, program_id):
+        pass
+
+    @pyqtSlot(str, str, str, result=str)
+    def custom_data(self, lv2_id, data_type, data_id):
+        pass
+
+    @pyqtSlot(str, str, str, str)
+    def set_custom_data(self, lv2_id, data_type, data_id, data_value):
+        pass
+
+    @pyqtSlot(str, str, str, int)
+    def set_custom_int_data(self, lv2_id, data_type, data_id, data_value):
+        pass
+
     @pyqtSlot(str, result=str)
     @pyqtSlot(str, bool, result=str)
     def save_state(self, lv2_id, convert_xml_to_json=False):

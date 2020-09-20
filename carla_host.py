@@ -29,7 +29,7 @@ class CarlaHost(QObject):
 
     class PatchBayClient:
         __slots__ = ["id", "name", "input_ports", "output_ports"]
-        
+
     def __init__(self, carla_install_path, parent=None):
         super().__init__(parent)
 
