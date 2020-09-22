@@ -34,7 +34,6 @@ Item {
 
     // shortcut
     function _setLV2(obj, value) {
-        console.log("_setLV2", obj, value);
         if (lv2Id) {
             lv2Host.setParameterValue(lv2Id, Utils.objectId(obj), value);
         }
@@ -77,8 +76,6 @@ Item {
             let child = children[i];
             if (child.saveState != undefined) {
                 let parameterName = Utils.objectId(child);
-                console.log("---", parameterName);
-                console.log("--- child", child);
                 child.setFromLV2(lv2Host.getParameterValue(lv2Id, parameterName));
             }
         }

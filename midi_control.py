@@ -97,20 +97,21 @@ class StubHost(QObject):
 
     @pyqtSlot(str, result=str)
     def addInstance(self, lv2_name):
-        print(">>> addInstance", lv2_name)
+        #print(">>> addInstance", lv2_name)
         lv2_id = "stub{}".format(self.__next_id)
         self.__next_id += 1
         return lv2_id
 
     @pyqtSlot(str, str, float)
     def setParameterValue(self, lv2_id, parameter_name, value):
-        print(">>> setParameterValue", lv2_id, parameter_name, value)
+        #print(">>> setParameterValue", lv2_id, parameter_name, value)
+        pass
 
     @pyqtSlot(str, str, result=float)
     def getParameterValue(self, lv2_id, parameter_name):
         import random
         v = random.random()
-        print(">>> getParameterValue", lv2_id, parameter_name, v)
+        #print(">>> getParameterValue", lv2_id, parameter_name, v)
         return v
 
     @pyqtSlot(str, int, int)
@@ -147,6 +148,9 @@ class StubHost(QObject):
     def load_state(self, lv2_id, state, convert_json_to_xml=False):
         pass
 
+    @pyqtSlot(str, result=list)
+    def programs(self, lv2_id):
+        return []
 
 class MidiAPI(Enum):
     JACK = rtmidi.API_UNIX_JACK

@@ -46,6 +46,7 @@ Item {
             text: {
                 switch (parent.value) {
                 case 0:
+                default:
                     return "LPF";
                 case 1:
                     return "BPF";
@@ -71,6 +72,7 @@ Item {
             text: {
                 switch (parent.value) {
                 case 0:
+                default:
                     return "12dB/Oct";
                 case 1:
                     return "24dB/Oct";

@@ -4,6 +4,8 @@ import QtQuick.Layouts 1.11
 
 import Utils 1.0
 
+import "instruments/common" as Common
+
 // TODO
 // - remap keyboard:
 //   - add shift button => shift
@@ -16,6 +18,8 @@ ColumnLayout {
     id: main
 
     readonly property int unitSize: 120
+
+    readonly property int legendSize: 0.3 * unitSize
 
     width: unitSize*8
 
@@ -54,12 +58,13 @@ ColumnLayout {
             }
         }
 
-        let state = JSON.parse(Utils.readFile("state.json"));
-        if (state) {
-            console.log("-- Loading state from state.json --");
-
-
-            canvas.loadState(state);
+        let stateStr = Utils.readFile("state.json");
+        if (stateStr) {
+            let state = JSON.parse(stateStr);
+            if (state) {
+                console.log("-- Loading state from state.json --");
+                canvas.loadState(state);
+            }
         }
 
         //console.log("midi receive", midi.receive_message());
@@ -112,14 +117,15 @@ ColumnLayout {
                         return d / 128.0;
                     }
 
-                    function increment() {
-                        value = value + _delta();
+                    function increment(amount) {
+                        console.log("inc, amount", amount);
+                        value = value + (amount ? amount : _delta());
                         if (value > max) {
                             value = max;
                         }
                     }
-                    function decrement() {
-                        value = value - _delta();
+                    function decrement(amount) {
+                        value = value - (amount ? amount : _delta());
                         if (value < min) {
                             value = min;
                         }
@@ -139,11 +145,13 @@ ColumnLayout {
             readonly property int knob9SwitchId : 17
 
             function knobValue(knobNumber) {
-                return knobs.itemAt(knobNumber).value;
+                let knob = knobs.itemAt(knobNumber);
+                return knob ? knob.value : 0;
             }
 
             function setKnobValue(knobNumber, value) {
-                knobs.itemAt(knobNumber).value = value;
+                let knob = knobs.itemAt(knobNumber);
+                knob.value = value;
             }
 
             function setKnobMinMax(knobNumber, min, max) {
@@ -172,13 +180,15 @@ ColumnLayout {
             focus: true
 
             Keys.onPressed : {
-                if (event.key == Qt.Key_Up) {
-                    knobs.itemAt(selectedKnob).increment();
-                    knobMoved(selectedKnob, knobs.itemAt(selectedKnob).value);
-                }
-                if (event.key == Qt.Key_Down) {
-                    knobs.itemAt(selectedKnob).decrement();
-                    knobMoved(selectedKnob, knobs.itemAt(selectedKnob).value);
+                if ((event.key == Qt.Key_Up) || (event.key == Qt.Key_Down)) {
+                    let knob = knobs.itemAt(selectedKnob);
+                    if (event.key == Qt.Key_Up) {
+                        knob.increment(knob.isInteger ? 1 : 0);
+                    }
+                    else {
+                        knob.decrement(knob.isInteger ? 1 : 0);
+                    }
+                    knobMoved(selectedKnob, knob.value);
                 }
 
                 // isAutoRepeat only for pads, not for knobs +/-
@@ -481,8 +491,38 @@ ColumnLayout {
         }
 
         // index: 0 - blank
-        Text {
+        Item {
+            width: unitSize
+            height: unitSize
+            Common.PlacedKnobMapping {
+                id: k1
+                mapping.isInteger: true
+                mapping.knobNumber: 0
+                readonly property var functionName: [
+                    "Trigger",
+                    "Intr. edit"
+                ]
+
+                mapping.min: 0
+                mapping.max: functionName.length-1
+                mapping.parameterDisplay: "Function"
+                legend: "Function"
+
+                Dial {
+                    x: 0
+                    y: 0
+                    width: unitSize
+                    height: unitSize
+                    value: parent.value
+                    Text{
+                        x: (unitSize - width) / 2
+                        y: (unitSize - height) / 2
+                        text: k1.functionName[~~parent.value]
+                    }
+                }
+            }
         }
+
         // index: 1 - no instrument assigned
         ColumnLayout {
             id: blankTrack
@@ -681,21 +721,12 @@ ColumnLayout {
             switch (state) {
             case "rootMenu": {
                 switch (padNumber) {
-                case 0:
-                    state = "projectMenu";
-                    break;
                 case 1:
                     state = "instrMenu";
                     break;
                 case 7:
                     quit();
                     break;
-                }
-            }
-                break;
-            case "projectMenu": {
-                if (padNumber == 7) {
-                    state = "rootMenu";
                 }
             }
                 break;
@@ -766,7 +797,7 @@ ColumnLayout {
             name: "rootMenu"
             PropertyChanges {
                 target: padMenu
-                texts: ["Project", "Instr.", "", "", "", "", "", "Quit",
+                texts: ["", "Instr.", "", "", "", "", "", "Quit",
                        "", "", "", "", "", "", "", ""]
             }
             PropertyChanges {
@@ -776,18 +807,6 @@ ColumnLayout {
             PropertyChanges {
                 target: infoScreen
                 text: "Main menu"
-            }
-        },
-        State {
-            name: "projectMenu"
-            PropertyChanges {
-                target: padMenu
-                texts: ["", "", "", "", "", "", "", "Back",
-                       "", "", "", "", "", "", "", ""]
-            }
-            PropertyChanges {
-                target: infoScreen
-                text: "Project"
             }
         },
         State {

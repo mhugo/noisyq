@@ -22,6 +22,7 @@ Item {
             text: {
                 switch (parent.value) {
                 case 0:
+                default:
                     return "Pulse";
                 case 1:
                     return "Saw";
@@ -103,6 +104,7 @@ Item {
             text: {
                 switch (parent.value) {
                 case 0:
+                default:
                     return "Sweep";
                 case 1:
                     return "Pitch";

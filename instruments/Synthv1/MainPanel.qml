@@ -65,6 +65,7 @@ Item {
             text: {
                 switch (parent.value) {
                 case 0:
+                default:
                     return "Mono";
                 case 1:
                     return "Poly";

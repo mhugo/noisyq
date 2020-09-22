@@ -48,11 +48,17 @@ Item {
         enabled: root.visible && root.enabled
     }
 
-    onVisibleChanged: {
+    function _initIfVisible() {
         if (visible) {
             board.setKnobIsInteger(root.knobNumber, root.isInteger);
             board.setKnobMinMax(root.knobNumber, root.min, root.max);
             board.setKnobValue(root.knobNumber, fromParameter(root.value));
         }
+    }
+    onVisibleChanged: {
+        _initIfVisible();
+    }
+    Component.onCompleted: {
+        _initIfVisible();
     }
 }
