@@ -6,14 +6,6 @@ import Utils 1.0
 
 import "instruments/common" as Common
 
-// TODO
-// - remap keyboard:
-//   - add shift button => shift
-//   - add "pad 1-8/9-16" button => capslock
-//   - add slider
-//   - add pitch bend
-
-
 Item {
     id: main
 
@@ -26,7 +18,7 @@ Item {
 
     function quit()
     {
-        Utils.saveFile("state.json", JSON.stringify(canvas.saveState()));
+        Utils.saveFile("state.json", JSON.stringify(instrumentStack.saveState()));
         Qt.callLater(Qt.quit);
     }
 
@@ -64,7 +56,7 @@ Item {
             let state = JSON.parse(stateStr);
             if (state) {
                 console.log("-- Loading state from state.json --");
-                canvas.loadState(state);
+                instrumentStack.loadState(state);
             }
         }
 
@@ -161,6 +153,7 @@ Item {
         }
 
         function setKnobIsInteger(knobNumber, isInteger) {
+            console.log("knob", knobNumber, "isInteger", isInteger);
             knobs.itemAt(knobNumber).isInteger = isInteger;
         }
 
@@ -389,48 +382,126 @@ Item {
         }
     }
 
-    Common.PlacedKnobMapping {
-        width: unitSize
-        height: unitSize
-        id: k1
+    Item {
+        id: mainLayout
         anchors.top: infoScreen.bottom
-        // always on top
-        z: 2
+        Common.PlacedDial {
+            id: modeKnob
+            knobNumber: 0
 
-        mapping.isInteger: true
-        mapping.knobNumber: 0
-        readonly property var functionName: [
-            "Trigger",
-            "Intr. edit"
-        ]
+            enumValues: [
+                "Instr. assign",
+                "Trigger",
+                "Instr. edit"
+            ]
 
-        mapping.min: 0
-        mapping.max: functionName.length-1
-        mapping.parameterDisplay: "Function"
-        legend: "Function"
+            legend: "Function"
 
-        Dial {
-            x: 0
-            y: 0
-            width: unitSize
-            height: unitSize
-            value: parent.value
-            Text{
-                x: (unitSize - width) / 2
-                y: (unitSize - height) / 2
-                text: k1.functionName[~~parent.value]
+            onValueChanged: {
+                modeStackLayout.currentIndex = ~~value;
+            }
+        }
+
+        StackLayout {
+            id: modeStackLayout
+
+            // Instrument assign
+            Item {
+                Common.PlacedDial {
+                    id: chooseInstrKnob
+                    knobNumber: 9
+                    legend: "Instr. type "
+
+                    enumValues: ["None"]
+
+                    Component.onCompleted: {
+                        max = instrumentComponents.length;
+                        for (var i = 0; i < instrumentComponents.length; i++) {
+                            enumValues.push(instrumentComponents[i].name);
+                        }
+                        _initIfVisible();
+                    }
+                }
+
+                Common.PlacedDial {
+                    id: voiceAssignKnob
+                    isInteger: true
+                    knobNumber: 8
+
+                    min: 0
+                    max: 15
+                    legend: "Voice"
+
+                    onValueChanged: {
+                        let instr = instrumentStack.instrumentAt(~~value);
+                        if (instr) {
+                            chooseInstrKnob.value = instr.index + 1;
+                        }
+                        else {
+                            chooseInstrKnob.value = 0;
+                        }
+                    }
+
+                    Connections {
+                        target: board
+                        onPadReleased : {
+                            if (padNumber == board.knob9SwitchId) {
+                                // click => assign instrument to voice
+                                let instrumentIndex = ~~chooseInstrKnob.value - 1;
+                                if (instrumentIndex == -1) {
+                                    // unassign
+                                    // TODO
+                                }
+                                else {
+                                    instrumentStack.assignInstrumentFromIndex(instrumentIndex, ~~voiceAssignKnob.value);
+                                }
+                            }
+                        }
+                        enabled: visible
+                    }
+                }
+            }
+
+            // Trigger
+            Item {}
+
+            // Instrument Edit
+            Item {
+                Common.PlacedDial {
+                    id: voiceEditKnob
+                    isInteger: true
+                    knobNumber: 8
+
+                    min: 0
+                    max: 15
+                    legend: "Voice"
+
+                    Connections {
+                        target: board
+                        onPadReleased : {
+                            if (padNumber == board.knob9SwitchId) {
+                                // click => edit instrument
+                                instrumentStack.editInstrument(~~voiceEditKnob.value);
+                            }
+                        }
+                        enabled: visible
+                    }
+                }
             }
         }
     }
 
     StackLayout {
-        id: canvas
+        // A layout that stacks a widget for each instrument
+        id: instrumentStack
         anchors.top: infoScreen.bottom
+        visible: false
 
         width: parent.width
         height: main.unitSize*3
 
         function saveState() {
+            /*
             // save the state of each instrument
             var instrStates = []
             for (var i = 0; i < instruments.length; i++) {
@@ -449,9 +520,11 @@ Item {
                 "instruments": instrStates,
                 "stackMapping": instrumentStackIndex
             };
+            */
         }
 
         function loadState(state) {
+            /*
             //
             instrumentStackIndex = state["stackMapping"];
 
@@ -471,35 +544,61 @@ Item {
                     obj.loadState(instrState["state"]);
                 }
             }
+            */
         }
 
-        // Items associated to each instrument
-        property var instruments : [null, null, null, null, null, null, null]
+        // Instrument associated to each voice
+        // Each instrument object is a {"instrument": instrument, "index": index in instrumentComponents}
+        property var voiceInstrument : ({})
 
-        property int currentInstrument: 0
+        // map of voice number -> stack layout index
+        property var voiceStackLayoutIndex : ({})
 
-        // map of instrument number -> stack layout index
-        property var instrumentStackIndex : ({})
+        property int _currentVoice : 0
 
-        function editInstrument() {
-            // display the component associated with the instrument in the canvas
-            if (instruments[currentInstrument] === null) {
-                // blank instrument
-                currentIndex = 1;
+        function editInstrument(voiceNumber) {
+            // display the component associated with the current voice in the instrumentStack
+            if (voiceInstrument[voiceNumber] !== undefined) {
+                currentIndex = voiceStackLayoutIndex[voiceNumber];
+                mainLayout.visible = false;
+                instrumentStack.visible = true;
+                _currentVoice = voiceNumber;
             }
-            else {
-                currentIndex = instrumentStackIndex[currentInstrument];
-            }
+        }
+
+        function currentInstrumentObject() {
+            if (voiceInstrument[_currentVoice])
+                return voiceInstrument[_currentVoice].instrument;
+            return undefined;
         }
 
         function endEditInstrument() {
             console.log("** end edit instrument");
-            main.state = "instrMenu";
-            canvas.currentIndex = 0;
+            instrumentStack.visible = false;
+            mainLayout.visible = true;
         }
 
-        function currentInstrumentObject() {
-            return instruments[currentInstrument];
+        function instrumentAt(voiceNumber) {
+            return voiceInstrument[voiceNumber];
+        }
+
+        function assignInstrumentFromIndex(instrumentIndex, voiceNumber) {
+            let obj = instrumentComponents[instrumentIndex].component.createObject(main, {"visible": false});
+            let lv2Id = lv2Host.addInstance(instrumentComponents[instrumentIndex].lv2Url);
+            obj.lv2Id = lv2Id;
+            obj.unitSize = main.unitSize;
+            obj.init();
+            if (obj.quit !== undefined) {
+                obj.quit.connect(instrumentStack.endEditInstrument);
+            }
+            console.log("lv2id", obj.lv2Id);
+
+            if (obj != null) {
+                children.push(obj);
+                voiceInstrument[voiceNumber] = {"instrument": obj, "index": instrumentIndex};
+                voiceStackLayoutIndex[voiceNumber] = children.length - 1;
+            }
+            return obj;
         }
 
         // Assign a given Item to the current instrument slot
@@ -508,81 +607,67 @@ Item {
             let obj = null;
             for (var i in instrumentComponents) {
                 if (instrumentComponents[i].name == name) {
-                    obj = instrumentComponents[i].component.createObject(main, {});
-                    let lv2Id = lv2Host.addInstance(instrumentComponents[i].lv2Url);
-                    obj.lv2Id = lv2Id;
-                    obj.unitSize = main.unitSize;
-                    obj.init();
-                    console.log("lv2id", obj.lv2Id);
-                    break;
+                    return assignInstrumentFromIndex(i, currentVoice);
                 }
             }
-            if (obj != null) {
-                children.push(obj);
-                instruments[currentInstrument] = obj;
-                instrumentStackIndex[currentInstrument] = children.length - 1;
-            }
-            else {
-                console.log("Cannot find instrument", name);
-            }
-            return obj;
+            console.log("Cannot find instrument", name);
         }
 
-        // index: 0 - blank
-        Item {
+        function removeInstrumentAt(voiceNumber) {
+            delete voiceInstrument[voiceNumber];
+            delete voiceStackLayoutIndex[voiceNumber];
+        }
+
+        Connections {
+            target: board
+            onPadPressed: {
+                // call padPressed() function of instrument
+                let cur = instrumentStack.currentInstrumentObject();
+                if (cur != null && cur.padPressed !== undefined) {
+                    cur.padPressed(padNumber);
+                }
+            }
+            onPadReleased: {
+                // call padReleased() function of instrument
+                let cur = instrumentStack.currentInstrumentObject();
+                if (cur != null && cur.padReleased !== undefined) {
+                    cur.padReleased(padNumber);
+                }
+            }
+            onKnobMoved: {
+                // call knobMoved() function of instrument
+                let cur = instrumentStack.currentInstrumentObject();
+                if (cur != null && cur.knobMoved !== undefined) {
+                    cur.knobMoved(knobNumber, amount);
+                }
+            }
+            onNotePressed: {
+                let cur = instrumentStack.currentInstrumentObject();
+                if (cur != null) {
+                    lv2Host.noteOn(cur.lv2Id, note, velocity);
+                }
+            }
+            onNoteReleased : {
+                let cur = instrumentStack.currentInstrumentObject();
+                if (cur != null) {
+                    lv2Host.noteOff(cur.lv2Id, note);
+                }
+            }
+            enabled: visible
+        }
+
+        // index: 0 - blank with optional text
+        Text {
+            id: textPanel
             width: unitSize
             height: unitSize
-        }
-
-        // index: 1 - no instrument assigned
-        ColumnLayout {
-            id: blankTrack
-            Text {
-                text: "No instrument assigned"
-            }
-            ComboBox {
-                id: instrCombo
-                Component.onCompleted : {
-                    model = instrumentComponents.map(function(x) { return x["name"]; });
-                }
-            }
-            // FIXME
-            // knob values must be independant and then saved for each panel
-            Connections {
-                target: board
-
-                // only visible panels should react to knob / pad changes
-                enabled: blankTrack.visible
-
-                onKnobMoved : {
-                    if (knobNumber == 0) {
-                        instrCombo.currentIndex = ~~amount;
-                    }
-                }
-
-                onPadPressed : {
-                    if (padNumber == 0) {
-                        // confirm assignment
-                        canvas.assignInstrument(instrCombo.currentText);
-                        canvas.currentIndex = canvas.children.length - 1;
-                    }
-                }
-            }
-
-            onVisibleChanged : {
-                if (visible) {
-                    padMenu.texts = ["Assign"].concat(padMenu.texts.slice(1));
-                    board.setKnobIsInteger(0, true);
-                    board.setKnobMinMax(0, 0, instrCombo.count-1);
-                }
-            }
         }
     }
 
     Item {
         id: padMenu
         property alias texts: padRep.model
-        anchors.top: canvas.bottom
+        anchors.top: instrumentStack.bottom
 
         implicitWidth: 8 * unitSize
         implicitHeight: 2 * unitSize
@@ -648,86 +733,25 @@ Item {
         anchors.top: padMenu.bottom
     }
 
-    state: "rootMenu"
+    state: "instrAssign"
 
     Connections {
         target: board
         onPadPressed : {
             if (padNumber < 16)
                 padRep.itemAt(padNumber).color = "red";
-            if (state == "instrEditMenu") {
-                // forward signals to instrument
-                let cur = canvas.currentInstrumentObject();
-                if (cur != null && cur.padPressed !== undefined) {
-                    cur.padPressed(padNumber);
-                }
-            }
         }
         onPadReleased : {
             if (padNumber < 16)
                 padRep.itemAt(padNumber).color = board.padColor(padNumber);
-            switch (state) {
-            case "rootMenu": {
-                switch (padNumber) {
-                case 1:
-                    state = "instrMenu";
-                    break;
-                case 7:
-                    quit();
-                    break;
-                }
-            }
-                break;
-            case "instrMenu": {
-                if (padNumber == 7) {
-                    state = "rootMenu";
-                }
-                else {
-                    state = "instrEditMenu";
-                    canvas.currentInstrument = padNumber;
-                    canvas.editInstrument();
-                }
-            }
-                break;
-            case "instrEditMenu": {
-                // forward signals to instrument
-                let cur = canvas.currentInstrumentObject();
-                if (cur != null && cur.padReleased !== undefined) {
-                    cur.padReleased(padNumber);
-                }
-            }
-                break;
-            }
         }
 
         onNotePressed : {
-            if (state == "instrEditMenu") {
-                let cur = canvas.currentInstrumentObject();
-                if (cur != null) {
-                    lv2Host.noteOn(cur.lv2Id, note, velocity);
-                }
-            }
             piano.noteOn(note - piano.octave * 12, velocity);
         }
 
         onNoteReleased : {
-            if (state == "instrEditMenu") {
-                let cur = canvas.currentInstrumentObject();
-                if (cur != null) {
-                    lv2Host.noteOff(cur.lv2Id, note);
-                }
-            }
             piano.noteOff(note - piano.octave * 12);
-        }
-
-        onKnobMoved : {
-            if (state == "instrEditMenu") {
-                // forward signals to instrument
-                let cur = canvas.currentInstrumentObject();
-                if (cur != null && cur.knobMoved !== undefined) {
-                    cur.knobMoved(knobNumber, amount);
-                }
-            }
         }
 
         onOctaveUp : {
@@ -742,44 +766,32 @@ Item {
 
     states : [
         State {
-            name: "rootMenu"
-            PropertyChanges {
-                target: padMenu
-                texts: ["", "Instr.", "", "", "", "", "", "Quit",
-                       "", "", "", "", "", "", "", ""]
-            }
-            PropertyChanges {
-                target: canvas
-                currentIndex: 0
-            }
+            name: "instrEditChoose"
             PropertyChanges {
                 target: infoScreen
-                text: "Main menu"
+                text: "Instrument edit"
+            }
+            PropertyChanges {
+                target: chooseInstrKnob
+                visible: false
             }
         },
         State {
-            name: "instrMenu"
+            name: "trigger"
             PropertyChanges {
-                target: padMenu
-                texts: {
-                    let newPadMenu = [];
-                    for (var i=0; i < 7; i++) {
-                        board.setPadColor(i, canvas.instruments[i] ? "green" : "white");
-                        if (canvas.instruments[i]) {
-                            newPadMenu.push("<" + i.toString() + ">\n" + canvas.instruments[i].name);
-                        }
-                        else {
-                            newPadMenu.push("<" + i.toString() + ">");
-                        }
-                    }
-                    newPadMenu.push("Back");
-                    newPadMenu.push("", "", "", "", "", "", "", "");
-                    return newPadMenu;
-                }
+                target: chooseInstrKnob
+                visible: false
             }
+        },
+        State {
+            name: "instrAssign"
             PropertyChanges {
                 target: infoScreen
-                text: "Instrument"
+                text: "Instrument assign"
+            }
+            PropertyChanges {
+                target: chooseInstrKnob
+                visible: true
             }
         }
     ]

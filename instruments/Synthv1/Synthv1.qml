@@ -18,6 +18,8 @@ Item {
     // Set by the host when the instance is created
     property string lv2Id: ""
 
+    signal quit()
+
     property string name: "Synthv1"
 
     // Set by the host
@@ -238,7 +240,7 @@ Item {
         
         if (padNumber == 7) {
             // end of editing
-            canvas.endEditInstrument();            
+            quit();
         }
     }
 
