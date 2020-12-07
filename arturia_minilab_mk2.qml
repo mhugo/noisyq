@@ -391,7 +391,7 @@ Item {
 
             enumValues: [
                 "Instr. assign",
-                "Trigger",
+                "Sequencer",
                 "Instr. edit"
             ]
 
@@ -399,6 +399,28 @@ Item {
 
             onValueChanged: {
                 modeStackLayout.currentIndex = ~~value;
+            }
+        }
+
+        Common.PlacedDial {
+            id: voiceKnob
+            isInteger: true
+            knobNumber: 8
+
+            min: 0
+            max: 15
+            legend: "Voice"
+
+            onValueChanged: {
+                if (modeStackLayout.currentIndex == 0) { // instrument assign
+                    let instr = instrumentStack.instrumentAt(~~value);
+                    if (instr) {
+                        chooseInstrKnob.value = instr.index + 1;
+                    }
+                    else {
+                        chooseInstrKnob.value = 0;
+                    }
+                }
             }
         }
 
@@ -423,42 +445,22 @@ Item {
                     }
                 }
 
-                Common.PlacedDial {
-                    id: voiceAssignKnob
-                    isInteger: true
-                    knobNumber: 8
-
-                    min: 0
-                    max: 15
-                    legend: "Voice"
-
-                    onValueChanged: {
-                        let instr = instrumentStack.instrumentAt(~~value);
-                        if (instr) {
-                            chooseInstrKnob.value = instr.index + 1;
-                        }
-                        else {
-                            chooseInstrKnob.value = 0;
-                        }
-                    }
-
-                    Connections {
-                        target: board
-                        onPadReleased : {
-                            if (padNumber == board.knob9SwitchId) {
-                                // click => assign instrument to voice
-                                let instrumentIndex = ~~chooseInstrKnob.value - 1;
-                                if (instrumentIndex == -1) {
-                                    // unassign
-                                    // TODO
-                                }
-                                else {
-                                    instrumentStack.assignInstrumentFromIndex(instrumentIndex, ~~voiceAssignKnob.value);
-                                }
+                Connections {
+                    target: board
+                    onPadReleased : {
+                        if (padNumber == board.knob9SwitchId) {
+                            // click => assign instrument to voice
+                            let instrumentIndex = ~~chooseInstrKnob.value - 1;
+                            if (instrumentIndex == -1) {
+                                // unassign
+                                // TODO
+                            }
+                            else {
+                                instrumentStack.assignInstrumentFromIndex(instrumentIndex, ~~voiceKnob.value);
                             }
                         }
-                        enabled: visible
                     }
+                    enabled: visible
                 }
             }
 
@@ -467,25 +469,15 @@ Item {
 
             // Instrument Edit
             Item {
-                Common.PlacedDial {
-                    id: voiceEditKnob
-                    isInteger: true
-                    knobNumber: 8
-
-                    min: 0
-                    max: 15
-                    legend: "Voice"
-
-                    Connections {
-                        target: board
-                        onPadReleased : {
-                            if (padNumber == board.knob9SwitchId) {
-                                // click => edit instrument
-                                instrumentStack.editInstrument(~~voiceEditKnob.value);
-                            }
+                Connections {
+                    target: board
+                    onPadReleased : {
+                        if (padNumber == board.knob9SwitchId) {
+                            // click => edit instrument
+                            instrumentStack.editInstrument(~~voiceEditKnob.value);
                         }
-                        enabled: visible
                     }
+                    enabled: visible
                 }
             }
         }
