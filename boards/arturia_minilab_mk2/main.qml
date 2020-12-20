@@ -30,7 +30,7 @@ Item {
         // use JS Object.defineProperty to add it to the "root" object ?
         console.log("____qt", Qt.application.displayName);
         // load instruments
-        let instruments = JSON.parse(Utils.readFile("../../instruments/instruments.json"));
+        let instruments = JSON.parse(Utils.readFile("instruments/instruments.json"));
         if (instruments) {
             for (var i in instruments) {
                 let qmlFile = "../../instruments/" + instruments[i]["qml"];
