@@ -10,6 +10,8 @@ from PyQt5.QtWidgets import QApplication
 from PyQt5.QtQuick import QQuickView
 from PyQt5.QtQml import QQmlEngine, qmlRegisterSingletonType
 
+from qsequencer import QSequencer
+
 
 import rtmidi
 
@@ -245,8 +247,11 @@ view.rootContext().setContextProperty("lv2Host", lv2Host)
 midi = Midi(rtmidi.API_LINUX_ALSA, args.dev)
 view.rootContext().setContextProperty("midi", midi)
 
+sequencer = QSequencer()
+view.rootContext().setContextProperty("sequencer", sequencer)
+
 current_path = os.path.abspath(os.path.dirname(__file__))
-qml_file = os.path.join(current_path, 'arturia_minilab_mk2.qml')
+qml_file = os.path.join(current_path, 'boards/arturia_minilab_mk2/main.qml')
 view.setSource(QUrl.fromLocalFile(qml_file))
 view.engine().quit.connect(app.quit)
 view.show()
