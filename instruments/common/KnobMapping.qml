@@ -1,4 +1,4 @@
-import QtQuick 2.0
+import QtQuick 2.7
 
 //
 // Helper to declare a knob mapping.

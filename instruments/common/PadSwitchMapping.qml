@@ -1,4 +1,4 @@
-import QtQuick 2.0
+import QtQuick 2.7
 
 //
 // Helper to declare a pad "switch" mapping. The pad has two states: on/off, represented by a boolean.

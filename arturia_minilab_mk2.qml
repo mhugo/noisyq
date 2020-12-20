@@ -1,5 +1,5 @@
-import QtQuick 2.0
-import QtQuick.Controls 2.4
+import QtQuick 2.7
+import QtQuick.Controls 2.5
 import QtQuick.Layouts 1.11
 
 import Utils 1.0
@@ -460,7 +460,7 @@ Item {
                             }
                         }
                     }
-                    enabled: visible
+                    enabled: modeStackLayout.currentIndex == 0
                 }
             }
 
@@ -474,10 +474,10 @@ Item {
                     onPadReleased : {
                         if (padNumber == board.knob9SwitchId) {
                             // click => edit instrument
-                            instrumentStack.editInstrument(~~voiceEditKnob.value);
+                            instrumentStack.editInstrument(~~voiceKnob.value);
                         }
                     }
-                    enabled: visible
+                    enabled: modeStackLayout.currentIndex == 2
                 }
             }
         }
