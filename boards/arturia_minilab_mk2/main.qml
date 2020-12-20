@@ -56,7 +56,7 @@ Item {
             let state = JSON.parse(stateStr);
             if (state) {
                 console.log("-- Loading state from state.json --");
-                instrumentStack.loadState(state);
+                Qt.callLater(function() {instrumentStack.loadState(state);});
             }
         }
 
@@ -151,16 +151,20 @@ Item {
             max: 15
             legend: "Voice"
 
-            onValueChanged: {
+            function updateInstrKnob() {
                 if (modeStackLayout.currentIndex == 0) { // instrument assign
                     let instr = instrumentStack.instrumentAt(~~value);
                     if (instr) {
-                        chooseInstrKnob.value = instr.index + 1;
+                        chooseInstrKnob.value = parseInt(instr.index) + 1;
                     }
                     else {
                         chooseInstrKnob.value = 0;
                     }
                 }
+            }
+
+            onValueChanged: {
+                updateInstrKnob();
             }
         }
 
@@ -233,53 +237,43 @@ Item {
         height: main.unitSize*3
 
         function saveState() {
-            /*
             // save the state of each instrument
-            var instrStates = []
-            for (var i = 0; i < instruments.length; i++) {
-                if (instruments[i]) {
-                    let state = instruments[i].saveState();
-                    instrStates.push({
-                        "name": instruments[i].name,
-                        "state": state
-                    });
+            var voiceStates = [];
+            for (var voice in voiceInstrument) {
+                let instr = voiceInstrument[voice].instrument;
+                let instrState = null;
+                if (instr.saveState !== undefined) {
+                    instrState = instr.saveState();
                 }
-                else {
-                    instrStates.push(null);
-                }
+                voiceStates.push({
+                    "voice": voice,
+                    "instrument": instrumentComponents[voiceInstrument[voice].index].name,
+                    "state": instrState
+                });
             }
             return {
-                "instruments": instrStates,
-                "stackMapping": instrumentStackIndex
+                "voices": voiceStates,
+                "voiceStackLayoutIndex": voiceStackLayoutIndex
             };
-            */
         }
 
         function loadState(state) {
-            /*
             //
-            instrumentStackIndex = state["stackMapping"];
+            console.log("loadState");
+            voiceStackLayoutIndex = state["voiceStackLayoutIndex"];
 
-            // invert the mapping instrument -> stack index
-            // to get a mapping stack index -> instrument
-            let stackInstrumentIndex = {};
-            for (var instr in instrumentStackIndex) {
-                let idx = instrumentStackIndex[instr];
-                stackInstrumentIndex[idx] = instr;
-            }
-
-            for (var i in stackInstrumentIndex) {
-                currentInstrument = stackInstrumentIndex[i];
-                let instrState = state["instruments"][currentInstrument];
-                if (instrState) {
-                    let obj = assignInstrument(instrState["name"]);
-                    obj.loadState(instrState["state"]);
+            let voiceStates = state["voices"];
+            for (var i = 0; i < voiceStates.length; i++) {
+                let obj = instrumentStack.assignInstrument(voiceStates[i].instrument, voiceStates[i].voice);
+                if (obj) {
+                    obj.loadState(voiceStates[i].state);
                 }
-            }
-            */
+            }            
+            voiceKnob.updateInstrKnob();
         }
 
         // Instrument associated to each voice
+        // Key: a voice number (int converted to string by JS)
         // Each instrument object is a {"instrument": instrument, "index": index in instrumentComponents}
         property var voiceInstrument : ({})
 
@@ -325,6 +319,12 @@ Item {
             }
             console.log("lv2id", obj.lv2Id);
 
+            // FIXME install a saveState function if none
+            if (obj.saveState === undefined) {
+            }
+            if (obj.loadState === undefined) {
+            }
+
             if (obj != null) {
                 children.push(obj);
                 voiceInstrument[voiceNumber] = {"instrument": obj, "index": instrumentIndex};
@@ -334,15 +334,15 @@ Item {
         }
 
         // Assign a given Item to the current instrument slot
-        function assignInstrument(name) {
+        function assignInstrument(name, voice) {
             // look for the instrument in the component list
             let obj = null;
             for (var i in instrumentComponents) {
                 if (instrumentComponents[i].name == name) {
-                    return assignInstrumentFromIndex(i, currentVoice);
+                    return assignInstrumentFromIndex(i, voice);
                 }
             }
-            console.log("Cannot find instrument", name);
+            console.log("!!! Cannot find instrument", name);
         }
 
         function removeInstrumentAt(voiceNumber) {
@@ -385,7 +385,7 @@ Item {
                     lv2Host.noteOff(cur.lv2Id, note);
                 }
             }
-            enabled: visible
+            enabled: instrumentStack.visible
         }
 
         // index: 0 - blank with optional text
