@@ -61,7 +61,6 @@ Item {
         }
 
         //console.log("midi receive", midi.receive_message());
-        console.log(JSON.stringify(sequencer.listEvents(0, 1, 2, 1)))
     }
 
     FontLoader {
@@ -138,7 +137,15 @@ Item {
             legend: "Function"
 
             onValueChanged: {
-                modeStackLayout.currentIndex = ~~value;
+                infoScreen.text = enumValues[~~value];
+                if (~~value == 1) {
+                    // FIXME hack
+                    padMenu.texts = ["Play", "", "", "", "", "", "", "",
+                                     "", "", "", "", "", "", "", ""];
+                }
+            }
+            Component.onCompleted: {
+                infoScreen.text = enumValues[~~value];
             }
         }
 
@@ -170,6 +177,8 @@ Item {
 
         StackLayout {
             id: modeStackLayout
+
+            currentIndex: ~~modeKnob.value
 
             // Instrument assign
             Item {
@@ -209,7 +218,17 @@ Item {
             }
 
             // Trigger
-            Item {}
+            Item {
+                Connections {
+                    target: board
+                    onPadReleased : {
+                        if (padNumber == 0) {
+                            sequencer.play(120);
+                        }
+                    }
+                    enabled: modeStackLayout.currentIndex == 1
+                }
+            }
 
             // Instrument Edit
             Item {
@@ -465,8 +484,6 @@ Item {
         anchors.top: padMenu.bottom
     }
 
-    state: "instrAssign"
-
     Connections {
         target: board
         onPadPressed : {
@@ -496,23 +513,19 @@ Item {
         }
     }
 
-    states : [
-        State {
-            name: "instrEditChoose"
-            PropertyChanges {
-                target: infoScreen
-                text: "Instrument edit"
-            }
-        },
-        State {
-            name: "trigger"
-        },
-        State {
-            name: "instrAssign"
-            PropertyChanges {
-                target: infoScreen
-                text: "Instrument assign"
+    Connections {
+        target: sequencer
+        onNoteOn: {
+            let instr = instrumentStack.instrumentAt(channel);
+            if (instr != null) {
+                lv2Host.noteOn(instr.instrument.lv2Id, note, velocity);
             }
         }
-    ]
+        onNoteOff: {
+            let instr = instrumentStack.instrumentAt(channel);
+            if (instr != null) {
+                lv2Host.noteOff(instr.instrument.lv2Id, note);
+            }
+        }
+    }
 }

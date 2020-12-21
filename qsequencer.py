@@ -1,9 +1,9 @@
 # Qt interface to sequencer
 
-from sequencer import Sequencer, TimeUnit
+from sequencer import Sequencer, TimeUnit, NoteOnEvent, NoteOffEvent
 
 from PyQt5.QtCore import (
-    pyqtSignal, pyqtSlot, QObject
+    pyqtSignal, pyqtSlot, QObject, QTimer, QElapsedTimer
 )
 
 class QSequencer(QObject):
@@ -12,8 +12,23 @@ class QSequencer(QObject):
         super().__init__(parent)
         self.__seq = Sequencer()
 
+        self.__timer = QTimer()
+        self.__timer.setSingleShot(True)
+        self.__timer.timeout.connect(self.__on_timeout)
+
+        self.__elapsed_timer = QElapsedTimer()
+
+        self.__events = []
+        self.__event = None
+        self.__bpm = 120
+        # elasped time in ms since the beginning of play()
+        self.__elapsed_ms = 0
+
+    noteOn = pyqtSignal(int, int, int, arguments=["channel", "note", "velocity"])
+    noteOff = pyqtSignal(int, int, arguments=["channel", "note"])
+
     @pyqtSlot(int, int, int, int, result=list)
-    def listEvents(self,
+    def list_events(self,
                    start_time: int, start_time_unit: int,
                    stop_time: int, stop_time_unit: int):
         return [
@@ -29,4 +44,35 @@ class QSequencer(QObject):
             )
         ]
 
+    def __on_timeout(self):
+        self.__arm_next_event()
+        print("Timeout @", self.__elapsed_timer.elapsed())
+        for channel, event in self.__event:
+            if isinstance(event, NoteOnEvent):
+                self.noteOn.emit(channel, event.note, event.velocity)
+            elif isinstance(event, NoteOffEvent):
+                self.noteOff.emit(channel, event.note)
+            else:
+                raise TypeError("Unknown event type!")
 
+    def __arm_next_event(self):
+        if self.__events:
+            if not self.__event:
+                e_ms = 0
+                self.__elapsed_timer.start()
+            else:
+                e_ms = self.__elapsed_timer.elapsed()
+            e = self.__events.pop(0)
+            event_time, self.__event = e
+            next_ms = int(event_time.amount() * 60 * 1000 / event_time.unit() / self.__bpm)
+            self.__timer.start(next_ms - e_ms)
+            
+
+    @pyqtSlot(int)
+    def play(self, bpm):
+        # TODO: add start_time, stop_time
+        self.__bpm = bpm
+        self.__events = list(self.__seq.iterate_scheduled_events())
+        #print("\n".join([repr(e) for e in self.__events]))
+        self.__event = None
+        self.__arm_next_event()

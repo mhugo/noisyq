@@ -1,7 +1,8 @@
 from typing_extensions import Literal
-from typing import List, Tuple, Callable, Iterator
+from typing import Any, List, Tuple, Callable, Iterator, Optional
 
 from collections import namedtuple
+from fractions import Fraction
 import sched
 # pip install sortedcontainers
 from sortedcontainers import SortedDict
@@ -12,10 +13,17 @@ units_per_beat = 128
 
 
 class TimeUnit(object):
+    # FIXME: remove units and units_per_beat to simplify
+    # FIXME: TimeUnit = number of beats
     def __init__(self, amount: int, unit: Literal[1, 2, 4, 8, 16, 32, 64, 128] = 1) -> None:
         self.units = amount * units_per_beat // unit
-        self.unit = unit
-        self.amount = amount
+        self._fraction = Fraction(amount, unit)
+
+    def amount(self):
+        return self._fraction.numerator
+
+    def unit(self):
+        return self._fraction.denominator
 
     def __lt__(self, other):
         return self.units.__lt__(other.units)
@@ -31,14 +39,17 @@ class TimeUnit(object):
 
     def __add__(self, other):
         r = TimeUnit(0)
-        r.units = self.units.__add__(other.units)
-        r.amount = other.amount
-        r.unit = other.unit
+        r.units = self.units + other.units
+        r._fraction = self._fraction + other._fraction
         return r
+            
 
+class ScheduledEvent:
+    def __init__(self, time: TimeUnit):
+        self.time = time
 
 class Event(object):
-    def schedule(self, start_time):
+    def schedule(self, start_time : TimeUnit) -> List[ScheduledEvent]:
         """
         Returns a list of ScheduledEvent
         """
@@ -60,7 +71,7 @@ class NoteEvent(Event):
     def __eq__(self, other):
         return self.note == other.note and self.velocity == other.velocity and self.duration == other.duration
 
-    def schedule(self, start_time):
+    def schedule(self, start_time : TimeUnit) -> List[ScheduledEvent]:
         return [
             NoteOnEvent(start_time, self.note, self.velocity),
             NoteOffEvent(start_time + self.duration, self.note)
@@ -71,19 +82,14 @@ class NoteEvent(Event):
             "event_type": "note_event",
             "note": self.note,
             "velocity": self.velocity,
-            "duration_amount": self.duration.amount,
-            "duration_unit": self.duration.unit
+            "duration_amount": self.duration.amount(),
+            "duration_unit": self.duration.unit()
         }
 
 
 class ParameterEvent(Event):
     # TODO
     pass
-
-
-class ScheduledEvent:
-    def __init__(self, time: TimeUnit):
-        self.time = time
 
 
 class NoteOnEvent(ScheduledEvent):
@@ -111,6 +117,14 @@ class ChannelEvent:
         self.event = event
 
 
+def _add_event_to_sorted_dict(events: SortedDict, event: Any, start_time: TimeUnit) -> None:
+    if start_time not in events:
+        events[start_time] = [event]
+    else:
+        if event not in events[start_time]:
+            events[start_time].append(event)
+    
+        
 class Sequencer(object):
 
     N_CHANNELS = 16
@@ -126,18 +140,36 @@ class Sequencer(object):
 
         self.__sched: sched.scheduler
 
-        self.__callback = None
+        # default callback
+        self.__callback = print_sch_event
 
         self.add_event(1, TimeUnit(1, 2), NoteEvent(58, 64, TimeUnit(1)))
         self.add_event(0, TimeUnit(1), NoteEvent(61, 64, TimeUnit(1)))
+        self.add_event(0, TimeUnit(2), NoteEvent(62, 64, TimeUnit(1)))
+        self.add_event(0, TimeUnit(3), NoteEvent(65, 64, TimeUnit(1)))
+        self.add_event(0, TimeUnit(4), NoteEvent(60, 64, TimeUnit(1)))
+        self.add_event(0, TimeUnit(5), NoteEvent(63, 64, TimeUnit(1)))
+        self.add_event(0, TimeUnit(6), NoteEvent(62, 64, TimeUnit(1)))
+        self.add_event(0, TimeUnit(7), NoteEvent(61, 64, TimeUnit(1)))
+        self.add_event(0, TimeUnit(8), NoteEvent(62, 64, TimeUnit(1)))
 
     def add_event(self, channel: int, start_time: TimeUnit, event: Event) -> None:
-        if start_time not in self.__events:
-            self.__events[start_time] = [ChannelEvent(channel, event)]
-        else:
-            events = self.__events[start_time]
-            if (channel, event) not in events:
-                events.append(ChannelEvent(channel, event))
+        _add_event_to_sorted_dict(self.__events,
+                                  ChannelEvent(channel, event),
+                                  start_time)
+
+    def iterate_scheduled_events(self, start_time: Optional[TimeUnit] = None, stop_time: Optional[TimeUnit] = None) -> Iterator[Tuple[int, TimeUnit, List[ScheduledEvent]]]:
+        # key_type: TimeUnit
+        # value_type: List[ScheduledEvent]
+        scheduled_events = SortedDict()
+
+        for channel, event_time, event in self.iterate_events(start_time, stop_time):
+            events = event.schedule(event_time)
+            for e in events:
+                _add_event_to_sorted_dict(scheduled_events, (channel, e), e.time)
+
+        for event_time, e in scheduled_events.items():
+            yield event_time, e
 
     def remove_event(self, channel: int, start_time: TimeUnit, event: Event) -> None:
         if start_time in self.__events:
@@ -148,7 +180,7 @@ class Sequencer(object):
                         del self.__events[start_time]
                     break
 
-    def iterate_events(self, start_time=None, stop_time=None) -> Iterator[Tuple[int, TimeUnit, Event]]:
+    def iterate_events(self, start_time: Optional[TimeUnit] = None, stop_time : Optional[TimeUnit] = None) -> Iterator[Tuple[int, TimeUnit, Event]]:
         # iterate events, by advancing time
         for event_time in self.__events.irange(start_time, stop_time):
             for ch_event in self.__events[event_time]:
