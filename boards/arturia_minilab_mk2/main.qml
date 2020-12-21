@@ -503,27 +503,15 @@ Item {
                 target: infoScreen
                 text: "Instrument edit"
             }
-            PropertyChanges {
-                target: chooseInstrKnob
-                visible: false
-            }
         },
         State {
             name: "trigger"
-            PropertyChanges {
-                target: chooseInstrKnob
-                visible: false
-            }
         },
         State {
             name: "instrAssign"
             PropertyChanges {
                 target: infoScreen
                 text: "Instrument assign"
-            }
-            PropertyChanges {
-                target: chooseInstrKnob
-                visible: true
             }
         }
     ]
