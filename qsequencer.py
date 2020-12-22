@@ -45,9 +45,14 @@ class QSequencer(QObject):
         ]
 
     def __on_timeout(self):
+        # We rearm the timeout. Make sure self.__event is copied
+        # otherwise it could be overwritten while not processed yet
+        events = list(self.__event)
         self.__arm_next_event()
-        print("Timeout @", self.__elapsed_timer.elapsed())
-        for channel, event in self.__event:
+
+        # The following tasks should not take more time than allocated !
+        print("Timeout @", self.__elapsed_timer.elapsed(), events)
+        for channel, event in events:
             if isinstance(event, NoteOnEvent):
                 self.noteOn.emit(channel, event.note, event.velocity)
             elif isinstance(event, NoteOffEvent):
