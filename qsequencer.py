@@ -213,8 +213,8 @@ class QSequencer(QObject):
         return [
             {
                 "channel": channel,
-                "time_amount": event_time.amount,
-                "time_unit": event_time.unit,
+                "time_amount": event_time.amount(),
+                "time_unit": event_time.unit(),
                 "event": event.to_dict()
             }
             for channel, event_time, event in self.iterate_events(
