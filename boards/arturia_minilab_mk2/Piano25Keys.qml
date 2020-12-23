@@ -1,9 +1,13 @@
 import QtQuick 2.7
 import QtQuick.Layouts 1.11
 
-RowLayout {
+Item {
     id: root
     property int octave: 4
+
+    readonly property int octaveWidth: unitSize
+
+    height: main.unitSize*1.5
 
     // note index -> corresponding Rectangle for key
     property var _keyForNote: ({})
@@ -16,16 +20,11 @@ RowLayout {
         _keyForNote[note].color = _keyForNote[note].initialColor;
     }
 
-    Text {
-        id: octaveText
-        text: "Octave\n" + parent.octave
-        horizontalAlignment: Text.AlignHCenter
-    }
     Item {
         id: pianoK
-        width: main.width
+        width: main.width - octaveWidth
         height: main.unitSize*1.5
-        property real keyWidth: (main.width - octaveText.width) / 15
+        property real keyWidth: (main.width - octaveWidth) / 15
 
         Repeater {
             id: whiteKeyRep
@@ -68,5 +67,13 @@ RowLayout {
                 parent._keyForNote[blackKeyRep.semis[i]] = blackKeyRep.itemAt(i);
             }
         }
+    }
+    Text {
+        id: octaveText
+        width: octaveWidth
+        text: "Octave\n" + parent.octave
+        horizontalAlignment: Text.AlignHCenter
+        y: (unitSize * 1.5 - height) / 2
+        x: main.width - octaveWidth + (octaveWidth - width) / 2
     }
 }
