@@ -9,20 +9,28 @@ Item {
     implicitWidth: root.size
     implicitHeight: root.size
 
-    property string color : "black"
+    enum Color {
+        Black,
+        Red,
+        Green,
+        Blue,
+        White
+    }
+
+    property string color : Pad.Color.Black
     Rectangle
     {
         width: root.size
         height: root.size
         radius: root.size/10
         color: {
-            if (parent.color == "red") {
+            if (parent.color == Pad.Color.Red) {
                 "#d90243"
             }
-            else if (parent.color == "green") {
+            else if (parent.color == Pad.Color.Green) {
                 "#6fc22b"
             }
-            else if (parent.color == "blue") {
+            else if (parent.color == Pad.Color.Blue) {
                 "#2f9af7"
             }
             else {

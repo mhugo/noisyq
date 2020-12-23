@@ -488,7 +488,7 @@ Item {
         target: board
         onPadPressed : {
             if (padNumber < 16)
-                padRep.itemAt(padNumber).color = "red";
+                padRep.itemAt(padNumber).color = Pad.Color.Red;
         }
         onPadReleased : {
             if (padNumber < 16)
