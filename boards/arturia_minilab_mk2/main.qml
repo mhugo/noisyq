@@ -121,131 +121,6 @@ Item {
         }
     }
 
-    Item {
-        id: mainLayout
-        anchors.top: infoScreen.bottom
-        Common.PlacedDial {
-            id: modeKnob
-            knobNumber: 0
-
-            enumValues: [
-                "Instr. assign",
-                "Sequencer",
-                "Instr. edit"
-            ]
-
-            legend: "Function"
-
-            onValueChanged: {
-                infoScreen.text = enumValues[~~value];
-                if (~~value == 1) {
-                    // FIXME hack
-                    padMenu.texts = ["Play", "", "", "", "", "", "", "",
-                                     "", "", "", "", "", "", "", ""];
-                }
-            }
-            Component.onCompleted: {
-                infoScreen.text = enumValues[~~value];
-            }
-        }
-
-        Common.PlacedDial {
-            id: voiceKnob
-            isInteger: true
-            knobNumber: 8
-
-            min: 0
-            max: 15
-            legend: "Voice"
-
-            function updateInstrKnob() {
-                if (modeStackLayout.currentIndex == 0) { // instrument assign
-                    let instr = instrumentStack.instrumentAt(~~value);
-                    if (instr) {
-                        chooseInstrKnob.value = parseInt(instr.index) + 1;
-                    }
-                    else {
-                        chooseInstrKnob.value = 0;
-                    }
-                }
-            }
-
-            onValueChanged: {
-                updateInstrKnob();
-            }
-        }
-
-        StackLayout {
-            id: modeStackLayout
-
-            currentIndex: ~~modeKnob.value
-
-            // Instrument assign
-            Item {
-                Common.PlacedDial {
-                    id: chooseInstrKnob
-                    knobNumber: 9
-                    legend: "Instr. type "
-
-                    enumValues: ["None"]
-
-                    Component.onCompleted: {
-                        max = instrumentComponents.length;
-                        for (var i = 0; i < instrumentComponents.length; i++) {
-                            enumValues.push(instrumentComponents[i].name);
-                        }
-                        _initIfVisible();
-                    }
-                }
-
-                Connections {
-                    target: board
-                    onPadReleased : {
-                        if (padNumber == board.knob9SwitchId) {
-                            // click => assign instrument to voice
-                            let instrumentIndex = ~~chooseInstrKnob.value - 1;
-                            if (instrumentIndex == -1) {
-                                // unassign
-                                // TODO
-                            }
-                            else {
-                                instrumentStack.assignInstrumentFromIndex(instrumentIndex, ~~voiceKnob.value);
-                            }
-                        }
-                    }
-                    enabled: modeStackLayout.currentIndex == 0
-                }
-            }
-
-            // Trigger
-            Item {
-                Connections {
-                    target: board
-                    onPadReleased : {
-                        if (padNumber == 0) {
-                            sequencer.play(120);
-                        }
-                    }
-                    enabled: modeStackLayout.currentIndex == 1
-                }
-            }
-
-            // Instrument Edit
-            Item {
-                Connections {
-                    target: board
-                    onPadReleased : {
-                        if (padNumber == board.knob9SwitchId) {
-                            // click => edit instrument
-                            instrumentStack.editInstrument(~~voiceKnob.value);
-                        }
-                    }
-                    enabled: modeStackLayout.currentIndex == 2
-                }
-            }
-        }
-    }
-
     StackLayout {
         // A layout that stacks a widget for each instrument
         id: instrumentStack
@@ -253,7 +128,7 @@ Item {
         visible: false
 
         width: parent.width
-        height: main.unitSize*3
+        height: (main.unitSize+main.legendSize)*2
 
         function saveState() {
             // save the state of each instrument
@@ -510,6 +385,167 @@ Item {
             piano.octave -= 1;
             if (piano.octave < 0)
                 piano.octave = 0;
+        }
+    }
+
+    Item {
+        id: mainLayout
+        anchors.top: infoScreen.bottom
+        Common.PlacedDial {
+            id: modeKnob
+            knobNumber: 0
+
+            enumValues: [
+                "Instr. assign",
+                "Sequencer",
+                "Instr. edit"
+            ]
+
+            legend: "Function"
+
+            Component.onCompleted: {
+                infoScreen.text = enumValues[~~value];
+            }
+        }
+
+        Common.PlacedDial {
+            id: voiceKnob
+            isInteger: true
+            knobNumber: 8
+
+            min: 0
+            max: 15
+            legend: "Voice"
+
+            function updateInstrKnob() {
+                if (modeStackLayout.currentIndex == 0) { // instrument assign
+                    let instr = instrumentStack.instrumentAt(~~value);
+                    if (instr) {
+                        chooseInstrKnob.value = parseInt(instr.index) + 1;
+                    }
+                    else {
+                        chooseInstrKnob.value = 0;
+                    }
+                }
+            }
+
+            onValueChanged: {
+                updateInstrKnob();
+            }
+        }
+
+        StackLayout {
+            id: modeStackLayout
+
+            currentIndex: ~~modeKnob.value
+
+            // Instrument assign
+            Item {
+                Common.PlacedDial {
+                    id: chooseInstrKnob
+                    knobNumber: 9
+                    legend: "Instr. type "
+
+                    enumValues: ["None"]
+
+                    Component.onCompleted: {
+                        max = instrumentComponents.length;
+                        for (var i = 0; i < instrumentComponents.length; i++) {
+                            enumValues.push(instrumentComponents[i].name);
+                        }
+                        _initIfVisible();
+                    }
+                }
+
+                Connections {
+                    target: board
+                    onPadReleased : {
+                        if (padNumber == board.knob9SwitchId) {
+                            // click => assign instrument to voice
+                            let instrumentIndex = ~~chooseInstrKnob.value - 1;
+                            if (instrumentIndex == -1) {
+                                // unassign
+                                // TODO
+                            }
+                            else {
+                                instrumentStack.assignInstrumentFromIndex(instrumentIndex, ~~voiceKnob.value);
+                            }
+                        }
+                    }
+                    enabled: modeStackLayout.currentIndex == 0
+                }
+            }
+
+            // Sequencer
+            Item {
+                id: sequencerDisplay
+
+                Item {
+                    // all pads
+                    y: (main.unitSize+main.legendSize) * 2
+                    PadText {
+                        padNumber: 0
+                        text: "Play"
+                    }
+                }
+
+                Connections {
+                    target: board
+                    onPadReleased : {
+                        if (padNumber == 0) {
+                            sequencer.play(120);
+                        }
+                    }
+                    enabled: sequencerDisplay.visible
+                }
+
+                function _updateSteps() {
+                    let currentVoice = ~~voiceKnob.value;
+                    for (var p = 0; p < 16; p++) {
+                        padRep.itemAt(p).color = "black";
+                    }
+                    let events = sequencer.list_events(0, 1, 4, 1);
+                    for (var i = 0; i < events.length; i++) {
+                        let event = events[i];
+                        if (event.channel != currentVoice)
+                            continue;
+                        // round the event start time to the previous step
+                        let event_time = event.time_amount / event.time_unit;
+                        let step_number = ~~(event_time * 4);
+                        console.log("event_time", event_time, "step_number", step_number);
+                        if (step_number < 16)
+                            padRep.itemAt(step_number).color = Pad.Color.Blue;
+                    }
+                }
+
+                onVisibleChanged: {
+                    if (visible) {
+                        _updateSteps();
+                    }
+                }
+
+                Connections {
+                    target: voiceKnob
+                    onValueChanged: {
+                        sequencerDisplay._updateSteps();
+                    }
+                    enabled: sequencerDisplay.visible
+                }
+            }
+
+            // Instrument Edit
+            Item {
+                Connections {
+                    target: board
+                    onPadReleased : {
+                        if (padNumber == board.knob9SwitchId) {
+                            // click => edit instrument
+                            instrumentStack.editInstrument(~~voiceKnob.value);
+                        }
+                    }
+                    enabled: modeStackLayout.currentIndex == 2
+                }
+            }
         }
     }
 
