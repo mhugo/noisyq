@@ -96,6 +96,20 @@ Text {
     font.pointSize: 14
     focus: true
 
+    property bool _pianoSelected: false
+    property int currentOctave: 4
+
+    function _scancodeToMidiKey(scancode) {
+        // Convert a scan code in the two rows qsdfg and wxcvb to a MIDI keyboard key number
+        let whiteKeys = [0, 2, 4, 5, 7, 9, 11, 12, 14, 16, 17, 19, 21, 23, 24];
+        let blackKeys = [-1, 1, 3, -1, 6, 8, 10, -1, 13, 15, -1, 18, 20, 22];
+        if (scancode >= 52 && scancode < 62) // wxcvb => white keys
+            return whiteKeys[scancode - 52];
+        if (scancode >= 38 && scancode < 50) { // qsdfg => black keys
+            return blackKeys[scancode - 38];
+        }
+    }
+
     Keys.onPressed : {
         if ((event.key == Qt.Key_Up) || (event.key == Qt.Key_Down)) {
             let knob = knobs.itemAt(selectedKnob);
@@ -130,8 +144,11 @@ Text {
         else if (event.nativeScanCode >= 24 && event.nativeScanCode < 32) {
             selectedKnob = event.nativeScanCode - 24 + 8;
         }
+        else if (event.text == "p") {
+            _pianoSelected = ! _pianoSelected;
+        }
         // qsdfg...
-        else if (event.nativeScanCode >= 38 && event.nativeScanCode < 46) {
+        else if (!_pianoSelected && (event.nativeScanCode >= 38 && event.nativeScanCode < 46)) {
             let padNumber = event.nativeScanCode - 38;
             if (event.modifiers & Qt.ControlModifier) {
                 padPressed(padNumber + 8);
@@ -140,16 +157,25 @@ Text {
                 padPressed(padNumber);
             }
         }
+        else if (_pianoSelected && (event.nativeScanCode >= 38 && event.nativeScanCode < 50)) {
+            let midiKey = _scancodeToMidiKey(event.nativeScanCode);
+            if (midiKey != -1)
+                notePressed(midiKey + currentOctave * 12, 127);
+        }
         // wxcvbn.. => piano
         else if (event.nativeScanCode >= 52 && event.nativeScanCode < 62) {
-            let key = event.nativeScanCode - 52 + 60;
-            notePressed(key, 127);
+            let midiKey = _scancodeToMidiKey(event.nativeScanCode);
+            if (midiKey != -1)
+                notePressed(midiKey + currentOctave * 12, 127);
         }
         else if (event.text == ">") {
             octaveUp();
+            currentOctave += 1;
         }
         else if (event.text == "<") {
             octaveDown();
+            if (currentOctave > 0)
+                currentOctave -= 1;
         }
         else if (event.key == Qt.Key_Escape) {
             // escape
@@ -169,7 +195,7 @@ Text {
         else if ((event.nativeScanCode == 24) && (event.modifiers & Qt.ControlModifier)) {
             padReleased(knob9SwitchId);
         }
-        else if (event.nativeScanCode >= 38 && event.nativeScanCode < 46) {
+        else if (!_pianoSelected && (event.nativeScanCode >= 38 && event.nativeScanCode < 46)) {
             let padNumber = event.nativeScanCode - 38;
             if (event.modifiers & Qt.ControlModifier) {
                 padReleased(padNumber + 8);
@@ -178,9 +204,16 @@ Text {
                 padReleased(padNumber);
             }
         }
+        else if (_pianoSelected && (event.nativeScanCode >= 38 && event.nativeScanCode < 50)) {
+            let midiKey = _scancodeToMidiKey(event.nativeScanCode);
+            if (midiKey != -1)
+                noteReleased(midiKey + currentOctave * 12, 127);
+        }
+        // wxcvbn.. => piano
         else if (event.nativeScanCode >= 52 && event.nativeScanCode < 62) {
-            let key = event.nativeScanCode - 52 + 60;
-            noteReleased(key);
+            let midiKey = _scancodeToMidiKey(event.nativeScanCode);
+            if (midiKey != -1)
+                noteReleased(midiKey + currentOctave * 12);
         }
     }
 
