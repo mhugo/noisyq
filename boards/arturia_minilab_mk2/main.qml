@@ -491,6 +491,18 @@ Item {
 
                 Connections {
                     target: board
+                    onNoteReleased: {
+                        if (board.isShiftPressed) {
+                            if (note % 12 == 0) {
+                                // First note : play/pause
+                                sequencer.toggle_play_pause(120);
+                            }
+                            if (note % 12 == 2) {
+                                // Second note : stop
+                                sequencer.stop();
+                            }
+                        }
+                    }
                     onPadReleased : {
                         if (padNumber == 0) {
                             sequencer.play(120);

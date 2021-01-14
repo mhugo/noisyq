@@ -1,4 +1,5 @@
 # Qt interface to sequencer
+from enum import Enum
 from fractions import Fraction
 from typing import Any, Iterator, List, Literal, Optional, Tuple
 
@@ -135,6 +136,12 @@ def _add_event_to_sorted_dict(events: SortedDict, event: Any, start_time: TimeUn
             events[start_time].append(event)
 
 
+class State(Enum):
+    STOPPED = 0
+    PLAYING = 1
+    PAUSED = 2
+
+
 class QSequencer(QObject):
 
     def __init__(self, parent=None):
@@ -151,6 +158,7 @@ class QSequencer(QObject):
         self.__scheduled_events = []
         self.__current_events = None
         self.__bpm = 120
+        self.__state = State.STOPPED
 
         # FIXME
         self.add_event(1, TimeUnit(1, 2), NoteEvent(58, 64, TimeUnit(1)))
@@ -250,12 +258,43 @@ class QSequencer(QObject):
             event_time, self.__current_events = e
             next_ms = int(event_time.amount() * 60 * 1000 / event_time.unit() / self.__bpm)
             self.__timer.start(next_ms - e_ms)
+        else:
+            print("***STOP")
+            self.__state = State.STOPPED
 
     @pyqtSlot(int)
     def play(self, bpm):
-        # TODO: add start_time, stop_time
+        # TODO: add start_time, stop_time parameters
+
+        print("***PLAY")
         self.__bpm = bpm
-        self.__scheduled_events = list(self.iterate_scheduled_events())
-        # print("\n".join([repr(e) for e in self.__scheduled_events]))
-        self.__current_events = None
-        self.__arm_next_event()
+
+        if self.__state == State.STOPPED:
+            self.__scheduled_events = list(self.iterate_scheduled_events())
+            # print("\n".join([repr(e) for e in self.__scheduled_events]))
+            self.__current_events = None
+            self.__arm_next_event()
+        elif self.__state == State.PAUSED:
+            self.__elapsed_timer.start()
+            self.__timer.start()
+        self.__state = State.PLAYING
+
+    @pyqtSlot()
+    def pause(self):
+        print("***PAUSE")
+        if self.__state == State.PLAYING:
+            self.__timer.stop()
+        self.__state = State.PAUSED
+
+    @pyqtSlot()
+    def stop(self):
+        print("***STOP")
+        self.__timer.stop()
+        self.__state = State.STOPPED
+
+    @pyqtSlot(int)
+    def toggle_play_pause(self, bpm):
+        if self.__state == State.PLAYING:
+            self.pause()
+        else:
+            self.play(bpm)

@@ -16,6 +16,10 @@ Text {
     signal octaveUp()
     signal octaveDown()
 
+    property bool isShiftPressed: false
+    signal shiftPressed()
+    signal shiftReleased()
+
     Repeater {
         id: knobs
         model: 16
@@ -126,7 +130,12 @@ Text {
         if (event.isAutoRepeat) {
             return;
         }
-        console.log("key", "scan code", event.nativeScanCode, "key", event.key, "modifier", event.modifiers);
+        console.log("key pressed", "scan code", event.nativeScanCode, "key", event.key, "modifier", event.modifiers);
+
+        if (event.modifiers & Qt.ShiftModifier) {
+            shiftPressed();
+            isShiftPressed = true;
+        }
         let value;
         // ctrl + 0 => knob 1 switch
         if ((event.nativeScanCode == 10) && (event.modifiers & Qt.ControlModifier)) {
@@ -185,6 +194,10 @@ Text {
     Keys.onReleased : {
         if (event.isAutoRepeat) {
             return;
+        }
+        if (event.key == Qt.Key_Shift) {
+            shiftReleased();
+            isShiftPressed = false;
         }
         // ctrl + 0 => knob 1 switch
         if ((event.nativeScanCode == 10) && (event.modifiers & Qt.ControlModifier)) {
