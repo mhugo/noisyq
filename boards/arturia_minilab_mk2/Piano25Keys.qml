@@ -21,24 +21,6 @@ Item {
     }
 
     Item {
-        id: pianoIcons
-        readonly property real keyWidth: (main.width - octaveWidth) / 15
-        property bool isPlaying: false
-        Image {
-            source: { if (parent.isPlaying) {"pause.svg"} else {"play.svg"} }
-            width: 16
-            height: 16
-            x: (parent.keyWidth - width) / 2
-        }
-        Image {
-            source: "stop.svg"
-            width: 16
-            height: 16
-            x: (parent.keyWidth - width) / 2 + parent.keyWidth
-        }
-    }
-
-    Item {
         id: pianoK
         width: main.width - octaveWidth
         height: main.unitSize*1.5 - 32

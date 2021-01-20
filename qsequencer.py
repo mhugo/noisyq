@@ -231,6 +231,11 @@ class QSequencer(QObject):
             )
         ]
 
+    stateChanged = pyqtSignal()
+    def __state_change(self, new_state: State) -> None:
+        self.__state = new_state
+        self.stateChanged.emit()
+
     def __on_timeout(self):
         # We rearm the timeout. Make sure self.__current_events is copied
         # otherwise it could be overwritten while not processed yet
@@ -260,7 +265,7 @@ class QSequencer(QObject):
             self.__timer.start(next_ms - e_ms)
         else:
             print("***STOP")
-            self.__state = State.STOPPED
+            self.__state_change(State.STOPPED)
 
     @pyqtSlot(int)
     def play(self, bpm):
@@ -277,20 +282,20 @@ class QSequencer(QObject):
         elif self.__state == State.PAUSED:
             self.__elapsed_timer.start()
             self.__timer.start()
-        self.__state = State.PLAYING
+        self.__state_change(State.PLAYING)
 
     @pyqtSlot()
     def pause(self):
         print("***PAUSE")
         if self.__state == State.PLAYING:
             self.__timer.stop()
-        self.__state = State.PAUSED
+        self.__state_change(State.PAUSED)
 
     @pyqtSlot()
     def stop(self):
         print("***STOP")
         self.__timer.stop()
-        self.__state = State.STOPPED
+        self.__state_change(State.STOPPED)
 
     @pyqtSlot(int)
     def toggle_play_pause(self, bpm):
@@ -298,3 +303,7 @@ class QSequencer(QObject):
             self.pause()
         else:
             self.play(bpm)
+
+    @pyqtSlot(result=bool)
+    def is_playing(self):
+        return self.__state == State.PLAYING

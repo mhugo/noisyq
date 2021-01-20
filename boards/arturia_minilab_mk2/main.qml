@@ -483,9 +483,33 @@ Item {
                 Item {
                     // all pads
                     y: (main.unitSize+main.legendSize) * 2
-                    PadText {
-                        padNumber: 0
-                        text: "Play"
+                }
+
+                Item {
+                    // icons above piano keys
+                    id: pianoIcons
+                    y: main.unitSize*4 + main.legendSize*2 + 8
+                    readonly property real keyWidth: (main.width - piano.octaveWidth) / 15
+                    property bool isPlaying: false
+                    Image {
+                        source: "pause.svg"
+                        width: 16
+                        height: 16
+                        x: (parent.keyWidth - width) / 2
+                        visible: parent.isPlaying
+                    }
+                    Image {
+                        source: "play.svg"
+                        width: 16
+                        height: 16
+                        x: (parent.keyWidth - width) / 2
+                        visible: !parent.isPlaying
+                    }
+                    Image {
+                        source: "stop.svg"
+                        width: 16
+                        height: 16
+                        x: (parent.keyWidth - width) / 2 + parent.keyWidth
                     }
                 }
 
@@ -503,12 +527,13 @@ Item {
                             }
                         }
                     }
-                    onPadReleased : {
-                        if (padNumber == 0) {
-                            sequencer.play(120);
-                        }
-                    }
                     enabled: sequencerDisplay.visible
+                }
+                Connections {
+                    target: sequencer
+                    onStateChanged: {
+                        pianoIcons.isPlaying = sequencer.is_playing();
+                    }
                 }
 
                 function _updateSteps() {
