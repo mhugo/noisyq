@@ -142,6 +142,39 @@ class State(Enum):
     PAUSED = 2
 
 
+class ChronoMeter(object):
+    """
+       A chronometer can be started, paused, resumed and stopped.
+       It displays (here through elapsed()) the cumulative elasped time.
+    """
+    def __init__(self):
+        self.__elapsed = 0
+        self.__timer = QElapsedTimer()
+        self.__state = State.STOPPED
+
+    def start(self):
+        self.__timer.start()
+        self.__state = State.PLAYING
+
+    def stop(self):
+        self.__elapsed = 0
+        self.__timer.invalidate()
+        self.__state = State.STOPPED
+
+    def pause(self):
+        if self.__state == State.PLAYING:
+            # pause
+            self.__elapsed += self.__timer.elapsed()
+            self.__timer.invalidate()
+        self.__state = State.PAUSED
+
+    def elapsed(self) -> int:
+        if self.__timer.isValid():
+            return self.__elapsed + self.__timer.elapsed()
+        else:
+            return self.__elapsed
+
+
 class QSequencer(QObject):
 
     def __init__(self, parent=None):
@@ -154,11 +187,15 @@ class QSequencer(QObject):
         self.__timer = QTimer()
         self.__timer.setSingleShot(True)
         self.__timer.timeout.connect(self.__on_timeout)
-        self.__elapsed_timer = QElapsedTimer()
+
+        self.__chrono = ChronoMeter()
         self.__scheduled_events = []
         self.__current_events = None
         self.__bpm = 120
         self.__state = State.STOPPED
+
+        # Notes that are being played, so that stop can stop them all
+        self.__sustained_notes : Set[Tuple[int,int]] = set()
 
         # FIXME
         self.add_event(1, TimeUnit(1, 2), NoteEvent(58, 64, TimeUnit(1)))
@@ -243,11 +280,13 @@ class QSequencer(QObject):
         self.__arm_next_event()
 
         # The following tasks should not take more time than allocated !
-        print("Timeout @", self.__elapsed_timer.elapsed(), events)
+        print("Timeout @", self.__chrono.elapsed(), events)
         for channel, event in events:
             if isinstance(event, NoteOnEvent):
+                self.__sustained_notes.add((channel, event.note))
                 self.noteOn.emit(channel, event.note, event.velocity)
             elif isinstance(event, NoteOffEvent):
+                self.__sustained_notes.remove((channel, event.note))
                 self.noteOff.emit(channel, event.note)
             else:
                 raise TypeError("Unknown event type!")
@@ -256,16 +295,17 @@ class QSequencer(QObject):
         if self.__scheduled_events:
             if not self.__current_events:
                 e_ms = 0
-                self.__elapsed_timer.start()
+                self.__chrono.start()
             else:
-                e_ms = self.__elapsed_timer.elapsed()
-            e = self.__scheduled_events.pop(0)
-            event_time, self.__current_events = e
+                e_ms = self.__chrono.elapsed()
+            event_time, self.__current_events = self.__scheduled_events.pop(0)
             next_ms = int(event_time.amount() * 60 * 1000 / event_time.unit() / self.__bpm)
+            print("start timer", next_ms - e_ms)
             self.__timer.start(next_ms - e_ms)
         else:
             print("***STOP")
             self.__state_change(State.STOPPED)
+            self.__chrono.stop()
 
     @pyqtSlot(int)
     def play(self, bpm):
@@ -275,13 +315,15 @@ class QSequencer(QObject):
         self.__bpm = bpm
 
         if self.__state == State.STOPPED:
+            # Play
             self.__scheduled_events = list(self.iterate_scheduled_events())
             # print("\n".join([repr(e) for e in self.__scheduled_events]))
             self.__current_events = None
             self.__arm_next_event()
         elif self.__state == State.PAUSED:
-            self.__elapsed_timer.start()
+            # Resume from pause
             self.__timer.start()
+        self.__chrono.start()
         self.__state_change(State.PLAYING)
 
     @pyqtSlot()
@@ -289,13 +331,19 @@ class QSequencer(QObject):
         print("***PAUSE")
         if self.__state == State.PLAYING:
             self.__timer.stop()
+        self.__chrono.pause()
         self.__state_change(State.PAUSED)
 
     @pyqtSlot()
     def stop(self):
         print("***STOP")
         self.__timer.stop()
+        self.__chrono.stop()
         self.__state_change(State.STOPPED)
+        # Send note off to notes currently playing !
+        while len(self.__sustained_notes):
+            channel, note = self.__sustained_notes.pop()
+            self.noteOff.emit(channel, note)
 
     @pyqtSlot(int)
     def toggle_play_pause(self, bpm):
@@ -307,3 +355,32 @@ class QSequencer(QObject):
     @pyqtSlot(result=bool)
     def is_playing(self):
         return self.__state == State.PLAYING
+
+if __name__ == "__main__":
+    import time
+    # test ChronoMeter
+    c = ChronoMeter()
+    print("*START*")
+    c.start()
+    time.sleep(1)
+    print(c.elapsed())
+    print("*PAUSE*")
+    c.pause()
+    time.sleep(1)
+    print(c.elapsed())
+    print("*RESUME*")
+    c.start()
+    time.sleep(1)
+    print(c.elapsed())
+    time.sleep(1)
+    print(c.elapsed())
+    print("*PAUSE*")
+    c.pause()
+    time.sleep(1)
+    print(c.elapsed())
+    print("*STOP*")
+    c.stop()
+    print("*START*")
+    c.start()
+    time.sleep(1)
+    print(c.elapsed())
