@@ -189,6 +189,8 @@ class QSequencer(QObject):
         self.__timer.timeout.connect(self.__on_timeout)
 
         self.__chrono = ChronoMeter()
+        # Time after pause and before the next note
+        self.__remaining_time_after_pause = 0
         self.__scheduled_events = []
         self.__current_events = None
         self.__bpm = 120
@@ -322,7 +324,7 @@ class QSequencer(QObject):
             self.__arm_next_event()
         elif self.__state == State.PAUSED:
             # Resume from pause
-            self.__timer.start()
+            self.__timer.start(self.__remaining_time_after_pause)
         self.__chrono.start()
         self.__state_change(State.PLAYING)
 
@@ -330,6 +332,7 @@ class QSequencer(QObject):
     def pause(self):
         print("***PAUSE")
         if self.__state == State.PLAYING:
+            self.__remaining_time_after_pause = self.__timer.remainingTime()
             self.__timer.stop()
         self.__chrono.pause()
         self.__state_change(State.PAUSED)
@@ -338,6 +341,7 @@ class QSequencer(QObject):
     def stop(self):
         print("***STOP")
         self.__timer.stop()
+        self.__remaining_time_after_pause = 0
         self.__chrono.stop()
         self.__state_change(State.STOPPED)
         # Send note off to notes currently playing !
