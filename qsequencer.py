@@ -4,17 +4,18 @@ from fractions import Fraction
 from typing import Any, Iterator, List, Literal, Optional, Tuple
 
 from PyQt5.QtCore import (
-    pyqtSignal, pyqtSlot, QObject, QTimer, QElapsedTimer
+    pyqtSignal, pyqtSlot, QObject, QTimer, QElapsedTimer, QVariant, QVariant
 )
 from sortedcontainers import SortedDict
 
+TimeSubUnit = Literal[1, 2, 4, 8, 16, 32, 64, 128]
 
 class TimeUnit:
     """
        A TimeUnit represents a fraction of a beat.
        It is stored as two integers. Denominator is a power of 2.
     """
-    def __init__(self, amount: int, unit: Literal[1, 2, 4, 8, 16, 32, 64, 128] = 1) -> None:
+    def __init__(self, amount: int, unit: TimeSubUnit = 1) -> None:
         self._fraction = Fraction(amount, unit)
 
     def amount(self):
@@ -84,6 +85,12 @@ class Event:
 
     def to_dict(self):
         raise NotImplementedError
+
+    @classmethod
+    def from_dict(cls, d: dict) -> "Event":
+        if d.get("event_type") == "note_event":
+            return NoteEvent(d["note"], d["velocity"], TimeUnit(d["duration_amount"], d["duration_unit"]))
+        return Event()
 
 
 class NoteEvent(Event):
@@ -200,25 +207,33 @@ class QSequencer(QObject):
         self.__sustained_notes : Set[Tuple[int,int]] = set()
 
         # FIXME
-        self.add_event(1, TimeUnit(1, 2), NoteEvent(58, 64, TimeUnit(1)))
-        self.add_event(0, TimeUnit(1), NoteEvent(61, 64, TimeUnit(1)))
-        self.add_event(0, TimeUnit(2), NoteEvent(62, 64, TimeUnit(1)))
-        self.add_event(0, TimeUnit(3), NoteEvent(65, 64, TimeUnit(1)))
-        self.add_event(0, TimeUnit(4), NoteEvent(60, 64, TimeUnit(1)))
-        self.add_event(0, TimeUnit(5), NoteEvent(63, 64, TimeUnit(1)))
-        self.add_event(0, TimeUnit(6), NoteEvent(62, 64, TimeUnit(1)))
-        self.add_event(0, TimeUnit(7), NoteEvent(61, 64, TimeUnit(1)))
-        self.add_event(0, TimeUnit(8), NoteEvent(62, 64, TimeUnit(1)))
+        self._add_event(0, TimeUnit(1, 2), NoteEvent(58, 64, TimeUnit(1)))
+        self._add_event(0, TimeUnit(1), NoteEvent(61, 64, TimeUnit(1)))
+        self._add_event(0, TimeUnit(2), NoteEvent(62, 64, TimeUnit(1)))
+        self._add_event(0, TimeUnit(3), NoteEvent(65, 64, TimeUnit(1)))
+        self._add_event(0, TimeUnit(4), NoteEvent(60, 64, TimeUnit(1)))
+        self._add_event(0, TimeUnit(5), NoteEvent(63, 64, TimeUnit(1)))
+        self._add_event(0, TimeUnit(6), NoteEvent(62, 64, TimeUnit(1)))
+        self._add_event(0, TimeUnit(7), NoteEvent(61, 64, TimeUnit(1)))
+        self._add_event(0, TimeUnit(8), NoteEvent(62, 64, TimeUnit(1)))
 
     noteOn = pyqtSignal(int, int, int, arguments=["channel", "note", "velocity"])
     noteOff = pyqtSignal(int, int, arguments=["channel", "note"])
 
-    def add_event(self, channel: int, start_time: TimeUnit, event: Event) -> None:
+    def _add_event(self, channel: int, start_time: TimeUnit, event: Event) -> None:
         _add_event_to_sorted_dict(self.__events,
                                   ChannelEvent(channel, event),
                                   start_time)
 
-    def remove_event(self, channel: int, start_time: TimeUnit, event: Event) -> None:
+    @pyqtSlot(int, int, int, QVariant)
+    def add_event(self, channel: int, start_time_amount,
+                  start_time_unit: int, event_dict) -> None:
+        event = Event.from_dict(event_dict.toVariant())
+        self._add_event(channel,
+                        TimeUnit(start_time_amount, start_time_unit),
+                        event)
+
+    def _remove_event(self, channel: int, start_time: TimeUnit, event: Event) -> None:
         if start_time in self.__events:
             for i, evt in enumerate(self.__events[start_time]):
                 if evt.channel == channel and evt.event == event:
@@ -226,6 +241,15 @@ class QSequencer(QObject):
                     if len(self.__events[start_time]) == 0:
                         del self.__events[start_time]
                     break
+
+    @pyqtSlot(int, int, int, QVariant)
+    def remove_event(self, channel: int, start_time_amount,
+                     start_time_unit: int, event_dict) -> None:
+        print("event_dict", event_dict.toVariant())
+        event = Event.from_dict(event_dict.toVariant())
+        self._remove_event(channel,
+                           TimeUnit(start_time_amount, start_time_unit),
+                           event)
 
     def iterate_events(self,
                        start_time: Optional[TimeUnit] = None,

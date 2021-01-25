@@ -537,9 +537,10 @@ Item {
                 }
 
                 function _updateSteps() {
+                    // Change step colors based on steps from the sequencer
                     let currentVoice = ~~voiceKnob.value;
                     for (var p = 0; p < 16; p++) {
-                        padRep.itemAt(p).color = "black";
+                        padRep.itemAt(p).color = Pad.Color.Black;
                     }
                     let events = sequencer.list_events(0, 1, 4, 1);
                     for (var i = 0; i < events.length; i++) {
@@ -549,9 +550,9 @@ Item {
                         // round the event start time to the previous step
                         let event_time = event.time_amount / event.time_unit;
                         let step_number = ~~(event_time * 4);
-                        console.log("event_time", event_time, "step_number", step_number);
+                        console.log(event.time_amount, event.time_unit, "event_time", event_time, "step_number", step_number);
                         if (step_number < 16)
-                            padRep.itemAt(step_number).color = Pad.Color.Blue;
+                            Qt.callLater(function(){padRep.itemAt(step_number).color = Pad.Color.Blue});
                     }
                 }
 
@@ -567,6 +568,41 @@ Item {
                         sequencerDisplay._updateSteps();
                     }
                     enabled: sequencerDisplay.visible
+                }
+                Connections {
+                    target: board
+                    onPadReleased: {
+                        let currentVoice = ~~voiceKnob.value;
+                        // toggle step
+                        let l = sequencer.list_events(
+                            padNumber, 4,
+                            padNumber, 4);
+                        if (l.length) {
+                            for (var i = 0; i < l.length; i++) {
+                                if (l[i].channel == currentVoice) {
+                                    console.log("Event", l[i].time_amount, l[i].time_unit, l[i].event.note);
+                                    sequencer.remove_event(l[i].channel,
+                                                           l[i].time_amount,
+                                                           l[i].time_unit,
+                                                           l[i].event);
+                                }
+                            }
+                        }
+                        else {
+                            // add an event
+                            sequencer.add_event(currentVoice,
+                                                padNumber,
+                                                4,
+                                                {
+                                                    "event_type": "note_event",
+                                                    "note": 60,
+                                                    "velocity": 100,
+                                                    "duration_amount": 1,
+                                                    "duration_unit": 4
+                                                });
+                        }
+                        sequencerDisplay._updateSteps();
+                    }
                 }
             }
 
