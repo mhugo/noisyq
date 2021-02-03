@@ -271,7 +271,7 @@ Text {
                 71: 16, // Knob 1 button
                 72: 17  // Knob 9 button
             }
-            console.log("+++ midi received", message);
+            //console.log("+++ midi received", message);
             if ((message[0] & 0xF0) == 0x90) {
                 // NOTE_ON
                 console.log("note on");
@@ -307,7 +307,20 @@ Text {
                         root.padReleased(padNumber);
                 }
             }
-            // TODO SYSEX
+            else if ((message[0] == 0xF0) && message.length > 6) {
+                // SYSEX
+                let rem = message.slice(6, -1);
+                if ((rem[0] == 0x02) && (rem[1] == 0x00) && (rem[2] == 0x00) && (rem[3] == 0x2E)) {
+                    if (rem[4] == 0x7F) {
+                        root.shiftPressed();
+                        root.isShiftPressed = true;
+                    }
+                    else {
+                        root.shiftReleased();
+                        root.isShiftPressed = false;
+                    }
+                }
+            }
         }
     }
 }
