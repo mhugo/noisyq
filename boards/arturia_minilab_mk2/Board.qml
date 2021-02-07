@@ -32,7 +32,7 @@ Text {
             function _delta() {
                 let d = max - min;
                 if (isInteger) {
-                    return d < 128 ? d / 128 : 1;
+                    return d < 64 ? d / 64 : 1;
                 }
                 return d / 128.0;
             }
@@ -287,19 +287,20 @@ Text {
                 let v = message[2];
                 if ((cc in cc_to_knob) && (v != 0x40)) {
                     const knobNumber = cc_to_knob[cc];
+                    let knob = knobs.itemAt(knobNumber);
                     let amount = v - 0x40;
                     if (amount > 0) {
                         for (var i = 0; i < amount; i++)
-                            knobs.itemAt(knobNumber).increment();
-                        root.knobMoved(knobNumber, knobs.itemAt(knobNumber).value);
+                            knob.increment(0);
+                        root.knobMoved(knobNumber, knob.value);
                     }
                     else if (amount < 0) {
                         for (var i = 0; i < -amount; i++)
-                            knobs.itemAt(knobNumber).decrement();
-                        root.knobMoved(knobNumber, knobs.itemAt(knobNumber).value);
+                            knob.decrement(0);
+                        root.knobMoved(knobNumber, knob.value);
                     }
                 }
-                if (cc in cc_to_pad) {
+                else if (cc in cc_to_pad) {
                     const padNumber = cc_to_pad[cc];
                     if (v == 0x7F)
                         root.padPressed(padNumber);

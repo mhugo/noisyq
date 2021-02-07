@@ -16,7 +16,7 @@ Item {
 
     property real value: 0.0
     property real min: 0.0
-    property real max: enumValues ? (enumValues.length - 1) : 1.0
+    property real max: enumValues ? enumValues.length : 1.0
 
 
     x: (knobNumber  % 8) * unitSize
@@ -56,7 +56,8 @@ Item {
         target: board
         onKnobMoved: {
             if (knobNumber == root.knobNumber) {
-                root.value = amount;
+                if (amount != root.max)
+                    root.value = amount;
             }
         }
         enabled: root.visible && root.enabled
