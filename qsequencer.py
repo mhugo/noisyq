@@ -4,7 +4,10 @@ from fractions import Fraction
 from typing import Any, Iterator, List, Literal, Optional, Tuple
 
 from PyQt5.QtCore import (
-    pyqtSignal, pyqtSlot, QObject, QTimer, QElapsedTimer, QVariant, QVariant
+    pyqtSignal, pyqtSlot, pyqtProperty, QObject, QTimer, QElapsedTimer, QVariant, QVariant,
+)
+from PyQt5.QtWidgets import (
+    QApplication, QWidget, QVBoxLayout, QLabel, QPushButton
 )
 from sortedcontainers import SortedDict
 
@@ -149,40 +152,106 @@ class State(Enum):
     PAUSED = 2
 
 
-class ChronoMeter(object):
+class ChronoMeter(QObject):
     """
        A chronometer can be started, paused, resumed and stopped.
        It displays (here through elapsed()) the cumulative elasped time.
+
+       It can also trigger a signal after some given time, like a QTimer,
+       but with the ability to pause it.
     """
-    def __init__(self):
+
+    timeout = pyqtSignal()
+
+    def __init__(self, parent=None):
+        super().__init__(parent)
         self.__elapsed = 0
-        self.__timer = QElapsedTimer()
+        self.__etimer = QElapsedTimer()
         self.__state = State.STOPPED
 
-    def start(self):
-        self.__timer.start()
-        self.__state = State.PLAYING
+        self.__timer = QTimer(self)
+        self.__timer.setSingleShot(True)
+        # forward the internal timeout
+        self.__timer.timeout.connect(self.__on_timeout)
+        self.__interval = 0
+        self.__single_shot = False
 
+    @pyqtSlot(result=bool)
+    def isSingleShot(self):
+        return self.__single_shot
+
+    @pyqtSlot(bool)
+    def setSingleShot(self, s):
+        self.__single_shot = s
+
+    @pyqtSlot(result=int)
+    def interval(self):
+        return self.__interval
+
+    @pyqtSlot(int)
+    def setInterval(self, n_interval):
+        self.__interval = n_interval
+
+    def __on_timeout(self):
+        """Called when the internal timer times out"""
+        if self.__single_shot:
+            self.__state = State.STOPPED
+        else:
+            # rearm
+            self.__timer.setInterval(self.__interval)
+            self.__timer.start()
+        self.timeout.emit()
+
+    @pyqtSlot()
+    def start(self):
+        if self.__state == State.STOPPED:
+            print("interval", self.__interval)
+            self.__timer.setInterval(self.__interval)
+
+        if self.__state != State.PLAYING:
+            self.__etimer.start()
+            self.__timer.start()
+            self.__state = State.PLAYING
+
+    @pyqtSlot()
     def stop(self):
         self.__elapsed = 0
-        self.__timer.invalidate()
+        self.__etimer.invalidate()
+        self.__timer.stop()
         self.__state = State.STOPPED
 
+    @pyqtSlot()
     def pause(self):
         if self.__state == State.PLAYING:
             # pause
-            self.__elapsed += self.__timer.elapsed()
-            self.__timer.invalidate()
-        self.__state = State.PAUSED
+            self.__elapsed += self.__etimer.elapsed()
+            self.__etimer.invalidate()
+            # the timer is stopped before the timeout,
+            self.__timer.setInterval(self.__timer.remainingTime())
+            self.__timer.stop()
 
+            self.__state = State.PAUSED
+
+    @pyqtSlot()
     def elapsed(self) -> int:
-        if self.__timer.isValid():
-            return self.__elapsed + self.__timer.elapsed()
+        """
+           Returns the accumulated elapsed time (in ms) since the last restart.
+           The accumulated time does not include time spent during pauses.
+        """
+        if self.__etimer.isValid():
+            return self.__elapsed + self.__etimer.elapsed()
         else:
             return self.__elapsed
 
+    def is_playing(self):
+        return self.__state == State.PLAYING
+
 
 class QSequencer(QObject):
+
+    noteOn = pyqtSignal(int, int, int, arguments=["channel", "note", "velocity"])
+    noteOff = pyqtSignal(int, int, arguments=["channel", "note"])
+    step = pyqtSignal(int, arguments=["step"])
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -195,7 +264,16 @@ class QSequencer(QObject):
         self.__timer.setSingleShot(True)
         self.__timer.timeout.connect(self.__on_timeout)
 
+        # Main chrono for events
         self.__chrono = ChronoMeter()
+        # Second chrono, with fixed interval for UI update
+        self.__step_chrono = ChronoMeter()
+        self.__step_chrono.setSingleShot(False)
+        # At which interval the step signal is sent
+        self.__step_unit = 4 # quarter note (noire)
+        self.__step_number = 0
+        self.__step_chrono.timeout.connect(self._on_step_timeout)
+
         # Time after pause and before the next note
         self.__remaining_time_after_pause = 0
         self.__scheduled_events = []
@@ -217,8 +295,9 @@ class QSequencer(QObject):
         self._add_event(0, TimeUnit(7), NoteEvent(61, 64, TimeUnit(1)))
         self._add_event(0, TimeUnit(8), NoteEvent(62, 64, TimeUnit(1)))
 
-    noteOn = pyqtSignal(int, int, int, arguments=["channel", "note", "velocity"])
-    noteOff = pyqtSignal(int, int, arguments=["channel", "note"])
+    def _on_step_timeout(self):
+        self.__step_number += 1
+        self.step.emit(self.__step_number)
 
     def _add_event(self, channel: int, start_time: TimeUnit, event: Event) -> None:
         _add_event_to_sorted_dict(self.__events,
@@ -332,6 +411,7 @@ class QSequencer(QObject):
             print("***STOP")
             self.__state_change(State.STOPPED)
             self.__chrono.stop()
+            self.__step_chrono.stop()
 
     @pyqtSlot(int)
     def play(self, bpm):
@@ -339,6 +419,7 @@ class QSequencer(QObject):
 
         print("***PLAY")
         self.__bpm = bpm
+        self.__step_chrono.setInterval(int(60.0 / bpm * 1000 / self.__step_unit))
 
         if self.__state == State.STOPPED:
             # Play
@@ -350,7 +431,9 @@ class QSequencer(QObject):
             # Resume from pause
             self.__timer.start(self.__remaining_time_after_pause)
         self.__chrono.start()
+        self.__step_chrono.start()
         self.__state_change(State.PLAYING)
+        self.step.emit(self.__step_number)
 
     @pyqtSlot()
     def pause(self):
@@ -359,6 +442,7 @@ class QSequencer(QObject):
             self.__remaining_time_after_pause = self.__timer.remainingTime()
             self.__timer.stop()
         self.__chrono.pause()
+        self.__step_chrono.pause()
         self.__state_change(State.PAUSED)
 
     @pyqtSlot()
@@ -367,6 +451,8 @@ class QSequencer(QObject):
         self.__timer.stop()
         self.__remaining_time_after_pause = 0
         self.__chrono.stop()
+        self.__step_chrono.stop()
+        self.__step_number = 0
         self.__state_change(State.STOPPED)
         # Send note off to notes currently playing !
         while len(self.__sustained_notes):
@@ -384,31 +470,50 @@ class QSequencer(QObject):
     def is_playing(self):
         return self.__state == State.PLAYING
 
+    @pyqtProperty(int)
+    def bpm(self):
+        return self.__bpm
+
 if __name__ == "__main__":
-    import time
-    # test ChronoMeter
-    c = ChronoMeter()
-    print("*START*")
-    c.start()
-    time.sleep(1)
-    print(c.elapsed())
-    print("*PAUSE*")
-    c.pause()
-    time.sleep(1)
-    print(c.elapsed())
-    print("*RESUME*")
-    c.start()
-    time.sleep(1)
-    print(c.elapsed())
-    time.sleep(1)
-    print(c.elapsed())
-    print("*PAUSE*")
-    c.pause()
-    time.sleep(1)
-    print(c.elapsed())
-    print("*STOP*")
-    c.stop()
-    print("*START*")
-    c.start()
-    time.sleep(1)
-    print(c.elapsed())
+    app = QApplication([])
+
+    class Test(QWidget):
+        def __init__(self):
+            QWidget.__init__(self)
+            self.resize(400, 400)
+
+            self.__chrono = ChronoMeter()
+            self.__chrono.setInterval(1000)
+            self.__chrono.timeout.connect(self.on_timeout)
+            self.__chrono.setSingleShot(False)
+            self.__chrono.start()
+
+            vbox = QVBoxLayout()
+            self.__label = QLabel("Label")
+            self.__play_button = QPushButton("Pause/Play")
+            self.__stop_button = QPushButton("Stop")
+            self.__play_button.clicked.connect(self.on_play_button)
+            self.__stop_button.clicked.connect(self.on_stop_button)
+            vbox.addWidget(self.__label)
+            vbox.addWidget(self.__play_button)
+            vbox.addWidget(self.__stop_button)
+            self.setLayout(vbox)
+
+        def on_play_button(self):
+            if self.__chrono.is_playing():
+                self.__chrono.pause()
+            else:
+                self.__chrono.start()
+
+        def on_stop_button(self):
+            self.__chrono.stop()
+
+        def on_timeout(self):
+            self.__label.setText(str(self.__chrono.elapsed()))
+            print("Timeout")
+
+    t = Test()
+    t.show()
+
+    app.exec_()
+

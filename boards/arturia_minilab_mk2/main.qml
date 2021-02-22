@@ -480,6 +480,18 @@ Item {
             Item {
                 id: sequencerDisplay
 
+                property int step: 0
+                property string oldColor: Pad.Color.Black
+                property int oldStep: -1
+
+                function lightStep(step) {
+                    if (oldStep > -1)
+                        padRep.itemAt(oldStep % 16).color = oldColor;
+                    oldColor = padRep.itemAt(step % 16).color;
+                    padRep.itemAt(step % 16).color = Pad.Color.Red;
+                    oldStep = step;
+                }
+
                 Item {
                     // all pads
                     y: (main.unitSize+main.legendSize) * 2
@@ -524,6 +536,7 @@ Item {
                             if (note % 12 == 2) {
                                 // Second note : stop
                                 sequencer.stop();
+                                step = 0;
                             }
                         }
                     }
@@ -533,6 +546,9 @@ Item {
                     target: sequencer
                     onStateChanged: {
                         pianoIcons.isPlaying = sequencer.is_playing();
+                    }
+                    onStep: {
+                        sequencerDisplay.lightStep(step);
                     }
                 }
 
