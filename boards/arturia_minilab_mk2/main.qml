@@ -439,7 +439,11 @@ Item {
 
             currentIndex: ~~modeKnob.value
 
-            // Instrument assign
+            /////////////////////////////
+            //
+            //     Instrument assign
+            //
+            /////////////////////////////
             Item {
                 Common.PlacedDial {
                     id: chooseInstrKnob
@@ -476,7 +480,11 @@ Item {
                 }
             }
 
-            // Sequencer
+            ////////////////////////
+            //
+            //      Sequencer
+            //
+            ////////////////////////
             Item {
                 id: sequencerDisplay
 
@@ -492,6 +500,20 @@ Item {
                     oldStep = step;
                 }
 
+                Common.PlacedKnobMapping {
+                    id: bpm
+                    mapping.knobNumber: 1
+                    mapping.isInteger: true
+                    mapping.min: 20
+                    mapping.max: 300
+                    mapping.value: 120
+                    Common.NumberFrame {
+                        value: parent.value
+                        displaySign: false
+                        text: "BPM"
+                    }
+                }
+                
                 Item {
                     // all pads
                     y: (main.unitSize+main.legendSize) * 2
@@ -531,7 +553,7 @@ Item {
                         if (board.isShiftPressed) {
                             if (note % 12 == 0) {
                                 // First note : play/pause
-                                sequencer.toggle_play_pause(120);
+                                sequencer.toggle_play_pause(bpm.value);
                             }
                             if (note % 12 == 2) {
                                 // Second note : stop
@@ -622,7 +644,11 @@ Item {
                 }
             }
 
-            // Instrument Edit
+            ///////////////////////////////
+            //
+            //       Instrument Edit
+            //
+            ///////////////////////////////
             Item {
                 Connections {
                     target: board
