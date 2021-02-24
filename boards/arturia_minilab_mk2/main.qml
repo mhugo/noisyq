@@ -453,10 +453,10 @@ Item {
                     enumValues: ["None"]
 
                     Component.onCompleted: {
-                        max = instrumentComponents.length;
                         for (var i = 0; i < instrumentComponents.length; i++) {
                             enumValues.push(instrumentComponents[i].name);
                         }
+                        max = enumValues.length - 1;
                         _initIfVisible();
                     }
                 }
