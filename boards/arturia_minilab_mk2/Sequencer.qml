@@ -127,6 +127,7 @@ Item {
     }
     Connections {
         target: board
+        enabled: sequencerDisplay.visible
         onPadReleased: {
             let currentVoice = ~~voiceKnob.value;
             // toggle step

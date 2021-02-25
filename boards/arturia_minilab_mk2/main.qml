@@ -124,11 +124,9 @@ Item {
     StackLayout {
         // A layout that stacks a widget for each instrument
         id: instrumentStack
+        z: 1
         anchors.top: infoScreen.bottom
         visible: false
-
-        width: parent.width
-        height: (main.unitSize+main.legendSize)*2
 
         function saveState() {
             // save the state of each instrument
@@ -297,8 +295,6 @@ Item {
 
         implicitWidth: 8 * unitSize
         implicitHeight: 2 * unitSize
-        x: 0
-        y: 0
 
         // update one particular pad text
         function updateText(padNumber, newText) {
@@ -467,7 +463,7 @@ Item {
                         if (padNumber == board.knob9SwitchId) {
                             // click => assign instrument to voice
                             let instrumentIndex = ~~chooseInstrKnob.value - 1;
-                            if (instrumentIndex == -1) {
+                            if (instrumentIndex == -1) { // -1 => "None"
                                 // unassign
                                 // TODO
                             }
@@ -508,6 +504,7 @@ Item {
         }
     }
 
+    // route note from the sequencer to instruments
     Connections {
         target: sequencer
         onNoteOn: {

@@ -17,6 +17,8 @@ Item {
     // Set by the host when the instance is created
     property string lv2Id: ""
 
+    signal quit()
+
     property string name: "Samplv1"
 
     // Set by the host
@@ -69,14 +71,18 @@ Item {
         console.log("samplv1 init");
         // enable offseting
         lv2Host.setParameterValue(lv2Id, "GEN1_OFFSET", 1.0);
+    }
 
-        board.setKnobMinMax(0, 0.0, 1.0);
-        board.setKnobIsInteger(0, false);
-        board.setKnobValue(0, 0);
+    onVisibleChanged : {
+        if (visible) {
+            board.setKnobMinMax(0, 0.0, 1.0);
+            board.setKnobIsInteger(0, false);
+            board.setKnobValue(0, 0);
 
-        board.setKnobMinMax(1, 0.0, 1.0);
-        board.setKnobIsInteger(1, false);
-        board.setKnobValue(1, 1.0);
+            board.setKnobMinMax(1, 0.0, 1.0);
+            board.setKnobIsInteger(1, false);
+            board.setKnobValue(1, 1.0);
+        }
     }
 
     Item {
@@ -395,10 +401,18 @@ Item {
         }
     }
 
+    PlacedPadText {
+        padNumber: 1
+        text: "Play"
+    }
+
+    PlacedPadText {
+        padNumber: 7
+        text: "Back"
+    }
+
     PadSwitchMapping {
         id: loopEnabled
-        x: unitSize * 2
-        y: unitSize * 1
         padNumber: 2
 
         parameterName: "GEN1_LOOP"
@@ -509,14 +523,6 @@ Item {
         }
     }
 
-    onVisibleChanged : {
-        if (visible) {
-            padMenu.updateText(0, ":menu:");
-            padMenu.updateText(1, "Play");
-            padMenu.updateText(7, "Back");
-        }
-    }
-
     function _loadSample(sampleFile) {
         if (!sampleFile)
             return;
@@ -596,14 +602,14 @@ Item {
 
     // will be called by main
     function padReleased(padNumber) {
-        console.log("pad pressed", padNumber);
+        console.log("samplv1 pad pressed", padNumber);
         if (padNumber == 1) {
             // BANG !
             lv2Host.noteOff(lv2Id, 60);
         }
         else if (padNumber == 7) {
             // end of editing
-            canvas.endEditInstrument();
+            quit();
         }
     }
 

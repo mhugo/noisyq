@@ -5,8 +5,8 @@ import QtQuick 2.7
 Item {
     id: root
 
-    property int padNumber: 0
-
+    property alias padNumber: sub_text.padNumber
+    
     property bool value: false
 
     // Value used by the plugin to represent the "off" state
@@ -19,6 +19,10 @@ Item {
 
     // Human-centered parameter name
     property string parameterDisplay: parameterName
+
+    PlacedPadText {
+        id: sub_text
+    }
 
     // Called when converting from the value to the parameter value.
     // The default behaviour can be changed by redefining this function.
@@ -38,10 +42,11 @@ Item {
 
     function _updatePad() {
         board.setPadColor(root.padNumber, root.value ? "green" : "white");
-        padMenu.updateText(
+        /*padMenu.updateText(
             root.padNumber,
             root.parameterDisplay + "\n" + valueToString(root.value)
-        );
+            );*/
+        sub_text.text = root.parameterDisplay + "\n" + valueToString(root.value);
     }
 
     Connections {
