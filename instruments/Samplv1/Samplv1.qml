@@ -330,8 +330,8 @@ Item {
             }
             delegate : RowLayout {
                 width: sampleFileList.width
-                Text {
-                    text: fileIsDir ? "D" : "F"
+                Image {
+                    source: fileIsDir ? "folder-24px.svg": ""
                 }
                 Text {
                     elide: Text.ElideMiddle
