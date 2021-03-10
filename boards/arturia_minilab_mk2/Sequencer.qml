@@ -77,6 +77,7 @@ Item {
                     // Second note : stop
                     sequencer.stop();
                     step = 0;
+                    _updateSteps();
                 }
             }
         }
@@ -89,6 +90,10 @@ Item {
         }
         onStep: {
             sequencerDisplay.lightStep(step);
+            sequencerDisplay.step = step;
+            if ((step % 16) == 0) {
+                _updateSteps();
+            }
         }
     }
 
@@ -98,7 +103,8 @@ Item {
         for (var p = 0; p < 16; p++) {
             padRep.itemAt(p).color = Pad.Color.Black;
         }
-        let events = sequencer.list_events(0, 1, 4, 1);
+        let bars = ~~(step/16);
+        let events = sequencer.list_events(bars*4, 1, bars*4+4, 1);
         for (var i = 0; i < events.length; i++) {
             let event = events[i];
             if (event.channel != currentVoice)
@@ -106,9 +112,7 @@ Item {
             // round the event start time to the previous step
             let event_time = event.time_amount / event.time_unit;
             let step_number = ~~(event_time * 4);
-            console.log(event.time_amount, event.time_unit, "event_time", event_time, "step_number", step_number);
-            if (step_number < 16)
-                Qt.callLater(function(){padRep.itemAt(step_number).color = Pad.Color.Blue});
+            Qt.callLater(function(){padRep.itemAt(step_number % 16).color = Pad.Color.Blue});
         }
     }
 
