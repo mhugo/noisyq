@@ -1,6 +1,8 @@
 import QtQuick 2.7
 import QtQuick.Controls 2.5
 
+import Utils 1.0
+
 import "../../instruments/common" as Common
 
 Item {
@@ -35,6 +37,13 @@ Item {
     Item {
         // all pads
         y: (main.unitSize+main.legendSize) * 2
+        Repeater {
+            id: pads
+            model: 16
+            PadText {
+                padNumber: index
+            }
+        }
     }
 
     Item {
@@ -102,6 +111,7 @@ Item {
         let currentVoice = ~~voiceKnob.value;
         for (var p = 0; p < 16; p++) {
             padRep.itemAt(p).color = Pad.Color.Black;
+            pads.itemAt(p).text = "";
         }
         let bars = ~~(step/16);
         let events = sequencer.list_events(bars*4, 1, bars*4+4, 1);
@@ -112,6 +122,9 @@ Item {
             // round the event start time to the previous step
             let event_time = event.time_amount / event.time_unit;
             let step_number = ~~(event_time * 4);
+            //console.log("event", event.event.note, event.event.velocity);
+            // FIXME handle chords
+            pads.itemAt(step_number % 16).text = Utils.midiNoteName(event.event.note);
             Qt.callLater(function(){padRep.itemAt(step_number % 16).color = Pad.Color.Blue});
         }
     }
