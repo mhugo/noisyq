@@ -12,6 +12,8 @@ Item {
     property string oldColor: Pad.Color.Black
     property int oldStep: -1
 
+    property int nPatterns: 4
+
     function lightStep(step) {
         if (oldStep > -1)
             padRep.itemAt(oldStep % 16).color = oldColor;
@@ -34,6 +36,34 @@ Item {
         }
     }
     
+    Common.PlacedKnobMapping {
+        id: patternKnob
+        mapping.knobNumber: 2
+        mapping.isInteger: true
+        mapping.min: 1
+        mapping.max: nPatterns
+        mapping.value: 1
+        mapping.shiftMin: 1
+        mapping.shiftMax: 16
+        mapping.shiftValue: nPatterns
+        Common.NumberFrame {
+            value: parent.value
+            max: parent.shiftValue
+            displaySign: false
+            text: "Pattern"
+
+            onValueChanged: {
+                step = (value-1) * 16;
+                _updateSteps();
+            }
+            onMaxChanged: {
+                nPatterns = max;
+                if (max < parent.value)
+                    parent.value = max;
+            }
+        }
+    }
+
     Item {
         // all pads
         y: (main.unitSize+main.legendSize) * 2
@@ -101,6 +131,7 @@ Item {
             sequencerDisplay.lightStep(step);
             sequencerDisplay.step = step;
             if ((step % 16) == 0) {
+                patternKnob.value = ~~(step / 16)+1;
                 _updateSteps();
             }
         }

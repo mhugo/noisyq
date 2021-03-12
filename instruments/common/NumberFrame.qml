@@ -4,6 +4,7 @@ import QtQuick.Controls 2.5
 Rectangle {
     id: root
     property real value: 0
+    property real max: 0
     property string text: ""
     property string unit: ""
     property bool displaySign: true
@@ -27,7 +28,7 @@ Rectangle {
                 if (displaySign)
                     root.value > 0 ? "+" + root.value + root.unit : root.value + root.unit;
                 else
-                    root.value + root.unit;
+                    root.value + (root.max > 0 ? ("/" + root.max) : "") + root.unit;
             }
             font.pixelSize: parent.height / 3
             font.family: monoFont.name

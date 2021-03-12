@@ -11,6 +11,10 @@ Item {
     property real max: 1.0
     property int knobNumber: 0
 
+    property real shiftValue: 0.0
+    property real shiftMin: 0.0
+    property real shiftMax: 0.0
+
     // Parameter name
     property string parameterName
 
@@ -37,13 +41,25 @@ Item {
         target: board
         onKnobMoved: {
             if (knobNumber == root.knobNumber) {
-                root.value = toParameter(amount);
-                // TODO infoScreen
-                infoScreen.flash(root.parameterDisplay + " = " + valueToString(amount));
-                if (root.parameterName) {
-                    lv2Host.setParameterValue(lv2Id, root.parameterName, root.value);
+                if (board.isShiftPressed) {
+                    root.shiftValue = amount;
+                }
+                else {
+                    root.value = toParameter(amount);
+                    // TODO infoScreen
+                    infoScreen.flash(root.parameterDisplay + " = " + valueToString(amount));
+                    if (root.parameterName) {
+                        lv2Host.setParameterValue(lv2Id, root.parameterName, root.value);
+                    }
                 }
             }
+        }
+        onShiftPressed: {
+            board.setKnobMinMax(root.knobNumber, root.shiftMin, root.shiftMax);
+            board.setKnobValue(root.knobNumber, root.shiftValue);
+        }
+        onShiftReleased: {
+            _initIfVisible();
         }
         enabled: root.visible && root.enabled
     }
