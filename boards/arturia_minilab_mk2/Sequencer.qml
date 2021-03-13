@@ -64,6 +64,60 @@ Item {
         }
     }
 
+    Common.PlacedKnobMapping {
+        id: durationKnob
+        mapping.knobNumber: 9
+        mapping.isInteger: true
+        mapping.min: 0
+        mapping.max: 5
+        mapping.value: 4
+        Common.FramedText {
+            legend: "Duration"
+            text: {
+                switch (parent.value) {
+                case 0:
+                    return "4/1";
+                case 1:
+                    return "2/1";
+                case 2:
+                    return "1/1";
+                case 3:
+                    return "1/2";
+                case 4:
+                    return "1/4";
+                case 5:
+                    return "1/8";
+                }
+            }
+        }
+    }
+
+    Common.PlacedKnobMapping {
+        id: noteKnob
+        mapping.knobNumber: 10
+        mapping.isInteger: true
+        mapping.min: 20
+        mapping.max: 100
+        mapping.value: 60
+        Common.FramedText {
+            legend: "Note"
+            text: Utils.midiNoteName(parent.value)
+        }
+    }
+
+    Common.PlacedKnobMapping {
+        id: velocityKnob
+        mapping.knobNumber: 11
+        mapping.isInteger: true
+        mapping.min: 0
+        mapping.max: 127
+        mapping.value: 64
+        Common.FramedText {
+            legend: "Velocity"
+            text: parent.value
+        }
+    }
+
     Item {
         // all pads
         y: (main.unitSize+main.legendSize) * 2
@@ -155,7 +209,7 @@ Item {
             let step_number = ~~(event_time * 4);
             //console.log("event", event.event.note, event.event.velocity);
             // FIXME handle chords
-            pads.itemAt(step_number % 16).text = Utils.midiNoteName(event.event.note);
+            //pads.itemAt(step_number % 16).text = Utils.midiNoteName(event.event.note);
             Qt.callLater(function(){padRep.itemAt(step_number % 16).color = Pad.Color.Blue});
         }
     }
@@ -178,10 +232,11 @@ Item {
         enabled: sequencerDisplay.visible
         onPadReleased: {
             let currentVoice = ~~voiceKnob.value;
+            let step = (patternKnob.value - 1) * 16 + padNumber;
             // toggle step
             let l = sequencer.list_events(
-                padNumber, 4,
-                padNumber, 4);
+                step, 4,
+                step, 4);
             if (l.length) {
                 for (var i = 0; i < l.length; i++) {
                     if (l[i].channel == currentVoice) {
@@ -196,12 +251,12 @@ Item {
             else {
                 // add an event
                 sequencer.add_event(currentVoice,
-                                    padNumber,
+                                    step,
                                     4,
                                     {
                                         "event_type": "note_event",
-                                        "note": 60,
-                                        "velocity": 100,
+                                        "note": noteKnob.value,
+                                        "velocity": velocityKnob.value,
                                         "duration_amount": 1,
                                         "duration_unit": 4
                                     });

@@ -284,17 +284,6 @@ class QSequencer(QObject):
         # Notes that are being played, so that stop can stop them all
         self.__sustained_notes : Set[Tuple[int,int]] = set()
 
-        # FIXME
-        self._add_event(0, TimeUnit(1, 2), NoteEvent(58, 64, TimeUnit(1)))
-        self._add_event(0, TimeUnit(1), NoteEvent(61, 64, TimeUnit(1)))
-        self._add_event(0, TimeUnit(2), NoteEvent(62, 64, TimeUnit(1)))
-        self._add_event(0, TimeUnit(3), NoteEvent(65, 64, TimeUnit(1)))
-        self._add_event(0, TimeUnit(4), NoteEvent(60, 64, TimeUnit(1)))
-        self._add_event(0, TimeUnit(5), NoteEvent(63, 64, TimeUnit(1)))
-        self._add_event(0, TimeUnit(6), NoteEvent(62, 64, TimeUnit(1)))
-        self._add_event(0, TimeUnit(7), NoteEvent(61, 64, TimeUnit(1)))
-        self._add_event(0, TimeUnit(8), NoteEvent(62, 64, TimeUnit(1)))
-
     def _on_step_timeout(self):
         self.__step_number += 1
         self.step.emit(self.__step_number)
