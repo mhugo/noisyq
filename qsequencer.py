@@ -346,9 +346,12 @@ class QSequencer(QObject):
             yield event_time, e
 
     @pyqtSlot(int, int, int, int, result=list)
+    @pyqtSlot(result=list)
     def list_events(self,
-                    start_time: int, start_time_unit: int,
-                    stop_time: int, stop_time_unit: int):
+                    start_time: Optional[int] = None, start_time_unit: Optional[int] = None,
+                    stop_time: Optional[int] = None, stop_time_unit: Optional[int] = None):
+        start = TimeUnit(start_time, start_time_unit) if start_time is not None else None
+        stop = TimeUnit(stop_time, stop_time_unit) if stop_time is not None else None
         return [
             {
                 "channel": channel,
@@ -356,10 +359,7 @@ class QSequencer(QObject):
                 "time_unit": event_time.unit(),
                 "event": event.to_dict()
             }
-            for channel, event_time, event in self.iterate_events(
-                    TimeUnit(start_time, start_time_unit),
-                    TimeUnit(stop_time, stop_time_unit)
-            )
+            for channel, event_time, event in self.iterate_events(start, stop)
         ]
 
     stateChanged = pyqtSignal()

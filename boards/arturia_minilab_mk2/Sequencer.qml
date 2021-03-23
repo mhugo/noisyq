@@ -14,6 +14,31 @@ Item {
 
     property int nPatterns: 4
 
+    function saveState() {
+        return {
+            "pattern": patternKnob.value,
+            "n_patterns": nPatterns,
+            "bpm": bpm.value,
+            "step_duration": durationKnob.value,
+            "step_note": noteKnob.value,
+            "step_velocity": velocityKnob.value,
+            "steps": sequencer.list_events()
+        };
+    }
+
+    function loadState(state) {
+        patternKnob.value = state.pattern;
+        nPatterns = state.n_patterns;
+        bpm.value = state.bpm;
+        durationKnob.value = state.step_duration;
+        noteKnob.value = state.step_note;
+        velocityKnob.value = state.step_velocity;
+        for (var i = 0; i < state.steps.length; i++) {
+            var e = state.steps[i];
+            sequencer.add_event(e.channel, e.time_amount, e.time_unit, e.event);
+        }
+    }
+
     function lightStep(step) {
         if (oldStep > -1)
             padRep.itemAt(oldStep % 16).color = oldColor;

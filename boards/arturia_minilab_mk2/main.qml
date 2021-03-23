@@ -18,7 +18,11 @@ Item {
 
     function quit()
     {
-        Utils.saveFile("state.json", JSON.stringify(instrumentStack.saveState()));
+        let saveState = {
+            "voices": instrumentStack.saveState(),
+            "sequencer": sequencerDisplay.saveState()
+        };
+        Utils.saveFile("state.json", JSON.stringify(saveState));
         Qt.callLater(Qt.quit);
     }
 
@@ -56,7 +60,10 @@ Item {
             let state = JSON.parse(stateStr);
             if (state) {
                 console.log("-- Loading state from state.json --");
-                Qt.callLater(function() {instrumentStack.loadState(state);});
+                Qt.callLater(function() {
+                    instrumentStack.loadState(state.voices);
+                    sequencerDisplay.loadState(state.sequencer);
+                });
             }
         }
 
@@ -482,6 +489,7 @@ Item {
             //
             ////////////////////////
             Sequencer {
+                id: sequencerDisplay
             }
 
             ///////////////////////////////
