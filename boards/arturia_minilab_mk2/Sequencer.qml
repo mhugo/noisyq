@@ -14,6 +14,9 @@ Item {
 
     property int nPatterns: 4
 
+    // Which pad is being pressed ?
+    property int padPressed: -1
+
     function saveState() {
         return {
             "pattern": patternKnob.value,
@@ -47,9 +50,19 @@ Item {
         oldStep = step;
     }
 
+    Common.PlacedDial {
+        id: modeKnob
+        knobNumber: 1
+        enumValues: [
+            "Pattern edit",
+            "Step edit"
+        ]
+        legend: "mode"
+    }
+
     Common.PlacedKnobMapping {
         id: bpm
-        mapping.knobNumber: 1
+        mapping.knobNumber: 2
         mapping.isInteger: true
         mapping.min: 20
         mapping.max: 300
@@ -63,7 +76,7 @@ Item {
     
     Common.PlacedKnobMapping {
         id: patternKnob
-        mapping.knobNumber: 2
+        mapping.knobNumber: 3
         mapping.isInteger: true
         mapping.min: 1
         mapping.max: nPatterns
@@ -89,6 +102,15 @@ Item {
         }
     }
 
+    function updateStepParameter(step_number, parameter_name, value) {
+        let currentVoice = ~~voiceKnob.value;
+        let s = ~~(step/16)*4 + step_number;
+        let event = sequencer.get_event(currentVoice, s, 4);
+        event[parameter_name] = value;
+        sequencer.set_event(currentVoice, s, 4, event);
+        _updateSteps();
+    }
+
     Common.PlacedKnobMapping {
         id: durationKnob
         mapping.knobNumber: 9
@@ -96,6 +118,59 @@ Item {
         mapping.min: 0
         mapping.max: 5
         mapping.value: 4
+
+        function setFromDuration(amount, unit) {
+            if ((amount == 4) && (unit == 1)) {
+                value = 0;
+            }
+            else if ((amount == 2) && (unit == 1)) {
+                value = 1;
+            }
+            else if ((amount == 1) && (unit == 1)) {
+                value = 2;
+            }
+            else if ((amount == 1) && (unit == 2)) {
+                value = 3;
+            }
+            else if ((amount == 1) && (unit == 4)) {
+                value = 4;
+            }
+            else if ((amount == 1) && (unit == 8)) {
+                value = 5;
+            }
+        }
+        function toAmount() {
+            switch (value) {
+            case 0:
+                return 4;
+            case 1:
+                return 2;
+            case 2:
+                return 1;
+            case 3:
+                return 1;
+            case 4:
+                return 1;
+            case 5:
+                return 1;
+            }
+        }
+        function toUnit() {
+            switch (value) {
+            case 0:
+                return 1;
+            case 1:
+                return 1;
+            case 2:
+                return 1;
+            case 3:
+                return 2;
+            case 4:
+                return 4;
+            case 5:
+                return 8;
+            }
+        }
         Common.FramedText {
             legend: "Duration"
             text: {
@@ -115,6 +190,12 @@ Item {
                 }
             }
         }
+        onValueChanged: {
+            if (padPressed != -1) {
+                updateStepParameter(padPressed, "duration_amount", durationKnob.toAmount());
+                updateStepParameter(padPressed, "duration_unit", durationKnob.toUnit());
+            }
+        }
     }
 
     Common.PlacedKnobMapping {
@@ -127,6 +208,12 @@ Item {
         Common.FramedText {
             legend: "Note"
             text: Utils.midiNoteName(parent.value)
+        }
+
+        onValueChanged: {
+            if (padPressed != -1) {
+                updateStepParameter(padPressed, "note", value);
+            }
         }
     }
 
@@ -141,6 +228,11 @@ Item {
             legend: "Velocity"
             text: parent.value
         }
+        onValueChanged: {
+            if (padPressed != -1) {
+                updateStepParameter(padPressed, "velocity", value);
+            }
+        }
     }
 
     Item {
@@ -149,8 +241,23 @@ Item {
         Repeater {
             id: pads
             model: 16
-            PadText {
-                padNumber: index
+            Item {
+                property alias text: padText.text
+                property int velocity: 64
+                property double duration: 1 // in steps
+                property int note: 60 // midi note
+                PadText {
+                    id: padText
+                    padNumber: index
+                }
+                Rectangle {
+                    width: unitSize * duration
+                    height: unitSize / 2
+                    x: (index % 8) * unitSize
+                    y: ~~(index / 8) * unitSize + unitSize / 4
+                    color: Qt.hsva((note % 12)/12.0, 0.8, velocity/127.0, velocity/127.0)
+                    border.color: Qt.rgba(0., 0., 0., velocity/127.0)
+                }
             }
         }
     }
@@ -222,6 +329,8 @@ Item {
         for (var p = 0; p < 16; p++) {
             padRep.itemAt(p).color = Pad.Color.Black;
             pads.itemAt(p).text = "";
+            pads.itemAt(p).velocity = 0;
+            pads.itemAt(p).duration = 1;
         }
         let bars = ~~(step/16);
         let events = sequencer.list_events(bars*4, 1, bars*4+4, 1);
@@ -235,7 +344,10 @@ Item {
             //console.log("event", event.event.note, event.event.velocity);
             // FIXME handle chords
             //pads.itemAt(step_number % 16).text = Utils.midiNoteName(event.event.note);
-            Qt.callLater(function(){padRep.itemAt(step_number % 16).color = Pad.Color.Blue});
+            pads.itemAt(step_number % 16).velocity = event.event.velocity;
+            pads.itemAt(step_number % 16).duration = event.event.duration_amount / event.event.duration_unit * 4;
+            pads.itemAt(step_number % 16).note = event.event.note;
+            //Qt.callLater(function(){padRep.itemAt(step_number % 16).color = Pad.Color.Blue});
         }
     }
 
@@ -255,38 +367,54 @@ Item {
     Connections {
         target: board
         enabled: sequencerDisplay.visible
+        onPadPressed: {
+            let currentVoice = ~~voiceKnob.value;
+            let step = (patternKnob.value - 1) * 16 + padNumber;
+            if (modeKnob.value == 1) { // Step edit
+                let e = sequencer.get_event(currentVoice, step, 4);
+                if (e) {
+                    noteKnob.value = e.note;
+                    velocityKnob.value = e.velocity;
+                    durationKnob.setFromDuration(e.duration_amount, e.duration_unit);
+                }
+                padPressed = padNumber;
+            }
+        }
         onPadReleased: {
             let currentVoice = ~~voiceKnob.value;
             let step = (patternKnob.value - 1) * 16 + padNumber;
-            // toggle step
-            let l = sequencer.list_events(
-                step, 4,
-                step, 4);
-            if (l.length) {
-                for (var i = 0; i < l.length; i++) {
-                    if (l[i].channel == currentVoice) {
-                        console.log("Event", l[i].time_amount, l[i].time_unit, l[i].event.note);
-                        sequencer.remove_event(l[i].channel,
-                                               l[i].time_amount,
-                                               l[i].time_unit,
-                                               l[i].event);
+            if (modeKnob.value == 0) { // Pattern edit
+                // toggle step
+                let l = sequencer.list_events(
+                    step, 4,
+                    step, 4);
+                if (l.length) {
+                    for (var i = 0; i < l.length; i++) {
+                        if (l[i].channel == currentVoice) {
+                            console.log("Event", l[i].time_amount, l[i].time_unit, l[i].event.note);
+                            sequencer.remove_event(l[i].channel,
+                                                   l[i].time_amount,
+                                                   l[i].time_unit,
+                                                   l[i].event);
+                        }
                     }
                 }
+                else {
+                    // add an event
+                    sequencer.add_event(currentVoice,
+                                        step,
+                                        4,
+                                        {
+                                            "event_type": "note_event",
+                                            "note": noteKnob.value,
+                                            "velocity": velocityKnob.value,
+                                            "duration_amount": durationKnob.toAmount(),
+                                            "duration_unit": durationKnob.toUnit()
+                                        });
+                }
+                sequencerDisplay._updateSteps();
             }
-            else {
-                // add an event
-                sequencer.add_event(currentVoice,
-                                    step,
-                                    4,
-                                    {
-                                        "event_type": "note_event",
-                                        "note": noteKnob.value,
-                                        "velocity": velocityKnob.value,
-                                        "duration_amount": 1,
-                                        "duration_unit": 4
-                                    });
-            }
-            sequencerDisplay._updateSteps();
+            padPressed = -1;
         }
     }
 }

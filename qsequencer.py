@@ -295,7 +295,7 @@ class QSequencer(QObject):
 
     @pyqtSlot(int, int, int, QVariant)
     def add_event(self, channel: int, start_time_amount,
-                  start_time_unit: int, event_dict) -> None:
+                  start_time_unit: TimeSubUnit, event_dict) -> None:
         event = Event.from_dict(event_dict.toVariant())
         self._add_event(channel,
                         TimeUnit(start_time_amount, start_time_unit),
@@ -312,7 +312,7 @@ class QSequencer(QObject):
 
     @pyqtSlot(int, int, int, QVariant)
     def remove_event(self, channel: int, start_time_amount,
-                     start_time_unit: int, event_dict) -> None:
+                     start_time_unit: TimeSubUnit, event_dict) -> None:
         print("event_dict", event_dict.toVariant())
         event = Event.from_dict(event_dict.toVariant())
         self._remove_event(channel,
@@ -330,7 +330,7 @@ class QSequencer(QObject):
     def iterate_scheduled_events(self,
                                  start_time: Optional[TimeUnit] = None,
                                  stop_time: Optional[TimeUnit] = None) -> Iterator[
-                                     Tuple[int, TimeUnit, List[ScheduledEvent]]]:
+                                     Tuple[TimeUnit, ScheduledEvent]]:
         # First schedule events to obtain ScheduleEvents
         # key_type: TimeUnit
         # value_type: List[ScheduledEvent]
@@ -348,10 +348,10 @@ class QSequencer(QObject):
     @pyqtSlot(int, int, int, int, result=list)
     @pyqtSlot(result=list)
     def list_events(self,
-                    start_time: Optional[int] = None, start_time_unit: Optional[int] = None,
-                    stop_time: Optional[int] = None, stop_time_unit: Optional[int] = None):
-        start = TimeUnit(start_time, start_time_unit) if start_time is not None else None
-        stop = TimeUnit(stop_time, stop_time_unit) if stop_time is not None else None
+                    start_time: Optional[int] = None, start_time_unit: Optional[TimeSubUnit] = None,
+                    stop_time: Optional[int] = None, stop_time_unit: Optional[TimeSubUnit] = None):
+        start = TimeUnit(start_time, start_time_unit) if start_time is not None and start_time_unit is not None else None
+        stop = TimeUnit(stop_time, stop_time_unit) if stop_time is not None and stop_time_unit is not None else None
         return [
             {
                 "channel": channel,
@@ -361,6 +361,23 @@ class QSequencer(QObject):
             }
             for channel, event_time, event in self.iterate_events(start, stop)
         ]
+
+    @pyqtSlot(int, int, int, result=QVariant)
+    def get_event(self, channel: int, time_amount: int, time_unit: TimeSubUnit):
+        for e_channel, event_time, event in self.iterate_events(TimeUnit(time_amount, time_unit)):
+            if channel == e_channel and event_time == TimeUnit(time_amount, time_unit):
+                return event.to_dict()
+
+        return None
+
+    @pyqtSlot(int, int, int, QVariant)
+    def set_event(self, channel: int,
+                  time_amount: int, time_unit: TimeSubUnit,
+                  event):
+        for evt in self.__events.get(TimeUnit(time_amount, time_unit), []):
+            if evt.channel == channel:
+                evt.event = Event.from_dict(event.toVariant())
+                break
 
     stateChanged = pyqtSignal()
     def __state_change(self, new_state: State) -> None:
