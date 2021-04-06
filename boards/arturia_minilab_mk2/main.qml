@@ -396,7 +396,7 @@ Item {
         anchors.top: infoScreen.bottom
         Common.PlacedDial {
             id: modeKnob
-            knobNumber: 0
+            knobNumber: 7
 
             enumValues: [
                 "Instr. assign",

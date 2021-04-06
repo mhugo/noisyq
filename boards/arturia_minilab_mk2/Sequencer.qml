@@ -52,12 +52,12 @@ Item {
 
     Common.PlacedDial {
         id: modeKnob
-        knobNumber: 1
+        knobNumber: 0
         enumValues: [
             "Pattern edit",
             "Step edit"
         ]
-        legend: "mode"
+        legend: "Mode"
     }
 
     Common.PlacedKnobMapping {
