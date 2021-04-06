@@ -385,19 +385,9 @@ Item {
             let step = (patternKnob.value - 1) * 16 + padNumber;
             if (modeKnob.value == 0) { // Pattern edit
                 // toggle step
-                let l = sequencer.list_events(
-                    step, 4,
-                    step, 4);
-                if (l.length) {
-                    for (var i = 0; i < l.length; i++) {
-                        if (l[i].channel == currentVoice) {
-                            console.log("Event", l[i].time_amount, l[i].time_unit, l[i].event.note);
-                            sequencer.remove_event(l[i].channel,
-                                                   l[i].time_amount,
-                                                   l[i].time_unit,
-                                                   l[i].event);
-                        }
-                    }
+                let event = sequencer.get_event(currentVoice, step, 4);
+                if (event) {
+                    sequencer.remove_event(currentVoice, step, 4, event);
                 }
                 else {
                     // add an event
