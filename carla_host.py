@@ -128,6 +128,7 @@ class CarlaHost(QObject):
         # We can now autoconnect
         for i in range(2):
             self.__jack.connect(self.__last_jack_client.audio_out[i], self.__system_audio_out[i])
+        self.__last_jack_client = None
 
         # DEBUG
         # FIXME: SAMPLV1 does not accept very well state restore when UI is shown !!
