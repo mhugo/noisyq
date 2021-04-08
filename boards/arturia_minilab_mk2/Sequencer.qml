@@ -367,6 +367,16 @@ Item {
     Connections {
         target: board
         enabled: sequencerDisplay.visible
+        onNotePressed: {
+            if (modeKnob.value == 1) { // Step edit
+                noteKnob.value = note;
+                velocityKnob.value = velocity;
+                if (padPressed != -1) {
+                    updateStepParameter(padPressed, "note", note);
+                    updateStepParameter(padPressed, "velocity", velocity);
+                }
+            }
+        }
         onPadPressed: {
             let currentVoice = ~~voiceKnob.value;
             let step = (patternKnob.value - 1) * 16 + padNumber;
