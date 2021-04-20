@@ -68,7 +68,7 @@ Item {
         mapping.max: 300
         mapping.value: 120
         Common.NumberFrame {
-            value: parent.value
+            value: ~~parent.value
             displaySign: false
             text: "BPM"
         }
@@ -85,8 +85,8 @@ Item {
         mapping.shiftMax: 16
         mapping.shiftValue: nPatterns
         Common.NumberFrame {
-            value: parent.value
-            max: parent.shiftValue
+            value: ~~parent.value
+            max: ~~parent.shiftValue
             displaySign: false
             text: "Pattern"
 
@@ -140,7 +140,7 @@ Item {
             }
         }
         function toAmount() {
-            switch (value) {
+            switch (~~value) {
             case 0:
                 return 4;
             case 1:
@@ -156,7 +156,7 @@ Item {
             }
         }
         function toUnit() {
-            switch (value) {
+            switch (~~value) {
             case 0:
                 return 1;
             case 1:
@@ -174,7 +174,7 @@ Item {
         Common.FramedText {
             legend: "Duration"
             text: {
-                switch (parent.value) {
+                switch (~~parent.value) {
                 case 0:
                     return "4/1";
                 case 1:
@@ -207,7 +207,7 @@ Item {
         mapping.value: 60
         Common.FramedText {
             legend: "Note"
-            text: Utils.midiNoteName(parent.value)
+            text: Utils.midiNoteName(~~parent.value)
         }
 
         onValueChanged: {
@@ -226,7 +226,7 @@ Item {
         mapping.value: 64
         Common.FramedText {
             legend: "Velocity"
-            text: parent.value
+            text: ~~parent.value
         }
         onValueChanged: {
             if (padPressed != -1) {

@@ -32,7 +32,7 @@ Text {
             function _delta() {
                 let d = max - min;
                 if (isInteger) {
-                    return d < 64 ? d / 64 : 1;
+                    return d < 128 ? d / 128 : 1;
                 }
                 return d / 128.0;
             }
