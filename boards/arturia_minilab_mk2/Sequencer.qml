@@ -346,7 +346,7 @@ Item {
             notes.itemAt(p).duration = 1;
         }
         let bars = ~~(step/16);
-        let events = sequencer.list_events(bars*4, 1, bars*4+4, 1);
+        let events = sequencer.list_events(bars*4, 1, bars*4+1, 1);
         for (var i = 0; i < events.length; i++) {
             let event = events[i];
             if (event.channel != currentVoice)
