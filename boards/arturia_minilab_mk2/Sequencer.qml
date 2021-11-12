@@ -381,16 +381,30 @@ Item {
         }
         enabled: sequencerDisplay.visible
     }
+
+    property var currentChord: []
+
     Connections {
         target: board
         enabled: sequencerDisplay.visible
         onNotePressed: {
-            noteKnob.value = note;
-            velocityKnob.value = velocity;
-            if (padPressed != -1) {
-                updateStepParameter(padPressed, "note", note);
-                updateStepParameter(padPressed, "velocity", velocity);
+            if (currentChord.length == 0) {
+                noteKnob.value = note;
+                velocityKnob.value = velocity;
             }
+            currentChord.push(note);
+            console.log("chord", currentChord);
+        }
+        onNoteReleased: {
+            if (currentChord.length == 0) {
+                // end of chord input
+                if (padPressed != -1) {
+                    updateStepParameter(padPressed, "note", currentChord[0]);
+                    // TODO handle other notes
+                    updateStepParameter(padPressed, "velocity", velocity);
+                }
+            }
+            currentChord.splice(currentChord.indexOf(note), 1);
         }
         onPadPressed: {
             let currentVoice = ~~voiceKnob.value;
