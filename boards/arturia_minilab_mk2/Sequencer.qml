@@ -296,7 +296,11 @@ Item {
             if (board.isShiftPressed) {
                 if (note % 12 == 0) {
                     // First note : play/pause
-                    sequencer.toggle_play_pause(bpm.value);
+                    sequencer.toggle_play_pause(
+                        bpm.value,
+                        0, 1,
+                        nPatterns * 4, 1
+                    );
                 }
                 if (note % 12 == 2) {
                     // Second note : stop
