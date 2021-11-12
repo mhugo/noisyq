@@ -151,6 +151,9 @@ class ChannelEvent:
         self.channel = channel
         self.event = event
 
+    def __repr__(self):
+        return "ChannelEvent(channel={},event={})".format(self.channel, self.event)
+
 
 def _add_event_to_sorted_dict(events: SortedDict, event: Any, start_time: TimeUnit) -> None:
     if start_time not in events:

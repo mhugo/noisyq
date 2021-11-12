@@ -305,9 +305,6 @@ Item {
         implicitWidth: 8 * unitSize
         implicitHeight: 4 * unitSize
 
-        // not visible in sequencer mode
-        visible: modeStackLayout.currentIndex != 1
-
         // update one particular pad text
         function updateText(padNumber, newText) {
             texts = texts.slice(0, padNumber).concat([newText].concat(texts.slice(padNumber+1)));            

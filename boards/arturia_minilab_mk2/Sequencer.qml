@@ -49,7 +49,8 @@ Item {
     function lightStep(step) {
         if (oldStep > -1)
             notes.itemAt(oldStep % 16).isPlaying = false;
-        notes.itemAt(step % 16).isPlaying = true;
+        if (step < nPatterns * 16)
+            notes.itemAt(step % 16).isPlaying = true;
         oldStep = step;
     }
 
@@ -334,7 +335,7 @@ Item {
         onStep: {
             sequencerDisplay.lightStep(step);
             sequencerDisplay.step = step;
-            if ((step % 16) == 0) {
+            if (((step % 16) == 0) && (step < nPatterns * 16)) {
                 patternKnob.value = ~~(step / 16)+1;
                 _updateSteps();
             }
@@ -349,7 +350,7 @@ Item {
             notes.itemAt(p).duration = 1;
         }
         let bars = ~~(step/16);
-        let events = sequencer.list_events(bars*4, 1, bars*4+1, 1);
+        let events = sequencer.list_events(bars*4, 1, bars*4+4, 1);
         for (var i = 0; i < events.length; i++) {
             let event = events[i];
             if (event.channel != currentVoice)
