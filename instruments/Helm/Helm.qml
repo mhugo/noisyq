@@ -66,6 +66,56 @@ Item {
                 }
             }
         }
+
+        console.log("==Helm.qml::loadState==");
+        let state_str = lv2Host.save_state(lv2Id, /* convert_xml_to_json */ true);
+        if (state_str) {
+            let state = JSON.parse(state_str);
+            let customData = "";
+            let children = state.children[1].children;
+            for (var i=0; i < children.length; i++) {
+                let child = children[i];
+                if (child.tag == "CustomData") {
+                    let key = child.children[1].text;
+                    let blob = child.children[2].text;
+                    let data = JSON.parse(Qt.atob(blob));
+                    data["settings"]["modulations"] = [
+                        {
+                            "source": "fil_envelope",
+                            "destination": "cutoff",
+                            "amount": 42
+                        }];
+                    customData = Qt.btoa(JSON.stringify(data));
+
+                    // remove
+                    children.splice(i, 1);
+                    break;
+                }
+            }
+
+            // add back the customdata
+            children.push({
+                "tag" : "CustomData",
+                "children": [
+                    {
+                        "tag": "Type",
+                        "text": "http://lv2plug.in/ns/ext/atom#Chunk"
+                    },
+                    {
+                        "tag": "Key",
+                        "text": "urn:juce:stateBinary"
+                    },
+                    {
+                        "tag": "Value",
+                        "text": customData
+                    }
+                ]});
+            state_str = JSON.stringify(state);
+            
+            // force state update
+            lv2Host.load_state(lv2Id, state_str, /*convert_json_to_xml*/ true);            
+            //lv2Host.save_state(lv2Id, /* convert_xml_to_json */ true);
+        }
     }
 
     // Initialize a state, reading from the living LV2 process
