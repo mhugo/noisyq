@@ -24,7 +24,7 @@ Item {
 
     property string legend: ""
 
-    Dial {
+    SquareKnob {
         width: unitSize
         height: unitSize
         value: parent.value
@@ -46,6 +46,30 @@ Item {
             }
         }
     }
+    /* 
+    Dial {
+        width: unitSize
+        height: unitSize
+        value: parent.value
+        from: parent.min
+        to: parent.max
+        Text {
+            x: (unitSize - width) / 2
+            y: (unitSize - height) / 2
+            text: {
+                if (root.enumValues.length > 0) {
+                    root.enumValues[~~value]
+                }
+                else if (isInteger) {
+                    ~~value
+                }
+                else {
+                    value
+                }
+            }
+        }
+        }*/
+    
     Text {
         x: (unitSize - width) / 2
         y: unitSize + (legendSize - height) / 2
