@@ -240,35 +240,35 @@ Item {
     }
 
     Item {
-        // One note per step
+        // 12 notes per step
         y: (main.unitSize+main.legendSize) * 2
-        //id: noteSequence
-        //property int octave: 4
+
         Repeater {
-            id: notes
             model: 16
-            Item {
-                property int velocity: 64
-                property double duration: 1 // in steps
-                property int note: 60 // midi note
+            id: notes
+            Rectangle {
                 property bool isPlaying: false
-                // FIXME add note2, note3 for triads ?
-                Rectangle {
-                    width: unitSize
-                    height: unitSize*2
-                    x: (index % 8) * unitSize
-                    y: ~~(index / 8) * unitSize * 2
-                    border.color: "black"
-                    border.width: 1
-                    color: isPlaying ? "#88bbffff" : "#00ffffff"
+                Repeater {
+                    model: 12
+                    Rectangle {
+                        property int velocity: 64
+                        property double duration: 1.0 // max 1.0
+                        width: duration * unitSize
+                        height: unitSize * 2 / 12
+                        y: index * unitSize * 2 / 12
+                        color: Qt.rgba(.0, .0, 1., velocity/127.0)
+                        border.color: "black"
+                        border.width: 1
+                        visible: velocity > 0
+                    }
                 }
-                Rectangle {
-                    width: unitSize * duration
-                    height: unitSize * 2 / 12
-                    x: (index % 8) * unitSize
-                    y: ~~(index / 8) * unitSize * 2 + (unitSize * 2 - ((note % 12)+1) * height)
-                    color: Qt.rgba(.0, .0, 1., velocity/127.0)
-                }
+                x: (index%8)*unitSize
+                y: ~~(index/8)*unitSize*2
+                border.color: "black"
+                border.width: 1
+                width: unitSize
+                height: unitSize*2
+                color: isPlaying ? "#88bbffff" : "#00ffffff"
             }
         }
     }
@@ -346,8 +346,10 @@ Item {
         // Change step colors based on steps from the sequencer
         let currentVoice = ~~voiceKnob.value;
         for (var p = 0; p < 16; p++) {
-            notes.itemAt(p).velocity = 0;
-            notes.itemAt(p).duration = 1;
+            for (var n = 0; n < 12; n++) {
+                notes.itemAt(p).children[n].velocity = 0;
+                notes.itemAt(p).children[n].duration = 1;
+            }
         }
         let bars = ~~(step/16);
         let events = sequencer.list_events(bars*4, 1, bars*4+4, 1);
@@ -361,9 +363,10 @@ Item {
             //console.log("event", event.event.note, event.event.velocity);
             // FIXME handle chords
             //notes.itemAt(step_number % 16).text = Utils.midiNoteName(event.event.note);
-            notes.itemAt(step_number % 16).velocity = event.event.velocity;
-            notes.itemAt(step_number % 16).duration = event.event.duration_amount / event.event.duration_unit * 4;
-            notes.itemAt(step_number % 16).note = event.event.note;
+            let n = 12 - event.event.note % 12 - 1;
+            notes.itemAt(step_number % 16).children[n].velocity = event.event.velocity;
+            notes.itemAt(step_number % 16).children[n].duration = event.event.duration_amount / event.event.duration_unit * 4;
+            //notes.itemAt(step_number % 16).note = event.event.note;
         }
     }
 
