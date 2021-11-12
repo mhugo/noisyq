@@ -108,7 +108,7 @@ Item {
 
     function updateStepParameter(step_number, parameter_name, value) {
         let currentVoice = ~~voiceKnob.value;
-        let s = ~~(step/16)*4 + step_number;
+        let s = ~~(step/16)*16 + step_number;
         let event = sequencer.get_event(currentVoice, s, 4);
         event[parameter_name] = value;
         sequencer.set_event(currentVoice, s, 4, event);
