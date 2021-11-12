@@ -519,36 +519,81 @@ Item {
         }
     }
 
-    Component {
-        id: debugRow
-        Item {
-            z: -1
+    Item {
+        // Red rectangles to debug layouting
+        id: debugGrid
+        anchors.top: infoScreen.bottom
+        z: 99
+        visible: board.debugEnabled
 
-            Repeater {
-                model: 9
-                Rectangle {
-                    x: index * unitSize
-                    implicitWidth: main.unitSize
-                    implicitHeight: main.unitSize
-                    border.color: "red"
-                    border.width: 1
+        Component {
+            id: debugRow
+            Item {
+                Repeater {
+                    model: 9
+                    Rectangle {
+                        x: index * unitSize
+                        implicitWidth: main.unitSize
+                        implicitHeight: main.unitSize
+                        border.color: "red"
+                        border.width: 1
+                        color: "transparent"
+                    }
                 }
             }
         }
-    }
-    
-    Item {
-        id: debugGrid
-        anchors.top: instrumentStack.bottom
-        z: -1
-        //visible: false
-
+        
+        Component {
+            id: debugLegendRow
+            Item {
+                Repeater {
+                    model: 9
+                    Rectangle {
+                        x: index * unitSize
+                        implicitWidth: main.unitSize
+                        implicitHeight: main.legendSize
+                        border.color: "red"
+                        border.width: 1
+                        color: "transparent"
+                    }
+                }
+            }
+        }
+        Loader {
+            sourceComponent: debugRow
+        }
+        Loader {
+            sourceComponent: debugLegendRow
+            y: unitSize
+        }
+        Loader {
+            sourceComponent: debugRow
+            y: unitSize + legendSize
+        }
+        Loader {
+            sourceComponent: debugLegendRow
+            y: unitSize*2 + legendSize
+        }
         Repeater {
             model: 5
             Loader {
                 sourceComponent: debugRow
-                y: index * unitSize
+                y: (unitSize + legendSize) * 2 + index * unitSize
             }
+        }
+    }
+
+    Item {
+        anchors.top: infoScreen.bottom
+        visible: board.debugEnabled
+        Rectangle {
+            width: unitSize
+            height: unitSize
+            border.color: "blue"
+            border.width: 3
+            color: "transparent"
+            x: (board.selectedKnob % 8 + 1) * unitSize
+            y: ~~(board.selectedKnob / 8) * (unitSize + legendSize)
         }
     }
 

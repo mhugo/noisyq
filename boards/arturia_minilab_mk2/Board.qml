@@ -20,6 +20,8 @@ Text {
     signal shiftPressed()
     signal shiftReleased()
 
+    property bool debugEnabled: false
+
     Repeater {
         id: knobs
         model: 16
@@ -95,7 +97,9 @@ Text {
     }
 
     // debug display
-    text: "Knob " + selectedKnob + ": " + knobValue(selectedKnob).toFixed(2)
+    text: ("Knob " + selectedKnob + ": " + knobValue(selectedKnob).toFixed(2)
+           + " | debug(o): " + (debugEnabled ? "ON": "OFF")
+           + " | last row(p): " + (_pianoSelected ? "piano" : "8-16 pads"))
     font.family: titleFont.name
     font.pointSize: 14
     focus: true
@@ -152,6 +156,9 @@ Text {
         // azerty..
         else if (event.nativeScanCode >= 24 && event.nativeScanCode < 32) {
             selectedKnob = event.nativeScanCode - 24 + 8;
+        }
+        else if (event.text == "o") {
+            debugEnabled = ! debugEnabled;
         }
         else if (event.text == "p") {
             _pianoSelected = ! _pianoSelected;
