@@ -22,10 +22,10 @@ Item {
 
     Item {
         id: pianoK
-        width: main.width - octaveWidth
+        width: main.width - octaveWidth - main.unitSize
         height: main.unitSize*1.5 - 32
         y: 16
-        property real keyWidth: (main.width - octaveWidth) / 15
+        property real keyWidth: (main.width - octaveWidth - main.unitSize) / 15
 
         Repeater {
             id: whiteKeyRep
@@ -75,6 +75,6 @@ Item {
         text: "Octave\n" + parent.octave
         horizontalAlignment: Text.AlignHCenter
         y: (unitSize * 1.5 - height) / 2
-        x: main.width - octaveWidth + (octaveWidth - width) / 2
+        x: main.width - octaveWidth - main.unitSize + (octaveWidth - width) / 2
     }
 }

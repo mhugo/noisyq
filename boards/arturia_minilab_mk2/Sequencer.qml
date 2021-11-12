@@ -5,11 +5,15 @@ import Utils 1.0
 
 import "../../instruments/common" as Common
 
+//
+// Step sequencer
+// 16 steps are visible
+// within 2 rows of 8 steps
+
 Item {
     id: sequencerDisplay
 
     property int step: 0
-    property string oldColor: Pad.Color.Black
     property int oldStep: -1
 
     property int nPatterns: 4
@@ -44,9 +48,8 @@ Item {
 
     function lightStep(step) {
         if (oldStep > -1)
-            padRep.itemAt(oldStep % 16).color = oldColor;
-        oldColor = padRep.itemAt(step % 16).color;
-        padRep.itemAt(step % 16).color = Pad.Color.Red;
+            notes.itemAt(oldStep % 16).isPlaying = false;
+        notes.itemAt(step % 16).isPlaying = true;
         oldStep = step;
     }
 
@@ -236,27 +239,34 @@ Item {
     }
 
     Item {
-        // all pads
+        // One note per step
         y: (main.unitSize+main.legendSize) * 2
+        //id: noteSequence
+        //property int octave: 4
         Repeater {
-            id: pads
+            id: notes
             model: 16
             Item {
-                property alias text: padText.text
                 property int velocity: 64
                 property double duration: 1 // in steps
                 property int note: 60 // midi note
-                PadText {
-                    id: padText
-                    padNumber: index
+                property bool isPlaying: false
+                // FIXME add note2, note3 for triads ?
+                Rectangle {
+                    width: unitSize
+                    height: unitSize*2
+                    x: (index % 8) * unitSize
+                    y: ~~(index / 8) * unitSize * 2
+                    border.color: "black"
+                    border.width: 1
+                    color: isPlaying ? "#bbffff" : "#ffffff"
                 }
                 Rectangle {
                     width: unitSize * duration
-                    height: unitSize / 2
+                    height: unitSize * 2 / 12
                     x: (index % 8) * unitSize
-                    y: ~~(index / 8) * unitSize + unitSize / 4
-                    color: Qt.hsva((note % 12)/12.0, 0.8, velocity/127.0, velocity/127.0)
-                    border.color: Qt.rgba(0., 0., 0., velocity/127.0)
+                    y: ~~(index / 8) * unitSize * 2 + (unitSize * 2 - ((note % 12)+1) * height)
+                    color: Qt.rgba(.0, .0, 1., velocity/127.0)
                 }
             }
         }
@@ -265,7 +275,7 @@ Item {
     Item {
         // icons above piano keys
         id: pianoIcons
-        y: main.unitSize*4 + main.legendSize*2 + 8
+        y: main.unitSize*6 + main.legendSize*2 + 8
         readonly property real keyWidth: (main.width - piano.octaveWidth) / 15
         property bool isPlaying: false
         Image {
@@ -306,6 +316,7 @@ Item {
                     // Second note : stop
                     sequencer.stop();
                     step = 0;
+                    notes.itemAt(oldStep).isPlaying = false;
                     _updateSteps();
                 }
             }
@@ -331,10 +342,8 @@ Item {
         // Change step colors based on steps from the sequencer
         let currentVoice = ~~voiceKnob.value;
         for (var p = 0; p < 16; p++) {
-            padRep.itemAt(p).color = Pad.Color.Black;
-            pads.itemAt(p).text = "";
-            pads.itemAt(p).velocity = 0;
-            pads.itemAt(p).duration = 1;
+            notes.itemAt(p).velocity = 0;
+            notes.itemAt(p).duration = 1;
         }
         let bars = ~~(step/16);
         let events = sequencer.list_events(bars*4, 1, bars*4+4, 1);
@@ -347,11 +356,10 @@ Item {
             let step_number = ~~(event_time * 4);
             //console.log("event", event.event.note, event.event.velocity);
             // FIXME handle chords
-            //pads.itemAt(step_number % 16).text = Utils.midiNoteName(event.event.note);
-            pads.itemAt(step_number % 16).velocity = event.event.velocity;
-            pads.itemAt(step_number % 16).duration = event.event.duration_amount / event.event.duration_unit * 4;
-            pads.itemAt(step_number % 16).note = event.event.note;
-            //Qt.callLater(function(){padRep.itemAt(step_number % 16).color = Pad.Color.Blue});
+            //notes.itemAt(step_number % 16).text = Utils.midiNoteName(event.event.note);
+            notes.itemAt(step_number % 16).velocity = event.event.velocity;
+            notes.itemAt(step_number % 16).duration = event.event.duration_amount / event.event.duration_unit * 4;
+            notes.itemAt(step_number % 16).note = event.event.note;
         }
     }
 

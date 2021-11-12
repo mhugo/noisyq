@@ -9,11 +9,11 @@ import "../../instruments/common" as Common
 Item {
     id: main
 
-    readonly property int unitSize: 120
+    readonly property int unitSize: 100
 
     readonly property int legendSize: 0.3 * unitSize
 
-    width: unitSize*8
+    width: unitSize*9
     height: childrenRect.height
 
     function quit()
@@ -132,6 +132,7 @@ Item {
         // A layout that stacks a widget for each instrument
         id: instrumentStack
         z: 1
+        x: unitSize
         anchors.top: infoScreen.bottom
         visible: false
 
@@ -299,9 +300,13 @@ Item {
         id: padMenu
         property alias texts: padRep.model
         anchors.top: instrumentStack.bottom
+        x: unitSize
 
         implicitWidth: 8 * unitSize
-        implicitHeight: 2 * unitSize
+        implicitHeight: 4 * unitSize
+
+        // not visible in sequencer mode
+        visible: modeStackLayout.currentIndex != 1
 
         // update one particular pad text
         function updateText(padNumber, newText) {
@@ -360,6 +365,7 @@ Item {
     Piano25Keys {
         id: piano
         anchors.top: padMenu.bottom
+        x: unitSize
     }
 
     Connections {
@@ -394,6 +400,7 @@ Item {
     Item {
         id: mainLayout
         anchors.top: infoScreen.bottom
+        x: unitSize
         Common.PlacedDial {
             id: modeKnob
             knobNumber: 7
@@ -508,6 +515,39 @@ Item {
                     }
                     enabled: modeStackLayout.currentIndex == 2
                 }
+            }
+        }
+    }
+
+    Component {
+        id: debugRow
+        Item {
+            z: -1
+
+            Repeater {
+                model: 9
+                Rectangle {
+                    x: index * unitSize
+                    implicitWidth: main.unitSize
+                    implicitHeight: main.unitSize
+                    border.color: "red"
+                    border.width: 1
+                }
+            }
+        }
+    }
+    
+    Item {
+        id: debugGrid
+        anchors.top: instrumentStack.bottom
+        z: -1
+        //visible: false
+
+        Repeater {
+            model: 5
+            Loader {
+                sourceComponent: debugRow
+                y: index * unitSize
             }
         }
     }
