@@ -260,7 +260,7 @@ Item {
                     y: ~~(index / 8) * unitSize * 2
                     border.color: "black"
                     border.width: 1
-                    color: isPlaying ? "#bbffff" : "#ffffff"
+                    color: isPlaying ? "#88bbffff" : "#00ffffff"
                 }
                 Rectangle {
                     width: unitSize * duration
@@ -371,6 +371,7 @@ Item {
         if (visible) {
             _updateSteps();
         }
+        padMenu.visible = !visible;
     }
 
     Connections {
