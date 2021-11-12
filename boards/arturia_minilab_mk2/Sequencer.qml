@@ -316,7 +316,10 @@ Item {
                     // Second note : stop
                     sequencer.stop();
                     step = 0;
-                    notes.itemAt(oldStep).isPlaying = false;
+                    if (oldStep > -1) {
+                        notes.itemAt(oldStep % 16).isPlaying = false;
+                    }
+                    patternKnob.value = 1;
                     _updateSteps();
                 }
             }
