@@ -224,6 +224,7 @@ COLOR_CYAN = 0x14
 COLOR_YELLOW = 0x05
 COLOR_WHITE = 0x7F
 
+
 def read_control(control, operation):
     midi.send_message(prefix + [
         0x01, # read value
@@ -235,7 +236,8 @@ def read_control(control, operation):
     msg, _ = midi.receive_message()
     return msg[10]
 
-def write_control(control, operation, value):
+
+def _write_control(control, operation, value):
     midi.send_message(prefix + [
         0x02, # write value
         0x00,
@@ -244,6 +246,16 @@ def write_control(control, operation, value):
         value,
         0xF7
     ])
+
+
+def write_control(control, operation, value):
+    for i in range(50):
+        _write_control(control, operation, value)
+        time.sleep(0.)
+        actual_value = read_control(control, operation)
+        if actual_value == value:
+            return
+    assert False
 
 # CC numbers for knobs
 knob_cc = [7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22]
@@ -268,7 +280,6 @@ try:
         write_control(knob_id[i], GET_SET_VALUE_2, knob_cc[i])
         # set relative
         write_control(knob_id[i], GET_SET_OPTION, OPTION_RELATIVE_1)
-    time.sleep(0.2)
 
     for i in range(16):
         mode = read_control(knob_id[i], GET_SET_MODE)
@@ -282,13 +293,15 @@ try:
         write_control(pad, GET_SET_MODE, MODE_SWITCHED)
         write_control(pad, GET_SET_VALUE_2, pad_cc[i])
         write_control(pad, GET_SET_OPTION, OPTION_GATE)
-        write_control(pad, GET_SET_TOGGLE_COLOR, COLOR_RED)
-    time.sleep(0.2)
+        if pad not in (KNOB_1_BUTTON, KNOB_9_BUTTON):
+            write_control(pad, GET_SET_TOGGLE_COLOR, COLOR_RED)
 
     for i, pad in enumerate(pad_id):
         mode = read_control(pad, GET_SET_MODE)
         option = read_control(pad, GET_SET_OPTION)
-        print("Pad", i, "mode", mode, "option", option)
+        value = read_control(pad, GET_SET_VALUE)
+        value2 = read_control(pad, GET_SET_VALUE_2)
+        print("Pad", i, "mode", mode, "option", option, "value", value, "value2", value2)
 
     # suspicious values
     # control, param, current value
