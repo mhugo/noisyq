@@ -89,7 +89,7 @@ Item {
                 height: _outerCircleSize
                 radius: width / 2
                 border.width: _lineWidth
-                border.color: index <= value ? "black" : "#aaa"
+                border.color: index == value ? "black" : "#aaa"
 
                 Rectangle {
                     x: (_outerCircleSize - _innerCircleSize)/2
@@ -98,7 +98,7 @@ Item {
                     height: _innerCircleSize
                     color: "black"
                     radius: width/2
-                    visible: index <= value
+                    visible: index == value
                 }
             }
         }
