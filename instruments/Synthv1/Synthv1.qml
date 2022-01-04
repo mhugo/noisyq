@@ -77,7 +77,7 @@ Item {
         }
     }
 
-    Item {
+    /*Item {
         id: debug_grid
         GridLayout {
             columns: 8
@@ -124,7 +124,7 @@ Item {
                 }
             }
         }
-    }
+    }*/
 
     StackLayout {
         id: mainLayout

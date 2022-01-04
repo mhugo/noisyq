@@ -11,7 +11,10 @@ Item {
     x: (mapping.knobNumber  % 8) * unitSize
     y: (unitSize + legendSize) * (~~(mapping.knobNumber / 8))
 
-    property string legend: ""
+    //property string legend: ""
+
+    property alias text: frame.text
+    property alias legend: frame.legend
 
     property alias mapping: knob
     property alias value: knob.value
@@ -20,10 +23,14 @@ Item {
     KnobMapping {
         id: knob
 
-        Text {
+        /*Text {
             x: (unitSize - width) / 2
             y: unitSize + (legendSize - height) / 2
             text: root.legend
-        }
+        }*/
+    }
+
+    FramedText {
+        id: frame
     }
 }

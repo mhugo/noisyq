@@ -9,27 +9,19 @@ Item {
     property int synthNumber: 1
 
     PlacedKnobMapping {
-        legend: "DCA Volume"
+        legend: "DCA Vol."
         mapping.parameterName: "DCA" + root.synthNumber + "_VOLUME"
         mapping.knobNumber: 0
 
-        Text {
-            x: (unitSize - width) / 2
-            y: (unitSize - height) / 2
-            text: (parent.value * 100).toFixed(2) + "%"
-        }
+        text: (value * 100).toFixed(0) + "%"
     }
 
     PlacedKnobMapping {
-        legend: "Envelope time"
+        legend: "Env. time"
         mapping.parameterName: "DCO" + root.synthNumber + "_ENVTIME"
         mapping.knobNumber: 3
 
-        Text {
-            x: (unitSize - width) / 2
-            y: (unitSize - height) / 2
-            text: (parent.value * 10).toFixed(2) + "s"
-        }
+        text: (value * 10).toFixed(0) + "s"
     }
 
     ADSRMapping {
@@ -45,47 +37,35 @@ Item {
         mapping.parameterName: "DEF" + root.synthNumber + "_VELOCITY"
         mapping.knobNumber: 14
 
-        Text {
-            x: (unitSize - width) / 2
-            y: (unitSize - height) / 2
-            text: (parent.value * 100).toFixed(2) + "%"
-        }
+        text: (value * 100).toFixed(0) + "%"
     }
     PlacedKnobMapping {
-        legend: "Mono / Poly"
+        legend: "Polyphony"
         mapping.parameterName: "DEF" + root.synthNumber + "_MONO"
         mapping.knobNumber: 15
         mapping.isInteger: true
         mapping.min: 0
         mapping.max: 2
 
-        Text {
-            x: (unitSize - width) / 2
-            y: (unitSize - height) / 2
-            text: {
-                switch (parent.value) {
-                case 0:
-                default:
-                    return "Mono";
-                case 1:
-                    return "Poly";
-                case 2:
-                    return "Legato";
-                }
+        text: {
+            switch (value) {
+            case 0:
+            default:
+                return "Mono";
+            case 1:
+                return "Poly";
+            case 2:
+                return "Legato";
             }
         }
     }
 
     PlacedKnobMapping {
-        legend: "OUT Volume"
+        legend: "OUT Vol."
         mapping.parameterName: "OUT" + root.synthNumber + "_VOLUME"
         mapping.knobNumber: 8
 
-        Text {
-            x: (unitSize - width) / 2
-            y: (unitSize - height) / 2
-            text: (parent.value * 100).toFixed(2) + "%"
-        }
+        text: (value * 100).toFixed(0) + "%"
     }
     PlacedKnobMapping {
         legend: "Width"
@@ -94,11 +74,7 @@ Item {
         mapping.min: -1
         mapping.max: 1
 
-        Text {
-            x: (unitSize - width) / 2
-            y: (unitSize - height) / 2
-            text: parent.value.toFixed(2)
-        }
+        text: value.toFixed(2)
     }
     PlacedKnobMapping {
         legend: "Panning"
@@ -107,21 +83,13 @@ Item {
         mapping.min: -1
         mapping.max: 1
 
-        Text {
-            x: (unitSize - width) / 2
-            y: (unitSize - height) / 2
-            text: parent.value.toFixed(2)
-        }
+        text: value.toFixed(2)
     }
     PlacedKnobMapping {
         legend: "FX Send"
         mapping.parameterName: "OUT" + root.synthNumber + "_FXSEND"
         mapping.knobNumber: 11
 
-        Text {
-            x: (unitSize - width) / 2
-            y: (unitSize - height) / 2
-            text: (parent.value * 100).toFixed(2) + "%"
-        }
+        text: (value * 100).toFixed(0) + "%"
     }
 }
