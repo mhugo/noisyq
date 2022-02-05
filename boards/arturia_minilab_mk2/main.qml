@@ -273,18 +273,6 @@ Item {
                     cur.knobMoved(knobNumber, amount);
                 }
             }
-            onNotePressed: {
-                let cur = instrumentStack.currentInstrumentObject();
-                if (cur != null) {
-                    lv2Host.noteOn(cur.lv2Id, note, velocity);
-                }
-            }
-            onNoteReleased : {
-                let cur = instrumentStack.currentInstrumentObject();
-                if (cur != null) {
-                    lv2Host.noteOff(cur.lv2Id, note);
-                }
-            }
             enabled: instrumentStack.visible
         }
 
@@ -378,10 +366,18 @@ Item {
 
         onNotePressed : {
             piano.noteOn(note - piano.octave * 12, velocity);
+            let instr = instrumentStack.instrumentAt(~~voiceKnob.value);
+            if (instr != null) {
+                lv2Host.noteOn(instr.instrument.lv2Id, note, velocity);
+            }
         }
 
         onNoteReleased : {
             piano.noteOff(note - piano.octave * 12);
+            let instr = instrumentStack.instrumentAt(~~voiceKnob.value);
+            if (instr != null) {
+                lv2Host.noteOff(instr.instrument.lv2Id, note);
+            }
         }
 
         onOctaveUp : {
