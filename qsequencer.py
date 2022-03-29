@@ -12,9 +12,9 @@ from PyQt5.QtCore import (
     QElapsedTimer,
     QVariant,
 )
-from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QLabel, QPushButton
+from PyQt5.QtWidgets import QApplication
 from PyQt5.QtQml import QJSValue, QJSEngine
-from sortedcontainers import SortedDict
+from sortedcontainers import SortedList  # type: ignore
 
 TimeSubUnit = Literal[1, 2, 4, 8, 16, 32, 64, 128]
 
@@ -167,14 +167,32 @@ class ChannelEvent:
         return "ChannelEvent(channel={},event={})".format(self.channel, self.event)
 
 
-def _add_event_to_sorted_dict(
-    events: SortedDict, event: Any, start_time: TimeUnit
-) -> None:
-    if start_time not in events:
-        events[start_time] = [event]
-    else:
-        if event not in events[start_time]:
-            events[start_time].append(event)
+class EventList:
+    """A list of events, indexed by time"""
+
+    def __init__(self) -> None:
+        # Events are stored in a SortedList that contains a Tuple[TimeUnit, Event]
+        self.__events = SortedList(key=lambda x: x[0])
+
+    def add_event(self, event: Any, start_time: TimeUnit) -> None:
+        self.__events.add((start_time, event))
+
+    def remove_event(self, event: Any, start_time: TimeUnit) -> None:
+        self.__events.remove((start_time, event))
+
+    def __iter__(self):
+        return self.__events.__iter__()
+
+    def irange(
+        self,
+        min_time: TimeUnit,
+        max_time: TimeUnit,
+        inclusive=(True, True),
+        reverse=False,
+    ):
+        return self.__events.irange(
+            (min_time, None), (max_time, None), inclusive, reverse
+        )
 
 
 class State(Enum):
@@ -289,7 +307,7 @@ class QSequencer(QObject):
         # Events are stored in a dict sorted by time
         # key type: TimeUnit
         # value type: List[ChannelEvent]
-        self.__events = SortedDict()
+        self.__events = EventList()
 
         self.__timer = QTimer()
         self.__timer.setSingleShot(True)
@@ -320,9 +338,7 @@ class QSequencer(QObject):
         self.step.emit(self.__step_number)
 
     def _add_event(self, channel: int, start_time: TimeUnit, event: Event) -> None:
-        _add_event_to_sorted_dict(
-            self.__events, ChannelEvent(channel, event), start_time
-        )
+        self.__events.add_event(ChannelEvent(channel, event), start_time)
 
     @pyqtSlot(int, int, int, QVariant)
     def add_event(
@@ -336,13 +352,7 @@ class QSequencer(QObject):
         self._add_event(channel, TimeUnit(start_time_amount, start_time_unit), event)
 
     def _remove_event(self, channel: int, start_time: TimeUnit, event: Event) -> None:
-        if start_time in self.__events:
-            for i, evt in enumerate(self.__events[start_time]):
-                if evt.channel == channel and evt.event == event:
-                    del self.__events[start_time][i]
-                    if len(self.__events[start_time]) == 0:
-                        del self.__events[start_time]
-                    break
+        self.__events.remove_event(ChannelEvent(channel, event), start_time)
 
     @pyqtSlot(int, int, int, QVariant)
     def remove_event(
@@ -358,11 +368,10 @@ class QSequencer(QObject):
         stop_time: Optional[TimeUnit] = None,
     ) -> Iterator[Tuple[int, TimeUnit, Event]]:
         # iterate events, by advancing time
-        for event_time in self.__events.irange(
+        for event_time, ch_event in self.__events.irange(
             start_time, stop_time, inclusive=[True, False]
         ):
-            for ch_event in self.__events[event_time]:
-                yield ch_event.channel, event_time, ch_event.event
+            yield ch_event.channel, event_time, ch_event.event
 
     def iterate_scheduled_events(
         self,
@@ -371,17 +380,15 @@ class QSequencer(QObject):
         add_stop_event: bool = False,
     ) -> Iterator[Tuple[TimeUnit, ScheduledEvent]]:
         # First schedule events to obtain ScheduleEvents
-        # key_type: TimeUnit
-        # value_type: List[ScheduledEvent]
-        scheduled_events = SortedDict()
+        scheduled_events = EventList()
 
         for channel, event_time, event in self.iterate_events(start_time, stop_time):
             events = event.schedule(event_time)
             for e in events:
-                _add_event_to_sorted_dict(scheduled_events, (channel, e), e.time)
+                scheduled_events.add_event((channel, e), e.time)
 
         # Then iterate over the list of scheduled events
-        for event_time, e in scheduled_events.items():
+        for event_time, e in scheduled_events:
             # print("Adding event @{} {}".format(event_time, e))
             yield event_time, e
 
@@ -420,6 +427,7 @@ class QSequencer(QObject):
 
     @pyqtSlot(int, int, int, result=QVariant)
     def get_event(self, channel: int, time_amount: int, time_unit: TimeSubUnit):
+        # FIXME get_events ??
         for e_channel, event_time, event in self.iterate_events(
             TimeUnit(time_amount, time_unit)
         ):
@@ -430,6 +438,7 @@ class QSequencer(QObject):
 
     @pyqtSlot(int, int, int, QVariant)
     def set_event(self, channel: int, time_amount: int, time_unit: TimeSubUnit, event):
+        # FIXME set_events ??
         for evt in self.__events.get(TimeUnit(time_amount, time_unit), []):
             if evt.channel == channel:
                 evt.event = Event.from_dict(event.toVariant())
