@@ -55,11 +55,27 @@ class PianoRoll(QQuickPaintedItem):
     def notesPerScreen(self) -> int:
         pass
 
+    def is_in_chord(self, note: int) -> bool:
+        # FIXME only major chord for now
+        return (note % 12) in (0, 2, 4, 5, 7, 9, 11)
+
     def paint(self, painter: QPainter) -> None:
-        # print("=================paint")
-        # pen = QPen(QColor("black"))
-        # pen.setWidth(2)
-        # painter.setPen(pen)
+        # lines with background
+        painter.save()
+        dark_brush = QBrush(QColor("#aaa"))
+        light_brush = QBrush(QColor("#eee"))
+        no_pen = QPen()
+        no_pen.setStyle(Qt.NoPen)
+        painter.setPen(no_pen)
+        h = (self.height() - 1) / self._notes_per_screen
+        for j in range(self._notes_per_screen + 1):
+            y = int(j * h)
+            if self.is_in_chord(j):
+                painter.setBrush(dark_brush)
+            else:
+                painter.setBrush(light_brush)
+            painter.drawRect(0, y, int(self.width()), int(h))
+        painter.restore()
 
         # vertical lines
         for i in range(self._steps_per_screen + 1):
@@ -67,11 +83,14 @@ class PianoRoll(QQuickPaintedItem):
             painter.drawLine(x, 0, x, int(self.height()))
 
         # horizontal lines
-        for i in range(self._notes_per_screen + 1):
-            y = int(i * (self.height() - 1) / self._notes_per_screen)
-            painter.drawLine(0, y, int(self.width()), y)
+        # for i in range(self._notes_per_screen + 1):
+        #    y = int(i * (self.height() - 1) / self._notes_per_screen)
+        #    painter.drawLine(0, y, int(self.width()), y)
 
         # notes
+        light = QBrush(QColor("#23629e"))
+        dark = QBrush(QColor("#3492eb"))
+        painter.setPen(no_pen)
         stop = self._offset + self._steps_per_screen
         for event in self._sequencer.list_events(
             self._offset.amount(), self._offset.unit(), stop.amount(), stop.unit()
@@ -99,6 +118,8 @@ class PianoRoll(QQuickPaintedItem):
             )
             h = (self.height() - 1) / self._notes_per_screen
 
-            brush = QBrush(QColor("blue"))
-            painter.setBrush(brush)
+            painter.setBrush(light)
             painter.drawRect(x, y, w, h)
+            painter.setBrush(dark)
+            b = 4
+            painter.drawRect(x + b, y + b, w - b * 2, h - b * 2)
