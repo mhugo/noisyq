@@ -3,12 +3,10 @@ from enum import Enum
 import os
 import sys
 
-from PyQt5.QtCore import (
-    QUrl, pyqtSignal, pyqtSlot, QObject, QVariant
-)
+from PyQt5.QtCore import QUrl, pyqtSignal, pyqtSlot, QObject, QVariant
 from PyQt5.QtWidgets import QApplication
 from PyQt5.QtQuick import QQuickView
-from PyQt5.QtQml import QQmlEngine, qmlRegisterSingletonType
+from PyQt5.QtQml import QQmlEngine, qmlRegisterSingletonType, qmlRegisterType
 
 from qsequencer import QSequencer
 from piano_roll import PianoRoll
@@ -75,13 +73,15 @@ class Utils(QObject):
         tmp_file = fo.name
         fo.close()
 
-        subprocess.call([
-            "ffmpeg",
-            "-i",
-            file_name,
-            "-filter_complex",
-            "showwavespic=s={}x{}:colors=black".format(output_width, output_height),
-            tmp_file]
+        subprocess.call(
+            [
+                "ffmpeg",
+                "-i",
+                file_name,
+                "-filter_complex",
+                "showwavespic=s={}x{}:colors=black".format(output_width, output_height),
+                tmp_file,
+            ]
         )
         return tmp_file
 
@@ -89,7 +89,7 @@ class Utils(QObject):
     def midiNoteName(self, note):
         name_en = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"]
         # name_fr = ["Do", "Do#", "Ré", "Ré#", "Mi", "Fa", "Fa#", "Sol", "Sol#", "La", "La#", "Si"]
-        return "{} {}".format(name_en[note % 12], (note // 12)-1)
+        return "{} {}".format(name_en[note % 12], (note // 12) - 1)
 
 
 class StubHost(QObject):
@@ -100,21 +100,22 @@ class StubHost(QObject):
 
     @pyqtSlot(str, result=str)
     def addInstance(self, lv2_name):
-        #print(">>> addInstance", lv2_name)
+        # print(">>> addInstance", lv2_name)
         lv2_id = "stub{}".format(self.__next_id)
         self.__next_id += 1
         return lv2_id
 
     @pyqtSlot(str, str, float)
     def setParameterValue(self, lv2_id, parameter_name, value):
-        #print(">>> setParameterValue", lv2_id, parameter_name, value)
+        # print(">>> setParameterValue", lv2_id, parameter_name, value)
         pass
 
     @pyqtSlot(str, str, result=float)
     def getParameterValue(self, lv2_id, parameter_name):
         import random
+
         v = random.random()
-        #print(">>> getParameterValue", lv2_id, parameter_name, v)
+        # print(">>> getParameterValue", lv2_id, parameter_name, v)
         return v
 
     @pyqtSlot(str, int, int)
@@ -154,6 +155,7 @@ class StubHost(QObject):
     @pyqtSlot(str, result=list)
     def programs(self, lv2_id):
         return []
+
 
 class MidiAPI(Enum):
     JACK = rtmidi.API_UNIX_JACK
@@ -223,11 +225,10 @@ class Midi(QObject):
         self.__received_message = None
         return msg
 
-parser = argparse.ArgumentParser(description='MIDI-controlled audio station.')
-parser.add_argument('--host-stub', action="store_true",
-                    help="Stub LV2 host")
-parser.add_argument('--dev', action="store",
-                    help="MIDI device to use (pattern)")
+
+parser = argparse.ArgumentParser(description="MIDI-controlled audio station.")
+parser.add_argument("--host-stub", action="store_true", help="Stub LV2 host")
+parser.add_argument("--dev", action="store", help="MIDI device to use (pattern)")
 
 args = parser.parse_args()
 
@@ -237,7 +238,9 @@ else:
     # lv2Host = JALVHost()
     lv2Host = CarlaHost("/usr/local")
 
-qmlRegisterSingletonType(Utils, 'Utils', 1, 0, "Utils", lambda engine, script_engine: Utils())
+qmlRegisterSingletonType(
+    Utils, "Utils", 1, 0, "Utils", lambda engine, script_engine: Utils()
+)
 qmlRegisterType(PianoRoll, "PianoRoll", 1, 0, "PianoRoll")
 
 view = QQuickView()
@@ -250,10 +253,10 @@ midi = Midi(rtmidi.API_LINUX_ALSA, args.dev)
 view.rootContext().setContextProperty("midi", midi)
 
 sequencer = QSequencer()
-view.rootContext().setContextProperty("sequencer", sequencer)
+view.rootContext().setContextProperty("gSequencer", sequencer)
 
 current_path = os.path.abspath(os.path.dirname(__file__))
-qml_file = os.path.join(current_path, 'boards/arturia_minilab_mk2/main.qml')
+qml_file = os.path.join(current_path, "boards/arturia_minilab_mk2/main.qml")
 view.setSource(QUrl.fromLocalFile(qml_file))
 view.engine().quit.connect(app.quit)
 view.show()
