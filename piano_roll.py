@@ -51,6 +51,15 @@ class PianoRoll(QQuickPaintedItem):
         self._channel = ch
         self.update()
 
+    @pyqtProperty(int)
+    def offset(self):
+        return int(self._offset)
+
+    @offset.setter
+    def offset(self, off: int):
+        self._offset = TimeUnit(off, 1)
+        self.update()
+
     # TODO
     def notesPerScreen(self) -> int:
         pass
@@ -71,9 +80,9 @@ class PianoRoll(QQuickPaintedItem):
         for j in range(self._notes_per_screen + 1):
             y = int(j * h)
             if self.is_in_chord(j):
-                painter.setBrush(dark_brush)
-            else:
                 painter.setBrush(light_brush)
+            else:
+                painter.setBrush(dark_brush)
             painter.drawRect(0, y, int(self.width()), int(h))
         painter.restore()
 
@@ -81,11 +90,6 @@ class PianoRoll(QQuickPaintedItem):
         for i in range(self._steps_per_screen + 1):
             x = int(i * (self.width() - 1) / self._steps_per_screen)
             painter.drawLine(x, 0, x, int(self.height()))
-
-        # horizontal lines
-        # for i in range(self._notes_per_screen + 1):
-        #    y = int(i * (self.height() - 1) / self._notes_per_screen)
-        #    painter.drawLine(0, y, int(self.width()), y)
 
         # notes
         light = QBrush(QColor("#23629e"))

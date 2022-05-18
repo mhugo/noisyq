@@ -252,6 +252,22 @@ Item {
         stepsPerScreen: 8
     }
 
+    Common.PlacedKnobMapping {
+        id: rollHKnob
+        mapping.knobNumber: 14
+        mapping.isInteger: true
+        mapping.min: 0
+        mapping.max: 127
+        mapping.value: 0
+        Common.FramedText {
+            legend: "Offset"
+            text: ~~parent.value
+        }
+        onValueChanged: {
+            pianoRoll.offset = value
+        }
+    }
+
     Item {
         // icons above piano keys
         id: pianoIcons
