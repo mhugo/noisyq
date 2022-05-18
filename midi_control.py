@@ -11,6 +11,7 @@ from PyQt5.QtQuick import QQuickView
 from PyQt5.QtQml import QQmlEngine, qmlRegisterSingletonType
 
 from qsequencer import QSequencer
+from piano_roll import PianoRoll
 
 
 import rtmidi
@@ -237,6 +238,7 @@ else:
     lv2Host = CarlaHost("/usr/local")
 
 qmlRegisterSingletonType(Utils, 'Utils', 1, 0, "Utils", lambda engine, script_engine: Utils())
+qmlRegisterType(PianoRoll, "PianoRoll", 1, 0, "PianoRoll")
 
 view = QQuickView()
 view.setResizeMode(QQuickView.SizeViewToRootObject)

@@ -1,7 +1,6 @@
 # Qt interface to sequencer
 from enum import Enum
-from fractions import Fraction
-from typing import Any, Iterator, List, Literal, Optional, Set, Tuple
+from typing import Any, Iterator, List, Optional, Set, Tuple
 
 from PyQt5.QtCore import (
     pyqtSignal,
@@ -15,41 +14,7 @@ from PyQt5.QtCore import (
 from PyQt5.QtWidgets import QApplication
 from PyQt5.QtQml import QJSValue, QJSEngine
 from sortedcontainers import SortedList  # type: ignore
-
-TimeSubUnit = Literal[1, 2, 4, 8, 16, 32, 64, 128]
-
-
-class TimeUnit:
-    """
-    A TimeUnit represents a fraction of a beat.
-    It is stored as two integers. Denominator is a power of 2.
-    """
-
-    def __init__(self, amount: int, unit: TimeSubUnit = 1) -> None:
-        self._fraction = Fraction(amount, unit)
-
-    def amount(self):
-        return self._fraction.numerator
-
-    def unit(self):
-        return self._fraction.denominator
-
-    def __lt__(self, other):
-        return self._fraction.__lt__(other._fraction)
-
-    def __repr__(self):
-        return repr(self._fraction)
-
-    def __eq__(self, other):
-        return self._fraction.__eq__(other._fraction)
-
-    def __hash__(self):
-        return self._fraction.__hash__()
-
-    def __add__(self, other):
-        r = TimeUnit(0)
-        r._fraction = self._fraction + other._fraction
-        return r
+from time_unit import TimeUnit, TimeSubUnit
 
 
 class ScheduledEvent:

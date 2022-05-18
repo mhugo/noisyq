@@ -2,6 +2,7 @@ import QtQuick 2.7
 import QtQuick.Controls 2.5
 
 import Utils 1.0
+import PianoRoll 1.0
 
 import "../../instruments/common" as Common
 
@@ -239,38 +240,16 @@ Item {
         }
     }
 
-    Item {
-        // 12 notes per step
-        y: (main.unitSize+main.legendSize) * 2
+    PianoRoll {
+        id: pianoRoll
+        width: 8 * unitSize
+        height: unitSize * 2
+        y: (main.unitSize+main.legendSize) * 2 + 2*unitSize
 
-        Repeater {
-            model: 16
-            id: notes
-            Rectangle {
-                property bool isPlaying: false
-                Repeater {
-                    model: 12
-                    Rectangle {
-                        property int velocity: 64
-                        property double duration: 1.0 // max 1.0
-                        width: duration * unitSize
-                        height: unitSize * 2 / 12
-                        y: index * unitSize * 2 / 12
-                        color: Qt.rgba(.0, .0, 1., velocity/127.0)
-                        border.color: "black"
-                        border.width: 1
-                        visible: velocity > 0
-                    }
-                }
-                x: (index%8)*unitSize
-                y: ~~(index/8)*unitSize*2
-                border.color: "black"
-                border.width: 1
-                width: unitSize
-                height: unitSize*2
-                color: isPlaying ? "#88bbffff" : "#00ffffff"
-            }
-        }
+        sequencer: gSequencer
+        channel: ~~voiceKnob.value
+
+        stepsPerScreen: 8
     }
 
     Item {
@@ -343,38 +322,11 @@ Item {
     }
 
     function _updateSteps() {
-        // Change step colors based on steps from the sequencer
-        let currentVoice = ~~voiceKnob.value;
-        for (var p = 0; p < 16; p++) {
-            for (var n = 0; n < 12; n++) {
-                notes.itemAt(p).children[n].velocity = 0;
-                notes.itemAt(p).children[n].duration = 1;
-            }
-        }
-        let bars = ~~(step/16);
-        let events = sequencer.list_events(bars*4, 1, bars*4+4, 1);
-        for (var i = 0; i < events.length; i++) {
-            let event = events[i];
-            if (event.channel != currentVoice)
-                continue;
-            // round the event start time to the previous step
-            let event_time = event.time_amount / event.time_unit;
-            let step_number = ~~(event_time * 4);
-            //console.log("event", event.event.note, event.event.velocity);
-            // FIXME handle chords
-            //notes.itemAt(step_number % 16).text = Utils.midiNoteName(event.event.note);
-            let n = 12 - event.event.note % 12 - 1;
-            notes.itemAt(step_number % 16).children[n].velocity = event.event.velocity;
-            notes.itemAt(step_number % 16).children[n].duration = event.event.duration_amount / event.event.duration_unit * 4;
-            //notes.itemAt(step_number % 16).note = event.event.note;
-        }
     }
-
     onVisibleChanged: {
         if (visible) {
             _updateSteps();
         }
-        padMenu.visible = !visible;
     }
 
     Connections {
