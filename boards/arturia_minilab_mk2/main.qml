@@ -592,7 +592,7 @@ Item {
 
     // route note from the sequencer to instruments
     Connections {
-        target: sequencer
+        target: gSequencer
         onNoteOn: {
             let instr = instrumentStack.instrumentAt(channel);
             if (instr != null) {

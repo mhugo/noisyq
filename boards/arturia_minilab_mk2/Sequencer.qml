@@ -29,7 +29,7 @@ Item {
             "step_duration": durationKnob.value,
             "step_note": noteKnob.value,
             "step_velocity": velocityKnob.value,
-            "steps": sequencer.list_events()
+            "steps": gSequencer.list_events()
         };
     }
 
@@ -42,7 +42,7 @@ Item {
         velocityKnob.value = state.step_velocity;
         for (var i = 0; i < state.steps.length; i++) {
             var e = state.steps[i];
-            sequencer.add_event(e.channel, e.time_amount, e.time_unit, e.event);
+            gSequencer.add_event(e.channel, e.time_amount, e.time_unit, e.event);
         }
     }
 
@@ -109,9 +109,9 @@ Item {
     function updateStepParameter(step_number, parameter_name, value) {
         let currentVoice = ~~voiceKnob.value;
         let s = ~~(step/16)*16 + step_number;
-        let event = sequencer.get_event(currentVoice, s, 4);
+        let event = gSequencer.get_event(currentVoice, s, 4);
         event[parameter_name] = value;
-        sequencer.set_event(currentVoice, s, 4, event);
+        gSequencer.set_event(currentVoice, s, 4, event);
         _updateSteps();
     }
 
@@ -307,7 +307,7 @@ Item {
             if (board.isShiftPressed) {
                 if (note % 12 == 0) {
                     // First note : play/pause
-                    sequencer.toggle_play_pause(
+                    gSequencer.toggle_play_pause(
                         bpm.value,
                         0, 1,
                         nPatterns * 4, 1
@@ -315,7 +315,7 @@ Item {
                 }
                 if (note % 12 == 2) {
                     // Second note : stop
-                    sequencer.stop();
+                    gSequencer.stop();
                     step = 0;
                     if (oldStep > -1) {
                         notes.itemAt(oldStep % 16).isPlaying = false;
@@ -328,9 +328,9 @@ Item {
         enabled: sequencerDisplay.visible
     }
     Connections {
-        target: sequencer
+        target: gSequencer
         onStateChanged: {
-            pianoIcons.isPlaying = sequencer.is_playing();
+            pianoIcons.isPlaying = gSequencer.is_playing();
         }
         onStep: {
             sequencerDisplay.lightStep(step);
@@ -413,7 +413,7 @@ Item {
             let currentVoice = ~~voiceKnob.value;
             let step = (patternKnob.value - 1) * 16 + padNumber;
             if (modeKnob.value == 1) { // Step edit
-                let e = sequencer.get_event(currentVoice, step, 4);
+                let e = gSequencer.get_event(currentVoice, step, 4);
                 if (e) {
                     noteKnob.value = e.note;
                     velocityKnob.value = e.velocity;
@@ -427,13 +427,13 @@ Item {
             let step = (patternKnob.value - 1) * 16 + padNumber;
             if (modeKnob.value == 0) { // Pattern edit
                 // toggle step
-                let event = sequencer.get_event(currentVoice, step, 4);
+                let event = gSequencer.get_event(currentVoice, step, 4);
                 if (event) {
-                    sequencer.remove_event(currentVoice, step, 4, event);
+                    gSequencer.remove_event(currentVoice, step, 4, event);
                 }
                 else {
                     // add an event
-                    sequencer.add_event(currentVoice,
+                    gSequencer.add_event(currentVoice,
                                         step,
                                         4,
                                         {
