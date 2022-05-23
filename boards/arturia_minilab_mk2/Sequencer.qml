@@ -59,8 +59,12 @@ Item {
         id: modeKnob
         knobNumber: 0
         enumValues: [
-            "Pattern edit",
-            "Step edit"
+            "Play",
+            "View",
+            "Select",
+            "Edit",
+            "Step record",
+            "Live record",
         ]
         legend: "Mode"
     }
@@ -118,7 +122,7 @@ Item {
 
     Common.PlacedKnobMapping {
         id: durationKnob
-        mapping.knobNumber: 9
+        mapping.knobNumber: 10
         mapping.isInteger: true
         mapping.min: 0
         mapping.max: 5
@@ -205,7 +209,7 @@ Item {
 
     Common.PlacedKnobMapping {
         id: noteKnob
-        mapping.knobNumber: 10
+        mapping.knobNumber: 11
         mapping.isInteger: true
         mapping.min: 20
         mapping.max: 100
@@ -224,7 +228,7 @@ Item {
 
     Common.PlacedKnobMapping {
         id: velocityKnob
-        mapping.knobNumber: 11
+        mapping.knobNumber: 12
         mapping.isInteger: true
         mapping.min: 0
         mapping.max: 127
@@ -240,6 +244,22 @@ Item {
         }
     }
 
+    Rectangle {
+        // upper part of the piano roll
+        y: (main.unitSize+main.legendSize) * 2 + unitSize
+        height: unitSize
+        width: 8 * unitSize
+        color: white
+
+    }
+    ScrollBar {
+        y: (main.unitSize+main.legendSize) * 2 + unitSize
+        width: 8*unitSize
+        policy: ScrollBar.AlwaysOn
+        orientation: Qt.Horizontal
+        size: 0.1
+    }
+
     PianoRoll {
         id: pianoRoll
         width: 8 * unitSize
@@ -252,22 +272,47 @@ Item {
         stepsPerScreen: 8
     }
 
-    Common.PlacedKnobMapping {
-        id: rollHKnob
-        mapping.knobNumber: 14
-        mapping.isInteger: true
-        mapping.min: 0
-        mapping.max: 127
-        mapping.value: 0
-        Common.FramedText {
-            legend: "Offset"
-            text: ~~parent.value
-        }
-        onValueChanged: {
-            pianoRoll.offset = value
+    Item {
+        // Pads for play mode
+        visible: modeKnob.value == 0
+        Common.PlacedPadText {
+            padNumber: 0
+            text: "test"
         }
     }
-
+    Item {
+        // Pads for view mode
+        visible: modeKnob.value == 1
+        Common.PlacedKnobMapping {
+            mapping.knobNumber: 1
+            mapping.isInteger: true
+            mapping.min: 0
+            mapping.max: nPatterns
+            mapping.value: 0
+            Common.FramedText {
+                legend: "Time Offset"
+                text: ~~parent.value
+            }
+            onValueChanged: {
+                pianoRoll.offset = value
+            }
+        }
+        Common.PlacedKnobMapping {
+            mapping.knobNumber: 9
+            mapping.isInteger: true
+            mapping.min: 0
+            mapping.max: 127
+            mapping.value: 60
+            Common.FramedText {
+                legend: "Note offset"
+                text: ~~parent.value
+            }
+            onValueChanged: {
+                pianoRoll.note_offset = value
+            }
+        }
+    }
+    
     Item {
         // icons above piano keys
         id: pianoIcons

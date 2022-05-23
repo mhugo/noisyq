@@ -20,6 +20,8 @@ class PianoRoll(QQuickPaintedItem):
 
         # time offset
         self._offset = TimeUnit(0)
+        # note offset
+        self._note_offset = 60
 
         # the sequencer from where to fetch notes to display
         self._sequencer: QSequencer
@@ -60,6 +62,15 @@ class PianoRoll(QQuickPaintedItem):
         self._offset = TimeUnit(off, 1)
         self.update()
 
+    @pyqtProperty(int)
+    def note_offset(self):
+        return self._note_offset
+
+    @note_offset.setter
+    def note_offset(self, off: int):
+        self._note_offset = off
+        self.update()
+
     # TODO
     def notesPerScreen(self) -> int:
         pass
@@ -79,7 +90,7 @@ class PianoRoll(QQuickPaintedItem):
         h = (self.height() - 1) / self._notes_per_screen
         for j in range(self._notes_per_screen + 1):
             y = int(j * h)
-            if self.is_in_chord(j):
+            if self.is_in_chord(j + self._note_offset):
                 painter.setBrush(light_brush)
             else:
                 painter.setBrush(dark_brush)
@@ -104,6 +115,11 @@ class PianoRoll(QQuickPaintedItem):
                 continue
             print("event", event)
             note = event["event"]["note"]
+            print("note - note_offset", note - self._note_offset)
+            if note - self._note_offset < 0:
+                continue
+            if note - self._note_offset >= self._notes_per_screen:
+                continue
             velocity = event["event"]["velocity"]
             note_time = TimeUnit(event["time_amount"], event["time_unit"])
             note_duration = TimeUnit(
@@ -116,7 +132,7 @@ class PianoRoll(QQuickPaintedItem):
             )
             w = float(note_duration) / self._steps_per_screen * (self.width() - 1)
             y = (
-                (note % self._notes_per_screen)
+                (note - self._note_offset)
                 / self._notes_per_screen
                 * (self.height() - 1)
             )
