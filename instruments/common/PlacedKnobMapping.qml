@@ -18,7 +18,6 @@ Item {
 
     property alias mapping: knob
     property alias value: knob.value
-    property alias shiftValue: knob.shiftValue
 
     KnobMapping {
         id: knob

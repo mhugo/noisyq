@@ -35,6 +35,7 @@ class PianoRoll(QQuickPaintedItem):
     @stepsPerScreen.setter
     def stepsPerScreen(self, steps: int):
         self._steps_per_screen = steps
+        self.update()
 
     @pyqtProperty(QObject)
     def sequencer(self) -> QSequencer:
@@ -97,9 +98,16 @@ class PianoRoll(QQuickPaintedItem):
             painter.drawRect(0, y, int(self.width()), int(h))
         painter.restore()
 
+        thick_pen = QPen()
+        thick_pen.setWidth(2)
+        normal_pen = QPen()
         # vertical lines
         for i in range(self._steps_per_screen + 1):
             x = int(i * (self.width() - 1) / self._steps_per_screen)
+            if int(i - self._offset) % 4 == 0:
+                painter.setPen(thick_pen)
+            else:
+                painter.setPen(normal_pen)
             painter.drawLine(x, 0, x, int(self.height()))
 
         # notes

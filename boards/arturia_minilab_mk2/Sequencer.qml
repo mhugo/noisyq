@@ -17,30 +17,26 @@ Item {
     property int step: 0
     property int oldStep: -1
 
-    property int nPatterns: 4
-
     // Which pad is being pressed ?
     property int padPressed: -1
 
     function saveState() {
         return {
-            "pattern": patternKnob.value,
-            "n_patterns": nPatterns,
-            "bpm": bpm.value,
-            "step_duration": durationKnob.value,
-            "step_note": noteKnob.value,
-            "step_velocity": velocityKnob.value,
+            "n_beats": nBeatsKnob.value,
+            "beats_per_screen": stepsPerScreenKnob.value,
+            "offset": timeOffsetKnob.value,
+            "note_offset": noteOffsetKnob.value,
+            //"bpm": bpm.value,
             "steps": gSequencer.list_events()
         };
     }
 
     function loadState(state) {
-        patternKnob.value = state.pattern;
-        nPatterns = state.n_patterns;
-        bpm.value = state.bpm;
-        durationKnob.value = state.step_duration;
-        noteKnob.value = state.step_note;
-        velocityKnob.value = state.step_velocity;
+        nBeatsKnob.value = state.n_beats;
+        stepsPerScreenKnob.value = state.beats_per_screen;
+        timeOffsetKnob.value = state.offset;
+        noteOffsetKnob.value = state.note_offset;
+        //bpm.value = state.bpm;
         for (var i = 0; i < state.steps.length; i++) {
             var e = state.steps[i];
             gSequencer.add_event(e.channel, e.time_amount, e.time_unit, e.event);
@@ -50,7 +46,7 @@ Item {
     function lightStep(step) {
         if (oldStep > -1)
             notes.itemAt(oldStep % 16).isPlaying = false;
-        if (step < nPatterns * 16)
+        if (step < ~~nBeatsKnob.value * 16)
             notes.itemAt(step % 16).isPlaying = true;
         oldStep = step;
     }
@@ -69,7 +65,7 @@ Item {
         legend: "Mode"
     }
 
-    Common.PlacedKnobMapping {
+/*    Common.PlacedKnobMapping {
         id: bpm
         mapping.knobNumber: 2
         mapping.isInteger: true
@@ -242,7 +238,7 @@ Item {
                 updateStepParameter(padPressed, "velocity", value);
             }
         }
-    }
+    }*/
 
     Rectangle {
         // upper part of the piano roll
@@ -257,7 +253,8 @@ Item {
         width: 8*unitSize
         policy: ScrollBar.AlwaysOn
         orientation: Qt.Horizontal
-        size: 0.1
+        size: 1.0 / nBeatsKnob.value
+        position: timeOffsetKnob.value / nBeatsKnob.value
     }
 
     PianoRoll {
@@ -275,19 +272,20 @@ Item {
     Item {
         // Pads for play mode
         visible: modeKnob.value == 0
-        Common.PlacedPadText {
+        /*Common.PlacedPadText {
             padNumber: 0
             text: "test"
-        }
+        }*/
     }
     Item {
         // Pads for view mode
         visible: modeKnob.value == 1
         Common.PlacedKnobMapping {
+            id: timeOffsetKnob
             mapping.knobNumber: 1
             mapping.isInteger: true
             mapping.min: 0
-            mapping.max: nPatterns
+            mapping.max: ~~nBeatsKnob.value
             mapping.value: 0
             Common.FramedText {
                 legend: "Time Offset"
@@ -296,8 +294,41 @@ Item {
             onValueChanged: {
                 pianoRoll.offset = value
             }
+            visible: ! board.isShiftPressed
         }
         Common.PlacedKnobMapping {
+            id: nBeatsKnob
+            mapping.knobNumber: 1
+            mapping.isInteger: true
+            mapping.min: 1
+            mapping.max: 2048
+            mapping.value: 4
+            Common.FramedText {
+                legend: "# of beats"
+                text: ~~parent.value
+            }
+            onValueChanged: {
+                gSequencer.nBeats = value
+            }
+            visible: board.isShiftPressed
+        }
+        Common.PlacedKnobMapping {
+            id: stepsPerScreenKnob
+            mapping.knobNumber: 2
+            mapping.isInteger: true
+            mapping.min: 1
+            mapping.max: 64
+            mapping.value: 4
+            Common.FramedText {
+                legend: "Steps / screen"
+                text: ~~parent.value
+            }
+            onValueChanged: {
+                pianoRoll.stepsPerScreen = value
+            }
+        }
+        Common.PlacedKnobMapping {
+            id: noteOffsetKnob
             mapping.knobNumber: 9
             mapping.isInteger: true
             mapping.min: 0
@@ -406,23 +437,23 @@ Item {
         onNotePressed: {
             if (currentChord.length == 0) {
                 noteKnob.value = note;
-                velocityKnob.value = velocity;
+                //velocityKnob.value = velocity;
             }
             currentChord.push(note);
             console.log("chord", currentChord);
         }
         onNoteReleased: {
-            if (currentChord.length == 0) {
+            /*if (currentChord.length == 0) {
                 // end of chord input
                 if (padPressed != -1) {
                     updateStepParameter(padPressed, "note", currentChord[0]);
                     // TODO handle other notes
                     updateStepParameter(padPressed, "velocity", velocity);
                 }
-            }
+            }*/
             currentChord.splice(currentChord.indexOf(note), 1);
         }
-        onPadPressed: {
+        /*onPadPressed: {
             let currentVoice = ~~voiceKnob.value;
             let step = (patternKnob.value - 1) * 16 + padNumber;
             if (modeKnob.value == 1) { // Step edit
@@ -460,6 +491,6 @@ Item {
                 sequencerDisplay._updateSteps();
             }
             padPressed = -1;
-        }
+        }*/
     }
 }

@@ -288,6 +288,10 @@ class QSequencer(QObject):
         self.__step_number = 0
         self.__step_chrono.timeout.connect(self._on_step_timeout)
 
+        # Number of beats for the sequence
+        # FIXME: a number of beats independent for each voice == Ableton "clip" ?
+        self.__n_beats = 4
+
         # Time after pause and before the next note
         self.__remaining_time_after_pause = 0
         self.__scheduled_events = []
@@ -326,6 +330,15 @@ class QSequencer(QObject):
         print("event_dict", event_dict.toVariant())
         event = Event.from_dict(event_dict.toVariant())
         self._remove_event(channel, TimeUnit(start_time_amount, start_time_unit), event)
+
+    @pyqtProperty(int)
+    def nBeats(self) -> int:
+        return self.__n_beats
+
+    @nBeats.setter
+    def nBeats(self, n_beats: int) -> None:
+        print("set n beats", n_beats)
+        self.__n_beats = n_beats
 
     def iterate_events(
         self,
