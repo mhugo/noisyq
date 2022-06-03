@@ -1,6 +1,6 @@
 # Qt interface to sequencer
 from enum import Enum
-from typing import Any, Iterator, List, Optional, Set, Tuple
+from typing import Any, Iterator, List, Optional, Set, Tuple, TypeVar, Generic
 
 from PyQt5.QtCore import (
     pyqtSignal,
@@ -132,20 +132,23 @@ class ChannelEvent:
         return "ChannelEvent(channel={},event={})".format(self.channel, self.event)
 
 
-class EventList:
+T = TypeVar("T")
+
+
+class EventList(Generic[T]):
     """A list of events, indexed by time"""
 
     def __init__(self) -> None:
-        # Events are stored in a SortedList that contains a Tuple[TimeUnit, Event]
+        # Events are stored in a SortedList that contains a Tuple[TimeUnit, T]
         self.__events = SortedList(key=lambda x: x[0])
 
-    def add_event(self, event: Any, start_time: TimeUnit) -> None:
+    def add_event(self, event: T, start_time: TimeUnit) -> None:
         self.__events.add((start_time, event))
 
-    def remove_event(self, event: Any, start_time: TimeUnit) -> None:
+    def remove_event(self, event: T, start_time: TimeUnit) -> None:
         self.__events.remove((start_time, event))
 
-    def __iter__(self):
+    def __iter__(self) -> Iterator[Tuple[TimeUnit, T]]:
         return self.__events.__iter__()
 
     def irange(
@@ -261,6 +264,9 @@ class ChronoMeter(QObject):
         return self.__state == State.PLAYING
 
 
+ScheduledEventWithChannel = Tuple[int, ScheduledEvent]
+
+
 class QSequencer(QObject):
 
     noteOn = pyqtSignal(int, int, int, arguments=["channel", "note", "velocity"])
@@ -269,10 +275,7 @@ class QSequencer(QObject):
 
     def __init__(self, parent=None):
         super().__init__(parent)
-        # Events are stored in a dict sorted by time
-        # key type: TimeUnit
-        # value type: List[ChannelEvent]
-        self.__events = EventList()
+        self.__events = EventList[Event]()
 
         self.__timer = QTimer()
         self.__timer.setSingleShot(True)
@@ -294,7 +297,7 @@ class QSequencer(QObject):
 
         # Time after pause and before the next note
         self.__remaining_time_after_pause = 0
-        self.__scheduled_events = []
+        self.__scheduled_events: EventList[ScheduledEventWithChannel]
         self.__current_events = None
         self.__bpm = 120
         self.__state = State.STOPPED
@@ -356,9 +359,9 @@ class QSequencer(QObject):
         start_time: Optional[TimeUnit] = None,
         stop_time: Optional[TimeUnit] = None,
         add_stop_event: bool = False,
-    ) -> Iterator[Tuple[TimeUnit, ScheduledEvent]]:
+    ) -> Iterator[Tuple[TimeUnit, Tuple[int, ScheduledEvent]]]:
         # First schedule events to obtain ScheduleEvents
-        scheduled_events = EventList()
+        scheduled_events = EventList[ScheduledEventWithChannel]()
 
         for channel, event_time, event in self.iterate_events(start_time, stop_time):
             events = event.schedule(event_time)
@@ -366,13 +369,14 @@ class QSequencer(QObject):
                 scheduled_events.add_event((channel, e), e.time)
 
         # Then iterate over the list of scheduled events
-        for event_time, e in scheduled_events:
-            # print("Adding event @{} {}".format(event_time, e))
-            yield event_time, e
+        for event_time, ee in scheduled_events:
+            # print("Adding event @{} {}".format(event_time, ee))
+            yield event_time, ee
 
         if stop_time and add_stop_event:
-            # print("Adding stop event @{}".format(stop_time))
-            yield stop_time, [(0, StopEvent(stop_time))]
+            # print("Adding stop event @{} {}".format(stop_time, StopEvent(stop_time)))
+            for channel in range(16):
+                yield stop_time, (channel, StopEvent(stop_time))
 
     @pyqtSlot(int, int, int, int, result=list)
     @pyqtSlot(result=list)
@@ -431,7 +435,7 @@ class QSequencer(QObject):
     def __on_timeout(self):
         # We rearm the timeout. Make sure self.__current_events is copied
         # otherwise it could be overwritten while not processed yet
-        events = list(self.__current_events)
+        events = [self.__current_events]
         self.__arm_next_event()
 
         # The following tasks should not take more time than allocated !
