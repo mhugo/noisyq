@@ -4,7 +4,7 @@ from PyQt5.QtCore import pyqtProperty, pyqtSlot, QSize, Qt, QVariant, QObject
 from PyQt5.QtGui import QColor, QPen, QPainter, QBrush
 from PyQt5.QtQuick import QQuickPaintedItem
 
-from typing import List
+from typing import List, Optional
 
 from time_unit import TimeUnit
 from qsequencer import QSequencer
@@ -28,6 +28,9 @@ class PianoRoll(QQuickPaintedItem):
 
         self._channel = 0
 
+        # step that is currently lit during a playback
+        self._lit_step: Optional[int] = None
+
     @pyqtProperty(int)
     def stepsPerScreen(self) -> int:
         return self._steps_per_screen
@@ -44,6 +47,11 @@ class PianoRoll(QQuickPaintedItem):
     @sequencer.setter
     def sequencer(self, seq):
         self._sequencer = seq
+        self._sequencer.step.connect(self.on_step)
+
+    def on_step(self, step):
+        self._lit_step = step
+        self.update()
 
     @pyqtProperty(int)
     def channel(self) -> int:
@@ -81,8 +89,8 @@ class PianoRoll(QQuickPaintedItem):
         return (note % 12) in (0, 2, 4, 5, 7, 9, 11)
 
     def paint(self, painter: QPainter) -> None:
-        # lines with background
         painter.save()
+        # lines with background
         dark_brush = QBrush(QColor("#aaa"))
         light_brush = QBrush(QColor("#eee"))
         no_pen = QPen()
@@ -96,7 +104,20 @@ class PianoRoll(QQuickPaintedItem):
             else:
                 painter.setBrush(dark_brush)
             painter.drawRect(0, y, int(self.width()), int(h))
+
+        # lit step, if any
+        if self._lit_step is not None:
+            step = int(self._lit_step - self._offset)
+            if step >= 0 and step < self._steps_per_screen:
+                play_brush = QBrush(QColor("#80fafabb"))
+                painter.setBrush(play_brush)
+                painter.setPen(no_pen)
+                w = (self.width() - 1) / self._steps_per_screen
+                x = step * w
+                painter.drawRect(x, 0, w, int(self.height() - 1))
+
         painter.restore()
+        # FIXME: add black piano roll when the displayed part is past the end
 
         thick_pen = QPen()
         thick_pen.setWidth(2)
