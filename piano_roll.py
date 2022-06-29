@@ -31,6 +31,10 @@ class PianoRoll(QQuickPaintedItem):
         # step that is currently lit during a playback
         self._lit_step: Optional[int] = None
 
+        # cursor
+        self._cursor_x = 0
+        self._cursor_y = 0
+
     @pyqtProperty(int)
     def stepsPerScreen(self) -> int:
         return self._steps_per_screen
@@ -80,6 +84,42 @@ class PianoRoll(QQuickPaintedItem):
         self._note_offset = off
         self.update()
 
+    @pyqtProperty(int)
+    def cursor_x(self):
+        return self._cursor_x
+
+    @cursor_x.setter
+    def cursor_x(self, x: int):
+        self._cursor_x = x
+        self.update()
+
+    @pyqtProperty(int)
+    def cursor_y(self):
+        return self._cursor_y
+
+    @pyqtSlot()
+    def increment_cursor_x(self):
+        if self._cursor_x == self._steps_per_screen - 1:
+            # TODO test max offset
+            self._offset += 1
+        else:
+            self._cursor_x += 1
+        self.update()
+
+    @pyqtSlot()
+    def decrement_cursor_x(self):
+        if self._cursor_x == 0:
+            if self._offset > 0:
+                self._offset -= 1
+        else:
+            self._cursor_x -= 1
+        self.update()
+
+    @cursor_y.setter
+    def cursor_y(self, y: int):
+        self._cursor_y = y
+        self.update()
+
     # TODO
     def notesPerScreen(self) -> int:
         pass
@@ -114,6 +154,16 @@ class PianoRoll(QQuickPaintedItem):
                 painter.setPen(no_pen)
                 w = (self.width() - 1) / self._steps_per_screen
                 x = step * w
+                painter.drawRect(x, 0, w, int(self.height() - 1))
+
+        else:
+            # draw cursor
+            if self._cursor_x >= 0 and self._cursor_x < self._steps_per_screen:
+                cursor_brush = QBrush(QColor("#808cfaa4"))
+                painter.setBrush(cursor_brush)
+                painter.setPen(no_pen)
+                w = (self.width() - 1) / self._steps_per_screen
+                x = self._cursor_x * w
                 painter.drawRect(x, 0, w, int(self.height() - 1))
 
         painter.restore()

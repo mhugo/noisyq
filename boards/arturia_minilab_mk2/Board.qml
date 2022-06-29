@@ -7,6 +7,8 @@ Text {
     signal padPressed(int padNumber)
     signal padReleased(int padNumber)
     signal knobMoved(int knobNumber, real amount)
+    signal knobIncremented(int knobNumber)
+    signal knobDecremented(int knobNumber)
 
     property int selectedKnob : 0
 
@@ -30,6 +32,10 @@ Text {
             property bool isInteger: false
             property real min: 0.0
             property real max: 1.0
+
+            // hasValue = false => value is meaningless and we are only
+            // interested in increment and decrement signals
+            property bool hasValue: true
 
             function _delta() {
                 let d = max - min;
@@ -86,6 +92,10 @@ Text {
         knobs.itemAt(knobNumber).isInteger = isInteger;
     }
 
+    function setKnobHasValue(knobNumber, hasValue) {
+        knobs.itemAt(knobNumber).hasValue = hasValue;
+    }
+
     function padColor(padNumber) {
         let item = pads.itemAt(padNumber);
         if (item === null)
@@ -122,12 +132,21 @@ Text {
         if ((event.key == Qt.Key_Up) || (event.key == Qt.Key_Down)) {
             let knob = knobs.itemAt(selectedKnob);
             if (event.key == Qt.Key_Up) {
-                knob.increment(knob.isInteger ? 1 : 0);
+                if (knob.hasValue) {
+                    knob.increment(knob.isInteger ? 1 : 0);
+                } else {
+                    knobIncremented(selectedKnob);
+                }
             }
             else {
-                knob.decrement(knob.isInteger ? 1 : 0);
+                if (knob.hasValue) {
+                    knob.decrement(knob.isInteger ? 1 : 0);
+                } else {
+                    knobDecremented(selectedKnob);
+                }
             }
-            knobMoved(selectedKnob, knob.value);
+            if (knob.hasValue)
+                knobMoved(selectedKnob, knob.value);
         }
 
         // isAutoRepeat only for pads, not for knobs +/-
@@ -298,13 +317,23 @@ Text {
                     let amount = v - 0x40;
                     if (amount > 0) {
                         for (var i = 0; i < amount; i++)
-                            knob.increment(0);
-                        root.knobMoved(knobNumber, knob.value);
+                            if (knob.hasValue) {
+                                knob.increment(0);
+                            } else {
+                                root.knobIncremented(knobNumber);
+                            }
+                        if (knob.hasValue)
+                            root.knobMoved(knobNumber, knob.value);
                     }
                     else if (amount < 0) {
                         for (var i = 0; i < -amount; i++)
-                            knob.decrement(0);
-                        root.knobMoved(knobNumber, knob.value);
+                            if (knob.hasValue) {
+                                knob.decrement(0);
+                            } else {
+                                root.knobDecremented(knobNumber);
+                            }
+                        if (knob.hasValue)
+                            root.knobMoved(knobNumber, knob.value);
                     }
                 }
                 else if (cc in cc_to_pad) {

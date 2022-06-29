@@ -24,7 +24,7 @@ Item {
         return {
             "n_beats": nBeatsKnob.value,
             "beats_per_screen": stepsPerScreenKnob.value,
-            "offset": timeOffsetKnob.value,
+            //"offset": timeOffsetKnob.value,
             "note_offset": noteOffsetKnob.value,
             //"bpm": bpm.value,
             "steps": gSequencer.list_events()
@@ -34,21 +34,13 @@ Item {
     function loadState(state) {
         nBeatsKnob.value = state.n_beats;
         stepsPerScreenKnob.value = state.beats_per_screen;
-        timeOffsetKnob.value = state.offset;
+//        timeOffsetKnob.value = state.offset;
         noteOffsetKnob.value = state.note_offset;
         //bpm.value = state.bpm;
         for (var i = 0; i < state.steps.length; i++) {
             var e = state.steps[i];
             gSequencer.add_event(e.channel, e.time_amount, e.time_unit, e.event);
         }
-    }
-
-    function lightStep(step) {
-        if (oldStep > -1)
-            notes.itemAt(oldStep % 16).isPlaying = false;
-        if (step < ~~nBeatsKnob.value * 16)
-            notes.itemAt(step % 16).isPlaying = true;
-        oldStep = step;
     }
 
     Common.PlacedDial {
@@ -269,6 +261,25 @@ Item {
         stepsPerScreen: 8
     }
 
+    // Common pads for all modes
+
+    Common.PlacedNoValueKnob {
+        id: xOffset
+        knobNumber: 1
+
+        Common.FramedText {
+            legend: "Cursor X"
+            text: "<X>"
+        }
+
+        function onIncrement() {
+            pianoRoll.increment_cursor_x();
+        }
+        function onDecrement() {
+            pianoRoll.decrement_cursor_x();
+        }
+    }
+
     Item {
         // Pads for play mode
         visible: modeKnob.value == 0
@@ -280,22 +291,6 @@ Item {
     Item {
         // Pads for view mode
         visible: modeKnob.value == 1
-        Common.PlacedKnobMapping {
-            id: timeOffsetKnob
-            mapping.knobNumber: 1
-            mapping.isInteger: true
-            mapping.min: 0
-            mapping.max: ~~nBeatsKnob.value
-            mapping.value: 0
-            Common.FramedText {
-                legend: "Time Offset"
-                text: ~~parent.value
-            }
-            onValueChanged: {
-                pianoRoll.offset = value
-            }
-            visible: ! board.isShiftPressed
-        }
         Common.PlacedKnobMapping {
             id: nBeatsKnob
             mapping.knobNumber: 1
@@ -402,14 +397,6 @@ Item {
         target: gSequencer
         onStateChanged: {
             pianoIcons.isPlaying = gSequencer.is_playing();
-        }
-        onStep: {
-            sequencerDisplay.lightStep(step);
-            sequencerDisplay.step = step;
-            if (((step % 16) == 0) && (step < nPatterns * 16)) {
-                patternKnob.value = ~~(step / 16)+1;
-                _updateSteps();
-            }
         }
     }
 
