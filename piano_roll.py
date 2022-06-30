@@ -97,6 +97,11 @@ class PianoRoll(QQuickPaintedItem):
     def cursor_y(self):
         return self._cursor_y
 
+    @cursor_y.setter
+    def cursor_y(self, y: int):
+        self._cursor_y = y
+        self.update()
+
     @pyqtSlot()
     def increment_cursor_x(self):
         if self._cursor_x == self._steps_per_screen - 1:
@@ -115,9 +120,22 @@ class PianoRoll(QQuickPaintedItem):
             self._cursor_x -= 1
         self.update()
 
-    @cursor_y.setter
-    def cursor_y(self, y: int):
-        self._cursor_y = y
+    @pyqtSlot()
+    def increment_cursor_y(self):
+        if self._cursor_y == self._notes_per_screen - 1:
+            # TODO test max offset
+            self._note_offset += 1
+        else:
+            self._cursor_y += 1
+        self.update()
+
+    @pyqtSlot()
+    def decrement_cursor_y(self):
+        if self._cursor_y == 0:
+            if self._note_offset > 0:
+                self._note_offset -= 1
+        else:
+            self._cursor_y -= 1
         self.update()
 
     # TODO
@@ -135,6 +153,9 @@ class PianoRoll(QQuickPaintedItem):
         light_brush = QBrush(QColor("#eee"))
         no_pen = QPen()
         no_pen.setStyle(Qt.NoPen)
+        no_brush = QBrush()
+        no_brush.setStyle(Qt.NoBrush)
+
         painter.setPen(no_pen)
         h = (self.height() - 1) / self._notes_per_screen
         for j in range(self._notes_per_screen + 1):
@@ -158,13 +179,21 @@ class PianoRoll(QQuickPaintedItem):
 
         else:
             # draw cursor
+            w = (self.width() - 1) / self._steps_per_screen
+            x = self._cursor_x * w
             if self._cursor_x >= 0 and self._cursor_x < self._steps_per_screen:
                 cursor_brush = QBrush(QColor("#808cfaa4"))
                 painter.setBrush(cursor_brush)
                 painter.setPen(no_pen)
-                w = (self.width() - 1) / self._steps_per_screen
-                x = self._cursor_x * w
                 painter.drawRect(x, 0, w, int(self.height() - 1))
+            if self._cursor_y >= 0 and self._cursor_y < self._notes_per_screen:
+                cursor_pen = QPen(QColor("black"))
+                cursor_pen.setWidth(2)
+                painter.setBrush(no_brush)
+                painter.setPen(cursor_pen)
+                h = (self.height() - 1) / self._notes_per_screen
+                y = self._cursor_y * h
+                painter.drawRect(x, y, w, h)
 
         painter.restore()
         # FIXME: add black piano roll when the displayed part is past the end

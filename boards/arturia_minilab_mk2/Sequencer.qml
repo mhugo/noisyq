@@ -279,6 +279,22 @@ Item {
             pianoRoll.decrement_cursor_x();
         }
     }
+    Common.PlacedNoValueKnob {
+        id: yOffset
+        knobNumber: 9
+
+        Common.FramedText {
+            legend: "Cursor Y"
+            text: "<Y>"
+        }
+
+        function onIncrement() {
+            pianoRoll.increment_cursor_y();
+        }
+        function onDecrement() {
+            pianoRoll.decrement_cursor_y();
+        }
+    }
 
     Item {
         // Pads for play mode
