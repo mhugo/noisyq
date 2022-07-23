@@ -24,6 +24,11 @@ Text {
 
     property bool debugEnabled: false
 
+    signal keyUp()
+    signal keyDown()
+    signal keyLeft()
+    signal keyRight()
+
     Repeater {
         id: knobs
         model: 16
@@ -129,9 +134,9 @@ Text {
     }
 
     Keys.onPressed : {
-        if ((event.key == Qt.Key_Up) || (event.key == Qt.Key_Down)) {
+        if ((event.key == Qt.Key_PageUp) || (event.key == Qt.Key_PageDown)) {
             let knob = knobs.itemAt(selectedKnob);
-            if (event.key == Qt.Key_Up) {
+            if (event.key == Qt.Key_PageUp) {
                 if (knob.hasValue) {
                     knob.increment(knob.isInteger ? 1 : 0);
                 } else {
@@ -147,6 +152,18 @@ Text {
             }
             if (knob.hasValue)
                 knobMoved(selectedKnob, knob.value);
+        }
+        else if (event.key == Qt.Key_Up) {
+            keyUp();
+        }
+        else if (event.key == Qt.Key_Down) {
+            keyDown();
+        }
+        else if (event.key == Qt.Key_Left) {
+            keyLeft();
+        }
+        else if (event.key == Qt.Key_Right) {
+            keyRight();
         }
 
         // isAutoRepeat only for pads, not for knobs +/-

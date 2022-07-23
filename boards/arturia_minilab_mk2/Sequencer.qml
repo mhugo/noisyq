@@ -278,6 +278,16 @@ Item {
         function onDecrement() {
             pianoRoll.decrement_cursor_x();
         }
+
+        Connections {
+            target: board
+            onKeyLeft: {
+                xOffset.onDecrement();
+            }
+            onKeyRight: {
+                xOffset.onIncrement();
+            }
+        }
     }
     Common.PlacedNoValueKnob {
         id: yOffset
@@ -294,6 +304,18 @@ Item {
         function onDecrement() {
             pianoRoll.decrement_cursor_y();
         }
+
+        Connections {
+            target: board
+            onKeyDown: {
+                yOffset.onDecrement();
+            }
+            onKeyUp: {
+                yOffset.onIncrement();
+            }
+        }
+    }
+
     }
 
     Item {
