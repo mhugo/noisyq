@@ -4,10 +4,26 @@ from PyQt5.QtCore import pyqtProperty, pyqtSlot, QSize, Qt, QVariant, QObject
 from PyQt5.QtGui import QColor, QPen, QPainter, QBrush
 from PyQt5.QtQuick import QQuickPaintedItem
 
-from typing import List, Optional
+from typing import Dict, Optional, Set
 
 from time_unit import TimeUnit
 from qsequencer import QSequencer
+
+
+class NoteSelection:
+    def __init__(self):
+        # selected notes: channel -> TimeUnit -> [note]
+        self._selection: Dict[int, Dict[TimeUnit, Set[int]]] = {}
+
+    def toggle_selection(self, channel: int, time: TimeUnit, note: int):
+        notes = self._selection.setdefault(channel, {}).setdefault(time, set())
+        if note in notes:
+            notes.remove(note)
+        else:
+            notes.add(note)
+
+    def is_selected(self, channel: int, time: TimeUnit, note: int) -> bool:
+        return note in self._selection.get(channel, {}).get(time, {})
 
 
 class PianoRoll(QQuickPaintedItem):
@@ -32,8 +48,11 @@ class PianoRoll(QQuickPaintedItem):
         self._lit_step: Optional[int] = None
 
         # cursor
-        self._cursor_x = 0
+        self._cursor_x = TimeUnit(0)
         self._cursor_y = 0
+        self._cursor_width = TimeUnit(1)
+
+        self._selected_notes = NoteSelection()
 
     @pyqtProperty(int)
     def stepsPerScreen(self) -> int:
@@ -104,11 +123,11 @@ class PianoRoll(QQuickPaintedItem):
 
     @pyqtSlot()
     def increment_cursor_x(self):
-        if self._cursor_x == self._steps_per_screen - 1:
+        if self._cursor_x == self._steps_per_screen - self._cursor_width:
             # TODO test max offset
             self._offset += 1
         else:
-            self._cursor_x += 1
+            self._cursor_x = self._cursor_x + self._cursor_width
         self.update()
 
     @pyqtSlot()
@@ -117,7 +136,7 @@ class PianoRoll(QQuickPaintedItem):
             if self._offset > 0:
                 self._offset -= 1
         else:
-            self._cursor_x -= 1
+            self._cursor_x -= self._cursor_width
         self.update()
 
     @pyqtSlot()
@@ -138,9 +157,31 @@ class PianoRoll(QQuickPaintedItem):
             self._cursor_y -= 1
         self.update()
 
+    @pyqtSlot()
+    def cursorWidth(self):
+        return self._cursor_width
+
+    @pyqtSlot(int, int)
+    def setCursorWidth(self, amount, unit):
+        self._cursor_width = TimeUnit(amount, unit)
+        self.update()
+
+    @cursor_y.setter
+    def cursor_y(self, y: int):
+        self._cursor_y = y
+        self.update()
+
     # TODO
     def notesPerScreen(self) -> int:
         pass
+
+    @pyqtSlot(int, int, int, int)
+    def toggleNoteSelection(
+        self, voice: int, time_amount: int, time_unit: int, note: int
+    ):
+        self._selected_notes.toggle_selection(
+            voice, TimeUnit(time_amount, time_unit), note
+        )
 
     def is_in_chord(self, note: int) -> bool:
         # FIXME only major chord for now
@@ -179,8 +220,9 @@ class PianoRoll(QQuickPaintedItem):
 
         else:
             # draw cursor
-            w = (self.width() - 1) / self._steps_per_screen
-            x = self._cursor_x * w
+            x = self._cursor_x * (self.width() - 1) / self._steps_per_screen
+            w = self._cursor_width * (self.width() - 1) / self._steps_per_screen
+
             if self._cursor_x >= 0 and self._cursor_x < self._steps_per_screen:
                 cursor_brush = QBrush(QColor("#808cfaa4"))
                 painter.setBrush(cursor_brush)
@@ -211,8 +253,10 @@ class PianoRoll(QQuickPaintedItem):
             painter.drawLine(x, 0, x, int(self.height()))
 
         # notes
-        light = QBrush(QColor("#23629e"))
-        dark = QBrush(QColor("#3492eb"))
+        light = QBrush(QColor("#23629e"))  # HSV 209°, 78%, 62%
+        dark = QBrush(QColor("#3492eb"))  # HSV 209°, 78%, 92%
+        light_selected = QBrush(QColor("#9e9623"))  # HSV 56°, 78%, 62%
+        dark_selected = QBrush(QColor("#ebde34"))  # HSV 56°, 78%, 92%
         painter.setPen(no_pen)
         stop = self._offset + self._steps_per_screen
         for event in self._sequencer.list_events(
@@ -246,8 +290,17 @@ class PianoRoll(QQuickPaintedItem):
             )
             h = (self.height() - 1) / self._notes_per_screen
 
-            painter.setBrush(light)
+            note_selected = self._selected_notes.is_selected(
+                self._channel, note_time, note
+            )
+            if note_selected:
+                painter.setBrush(light_selected)
+            else:
+                painter.setBrush(light)
             painter.drawRect(x, y, w, h)
-            painter.setBrush(dark)
+            if note_selected:
+                painter.setBrush(dark_selected)
+            else:
+                painter.setBrush(dark)
             b = 4
             painter.drawRect(x + b, y + b, w - b * 2, h - b * 2)

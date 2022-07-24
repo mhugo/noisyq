@@ -53,6 +53,7 @@ Item {
             board.setKnobIsInteger(root.knobNumber, root.isInteger);
             board.setKnobMinMax(root.knobNumber, root.min, root.max);
             board.setKnobValue(root.knobNumber, fromParameter(root.value));
+            board.setKnobHasValue(knobNumber, true);
         }
     }
     onVisibleChanged: {

@@ -1,8 +1,12 @@
 import QtQuick 2.7
 
-Item {    
+Item {
+    id: root
     property int padNumber: 0
     property alias text: sub_text.text
+
+    signal padPressed();
+    signal padReleased();
 
     x: (padNumber % 8) * unitSize
     y: unitSize * (~~(padNumber / 8)) + (unitSize + legendSize) * 2
@@ -16,5 +20,20 @@ Item {
         color: "white"
         verticalAlignment: Text.AlignVCenter
         horizontalAlignment: Text.AlignHCenter
+    }
+
+    Connections {
+        target: board
+        onPadPressed: {
+            if (padNumber == root.padNumber) {
+                padPressed();
+            }
+        }
+        onPadReleased: {
+            if (padNumber == root.padNumber) {
+                padReleased();
+            }
+        }
+        enabled: root.visible & root.enabled
     }
 }

@@ -288,6 +288,8 @@ Item {
                 xOffset.onIncrement();
             }
         }
+
+        visible: !board.isShiftPressed
     }
     Common.PlacedNoValueKnob {
         id: yOffset
@@ -319,60 +321,41 @@ Item {
     }
 
     Item {
-        // Pads for play mode
+        // Pads for select mode
         visible: modeKnob.value == 0
-        /*Common.PlacedPadText {
-            padNumber: 0
-            text: "test"
-        }*/
-    }
-    Item {
-        // Pads for view mode
-        visible: modeKnob.value == 1
+
         Common.PlacedKnobMapping {
-            id: nBeatsKnob
+            id: cursorWidth
             mapping.knobNumber: 1
             mapping.isInteger: true
-            mapping.min: 1
-            mapping.max: 2048
-            mapping.value: 4
-            Common.FramedText {
-                legend: "# of beats"
-                text: ~~parent.value
-            }
-            onValueChanged: {
-                gSequencer.nBeats = value
-            }
-            visible: board.isShiftPressed
-        }
-        Common.PlacedKnobMapping {
-            id: stepsPerScreenKnob
-            mapping.knobNumber: 2
-            mapping.isInteger: true
-            mapping.min: 1
-            mapping.max: 64
-            mapping.value: 4
-            Common.FramedText {
-                legend: "Steps / screen"
-                text: ~~parent.value
-            }
-            onValueChanged: {
-                pianoRoll.stepsPerScreen = value
-            }
-        }
-        Common.PlacedKnobMapping {
-            id: noteOffsetKnob
-            mapping.knobNumber: 9
-            mapping.isInteger: true
             mapping.min: 0
-            mapping.max: 127
-            mapping.value: 60
+            mapping.max: 5
+            mapping.value: 2
+
+            property int amount: 1
+            property int unit: 1
             Common.FramedText {
-                legend: "Note offset"
-                text: ~~parent.value
+                text: parent.amount + "/" + parent.unit
+                legend: "Cursor width"
             }
+
             onValueChanged: {
-                pianoRoll.note_offset = value
+                amount = [1, 1, 1, 2, 3, 4][value];
+                unit =   [4, 2, 1, 1, 1, 1][value];
+                pianoRoll.setCursorWidth(amount, unit);
+            }
+
+            visible: board.isShiftPressed;
+        }
+
+        Common.PlacedPadText {
+            padNumber: 0
+            text: "SLCT"
+
+            onPadReleased: {
+                let note = pianoRoll.note_offset + pianoRoll.cursor_y;
+                let time_amount = pianoRoll.offset * pianoRoll.stepsPerScreen + pianoRoll.cursor_x;
+                console.log("SELECT !!!", voiceKnob.value, time_amount, pianoRoll.stepsPerScreen, note);
             }
         }
     }
