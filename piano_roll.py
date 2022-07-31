@@ -200,7 +200,7 @@ class PianoRoll(QQuickPaintedItem):
         painter.setPen(no_pen)
         h = (self.height() - 1) / self._notes_per_screen
         for j in range(self._notes_per_screen + 1):
-            y = int(j * h)
+            y = int((self._notes_per_screen - j - 1) * h)
             if self.is_in_chord(j + self._note_offset):
                 painter.setBrush(light_brush)
             else:
@@ -234,7 +234,7 @@ class PianoRoll(QQuickPaintedItem):
                 painter.setBrush(no_brush)
                 painter.setPen(cursor_pen)
                 h = (self.height() - 1) / self._notes_per_screen
-                y = self._cursor_y * h
+                y = (self._notes_per_screen - self._cursor_y - 1) * h
                 painter.drawRect(x, y, w, h)
 
         painter.restore()
@@ -284,7 +284,7 @@ class PianoRoll(QQuickPaintedItem):
             )
             w = float(note_duration) / self._steps_per_screen * (self.width() - 1)
             y = (
-                (note - self._note_offset)
+                (self._notes_per_screen - (note - self._note_offset) - 1)
                 / self._notes_per_screen
                 * (self.height() - 1)
             )
