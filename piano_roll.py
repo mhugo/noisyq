@@ -107,6 +107,14 @@ class PianoRoll(QQuickPaintedItem):
     def cursor_x(self):
         return self._cursor_x
 
+    @pyqtProperty(int)
+    def cursor_x_amount(self):
+        return self._cursor_x.amount()
+
+    @pyqtProperty(int)
+    def cursor_x_unit(self):
+        return self._cursor_x.unit()
+
     @cursor_x.setter
     def cursor_x(self, x: int):
         self._cursor_x = x
@@ -157,12 +165,16 @@ class PianoRoll(QQuickPaintedItem):
             self._cursor_y -= 1
         self.update()
 
-    @pyqtSlot()
-    def cursorWidth(self):
-        return self._cursor_width
+    @pyqtProperty(int)
+    def cursor_width_amount(self):
+        return self._cursor_width.amount()
+
+    @pyqtProperty(int)
+    def cursor_width_unit(self):
+        return self._cursor_width.unit()
 
     @pyqtSlot(int, int)
-    def setCursorWidth(self, amount, unit):
+    def set_cursor_width(self, amount, unit):
         self._cursor_width = TimeUnit(amount, unit)
         self.update()
 

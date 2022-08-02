@@ -354,8 +354,18 @@ Item {
 
             onPadReleased: {
                 let note = pianoRoll.note_offset + pianoRoll.cursor_y;
-                let time_amount = pianoRoll.offset * pianoRoll.stepsPerScreen + pianoRoll.cursor_x;
-                console.log("SELECT !!!", voiceKnob.value, time_amount, pianoRoll.stepsPerScreen, note);
+                let start_amount = pianoRoll.offset * pianoRoll.stepsPerScreen * pianoRoll.cursor_x_unit + pianoRoll.cursor_x_amount;
+                let start_unit = pianoRoll.cursor_x_unit;
+                let stop_amount = pianoRoll.cursor_width_amount + start_amount * pianoRoll.cursor_width_unit;
+                let stop_unit = pianoRoll.cursor_x_unit * pianoRoll.cursor_width_unit;
+
+                let events = gSequencer.list_events(start_amount, start_unit, stop_amount, stop_unit);
+                for (var i=0; i < events.length; i++) {
+                    let event = events[i];
+                    if (event.channel == voiceKnob.value && event.event.event_type == "note_event" && event.event.note == note)
+                        pianoRoll.toggleNoteSelection(event.channel, event.time_amount, event.time_unit, note);
+                }
+                pianoRoll.update();
             }
         }
     }
