@@ -465,6 +465,7 @@ Item {
             }
             currentChord.push(note);
             console.log("chord", currentChord);
+            pianoRoll.noteOn(note);
         }
         onNoteReleased: {
             /*if (currentChord.length == 0) {
@@ -476,6 +477,7 @@ Item {
                 }
             }*/
             currentChord.splice(currentChord.indexOf(note), 1);
+            pianoRoll.noteOff(note);
         }
         /*onPadPressed: {
             let currentVoice = ~~voiceKnob.value;

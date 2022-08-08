@@ -54,6 +54,9 @@ class PianoRoll(QQuickPaintedItem):
 
         self._selected_notes = NoteSelection()
 
+        # notes playing when a key is pressed
+        self._notes_playing = set()
+
     @pyqtProperty(int)
     def stepsPerScreen(self) -> int:
         return self._steps_per_screen
@@ -195,6 +198,16 @@ class PianoRoll(QQuickPaintedItem):
             voice, TimeUnit(time_amount, time_unit), note
         )
 
+    @pyqtSlot(int)
+    def noteOn(self, note: int):
+        self._notes_playing.add(note)
+        self.update()
+
+    @pyqtSlot(int)
+    def noteOff(self, note: int):
+        self._notes_playing.remove(note)
+        self.update()
+
     def is_in_chord(self, note: int) -> bool:
         # FIXME only major chord for now
         return (note % 12) in (0, 2, 4, 5, 7, 9, 11)
@@ -203,6 +216,7 @@ class PianoRoll(QQuickPaintedItem):
         painter.save()
         # lines with background
         dark_brush = QBrush(QColor("#aaa"))
+        playing_brush = QBrush(QColor("#ccc"))
         light_brush = QBrush(QColor("#eee"))
         no_pen = QPen()
         no_pen.setStyle(Qt.NoPen)
@@ -213,7 +227,10 @@ class PianoRoll(QQuickPaintedItem):
         h = (self.height() - 1) / self._notes_per_screen
         for j in range(self._notes_per_screen + 1):
             y = int((self._notes_per_screen - j - 1) * h)
-            if self.is_in_chord(j + self._note_offset):
+            note = j + self._note_offset
+            if note in self._notes_playing:
+                painter.setBrush(playing_brush)
+            elif self.is_in_chord(j + self._note_offset):
                 painter.setBrush(light_brush)
             else:
                 painter.setBrush(dark_brush)
