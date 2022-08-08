@@ -332,33 +332,33 @@ Item {
         }
     }
 
+    Common.PlacedKnobMapping {
+        id: cursorWidth
+        mapping.knobNumber: 1
+        mapping.isInteger: true
+        mapping.min: 0
+        mapping.max: 5
+        mapping.value: 2
+
+        property int amount: 1
+        property int unit: 1
+        Common.FramedText {
+            text: parent.amount + "/" + parent.unit
+            legend: "Cursor width"
+        }
+
+        onValueChanged: {
+            amount = [1, 1, 1, 2, 3, 4][value];
+            unit =   [4, 2, 1, 1, 1, 1][value];
+            pianoRoll.set_cursor_width(amount, unit);
+        }
+
+        visible: board.isShiftPressed;
+    }
+
     Item {
         // Pads for select mode
         visible: modeKnob.value == 0
-
-        Common.PlacedKnobMapping {
-            id: cursorWidth
-            mapping.knobNumber: 1
-            mapping.isInteger: true
-            mapping.min: 0
-            mapping.max: 5
-            mapping.value: 2
-
-            property int amount: 1
-            property int unit: 1
-            Common.FramedText {
-                text: parent.amount + "/" + parent.unit
-                legend: "Cursor width"
-            }
-
-            onValueChanged: {
-                amount = [1, 1, 1, 2, 3, 4][value];
-                unit =   [4, 2, 1, 1, 1, 1][value];
-                pianoRoll.set_cursor_width(amount, unit);
-            }
-
-            visible: board.isShiftPressed;
-        }
 
         Common.PlacedPadText {
             padNumber: 0
@@ -413,35 +413,16 @@ Item {
             width: 16
             height: 16
             x: (parent.keyWidth - width) / 2 + 2 * parent.keyWidth
+            SequentialAnimation on visible {
+                id: recAnimation
+                running: false
+                loops: Animation.Infinite
+                PropertyAnimation { to: false }
+                PropertyAnimation { to: true }
+            }
         }
     }
 
-    Connections {
-        target: board
-        onNoteReleased: {
-            if (board.isShiftPressed) {
-                if (note % 12 == 0) {
-                    // First note : play/pause
-                    gSequencer.toggle_play_pause(
-                        120, //bpm.value,
-                        0, 1,
-                        ~~gSequencer.nBeats, 1
-                    );
-                }
-                if (note % 12 == 2) {
-                    // Second note : stop
-                    gSequencer.stop();
-                    step = 0;
-                    if (oldStep > -1) {
-                        notes.itemAt(oldStep % 16).isPlaying = false;
-                    }
-                    //patternKnob.value = 1;
-                    _updateSteps();
-                }
-            }
-        }
-        enabled: sequencerDisplay.visible
-    }
     Connections {
         target: gSequencer
         onStateChanged: {
@@ -480,16 +461,51 @@ Item {
             pianoRoll.noteOn(note);
         }
         onNoteReleased: {
-            /*if (currentChord.length == 0) {
-                // end of chord input
-                if (padPressed != -1) {
-                    updateStepParameter(padPressed, "note", currentChord[0]);
-                    // TODO handle other notes
-                    updateStepParameter(padPressed, "velocity", velocity);
+            if (board.isShiftPressed) {
+                if (note % 12 == 0) {
+                    // First note : play/pause
+                    gSequencer.toggle_play_pause(
+                        120, //bpm.value,
+                        0, 1,
+                        ~~gSequencer.nBeats, 1
+                    );
                 }
-            }*/
-            currentChord.splice(currentChord.indexOf(note), 1);
-            pianoRoll.noteOff(note);
+                else if (note % 12 == 2) {
+                    // Second note : stop
+                    gSequencer.stop();
+                    step = 0;
+                    if (oldStep > -1) {
+                        notes.itemAt(oldStep % 16).isPlaying = false;
+                    }
+                    //patternKnob.value = 1;
+                    _updateSteps();
+                }
+                else if (note % 12 == 4) {
+                    // Third note : record
+                    recAnimation.running = ! recAnimation.running;
+                }
+            }
+            else {
+                currentChord.splice(currentChord.indexOf(note), 1);
+                pianoRoll.noteOff(note);
+
+                if ((modeKnob.value == 2) && recAnimation.running) { // step record
+                    let currentVoice = ~~voiceKnob.value;
+                    gSequencer.add_event(currentVoice,
+                                         pianoRoll.offset * pianoRoll.stepsPerScreen * pianoRoll.cursor_x_unit + pianoRoll.cursor_x_amount,
+                                         pianoRoll.cursor_x_unit,
+                                         {
+                                             "event_type": "note_event",
+                                             "note": note,
+                                             "velocity": 127,
+                                             "duration_amount": cursorWidth.amount,
+                                             "duration_unit": cursorWidth.unit
+                                         });
+                    // advance step
+                    pianoRoll.increment_cursor_x();
+                }
+            }
+
         }
         /*onPadPressed: {
             let currentVoice = ~~voiceKnob.value;
@@ -529,6 +545,6 @@ Item {
                 sequencerDisplay._updateSteps();
             }
             padPressed = -1;
-        }*/
+            }*/
     }
 }
