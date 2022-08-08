@@ -22,20 +22,20 @@ Item {
 
     function saveState() {
         return {
-            "n_beats": nBeatsKnob.value,
+            "n_beats": gSequencer.nBeats,
             "beats_per_screen": stepsPerScreenKnob.value,
             //"offset": timeOffsetKnob.value,
-            "note_offset": noteOffsetKnob.value,
+            "note_offset": pianoRoll.note_offset,
             //"bpm": bpm.value,
             "steps": gSequencer.list_events()
         };
     }
 
     function loadState(state) {
-        nBeatsKnob.value = state.n_beats;
+        //nBeatsKnob.value = state.n_beats;
         stepsPerScreenKnob.value = state.beats_per_screen;
 //        timeOffsetKnob.value = state.offset;
-        noteOffsetKnob.value = state.note_offset;
+        pianoRoll.note_offset = state.note_offset;
         //bpm.value = state.bpm;
         for (var i = 0; i < state.steps.length; i++) {
             var e = state.steps[i];
@@ -47,8 +47,6 @@ Item {
         id: modeKnob
         knobNumber: 0
         enumValues: [
-            "Play",
-            "View",
             "Select",
             "Edit",
             "Step record",
@@ -245,8 +243,8 @@ Item {
         width: 8*unitSize
         policy: ScrollBar.AlwaysOn
         orientation: Qt.Horizontal
-        size: 1.0 / nBeatsKnob.value
-        position: timeOffsetKnob.value / nBeatsKnob.value
+        size: 1.0 / gSequencer.nBeats
+        position: timeOffsetKnob.value / gSequencer.nBeats
     }
 
     PianoRoll {
@@ -318,6 +316,20 @@ Item {
         }
     }
 
+    Common.PlacedKnobMapping {
+        id: stepsPerScreenKnob
+        mapping.knobNumber: 2
+        mapping.isInteger: true
+        mapping.min: 1
+        mapping.max: 64
+        mapping.value: 4
+        Common.FramedText {
+            legend: "Steps / screen"
+            text: ~~parent.value
+        }
+        onValueChanged: {
+            pianoRoll.stepsPerScreen = value
+        }
     }
 
     Item {
@@ -342,7 +354,7 @@ Item {
             onValueChanged: {
                 amount = [1, 1, 1, 2, 3, 4][value];
                 unit =   [4, 2, 1, 1, 1, 1][value];
-                pianoRoll.setCursorWidth(amount, unit);
+                pianoRoll.set_cursor_width(amount, unit);
             }
 
             visible: board.isShiftPressed;
@@ -411,9 +423,9 @@ Item {
                 if (note % 12 == 0) {
                     // First note : play/pause
                     gSequencer.toggle_play_pause(
-                        bpm.value,
+                        120, //bpm.value,
                         0, 1,
-                        nPatterns * 4, 1
+                        ~~gSequencer.nBeats, 1
                     );
                 }
                 if (note % 12 == 2) {
@@ -423,7 +435,7 @@ Item {
                     if (oldStep > -1) {
                         notes.itemAt(oldStep % 16).isPlaying = false;
                     }
-                    patternKnob.value = 1;
+                    //patternKnob.value = 1;
                     _updateSteps();
                 }
             }
@@ -460,7 +472,7 @@ Item {
         enabled: sequencerDisplay.visible
         onNotePressed: {
             if (currentChord.length == 0) {
-                noteKnob.value = note;
+                //noteKnob.value = note;
                 //velocityKnob.value = velocity;
             }
             currentChord.push(note);
