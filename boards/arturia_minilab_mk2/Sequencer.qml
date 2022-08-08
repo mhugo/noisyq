@@ -374,7 +374,7 @@ Item {
         // icons above piano keys
         id: pianoIcons
         y: main.unitSize*6 + main.legendSize*2 + 8
-        readonly property real keyWidth: (main.width - piano.octaveWidth) / 15
+        readonly property real keyWidth: (main.width - piano.octaveWidth - unitSize) / 15
         property bool isPlaying: false
         Image {
             source: "pause.svg"
@@ -395,6 +395,12 @@ Item {
             width: 16
             height: 16
             x: (parent.keyWidth - width) / 2 + parent.keyWidth
+        }
+        Image {
+            source: "rec.svg"
+            width: 16
+            height: 16
+            x: (parent.keyWidth - width) / 2 + 2 * parent.keyWidth
         }
     }
 

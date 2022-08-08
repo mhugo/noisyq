@@ -11,11 +11,11 @@
    height="90mm"
    viewBox="0 0 90 90"
    version="1.1"
-   id="svg1563"
+   id="svg2174"
    inkscape:version="1.0.2 (e86c870879, 2021-01-15)"
-   sodipodi:docname="stop.svg">
+   sodipodi:docname="rec.svg">
   <defs
-     id="defs1557" />
+     id="defs2168" />
   <sodipodi:namedview
      id="base"
      pagecolor="#ffffff"
@@ -23,9 +23,9 @@
      borderopacity="1.0"
      inkscape:pageopacity="0.0"
      inkscape:pageshadow="2"
-     inkscape:zoom="0.87674083"
-     inkscape:cx="198.56711"
-     inkscape:cy="367.49385"
+     inkscape:zoom="1.142059"
+     inkscape:cx="435.43303"
+     inkscape:cy="183.3279"
      inkscape:document-units="mm"
      inkscape:current-layer="layer1"
      inkscape:document-rotation="0"
@@ -34,28 +34,9 @@
      inkscape:window-height="1016"
      inkscape:window-x="0"
      inkscape:window-y="27"
-     inkscape:window-maximized="1"
-     showguides="true"
-     inkscape:guide-bbox="true">
-    <sodipodi:guide
-       position="0,88.79288"
-       orientation="1,0"
-       id="guide883" />
-    <sodipodi:guide
-       position="-93.551975,90.000003"
-       orientation="0,-1"
-       id="guide885" />
-    <sodipodi:guide
-       position="90.534169,59.218385"
-       orientation="1,0"
-       id="guide889" />
-    <sodipodi:guide
-       position="-65.184602,-0.53416649"
-       orientation="0,-1"
-       id="guide891" />
-  </sodipodi:namedview>
+     inkscape:window-maximized="1" />
   <metadata
-     id="metadata1560">
+     id="metadata2171">
     <rdf:RDF>
       <cc:Work
          rdf:about="">
@@ -70,14 +51,13 @@
      inkscape:label="Calque 1"
      inkscape:groupmode="layer"
      id="layer1"
-     transform="translate(-59.112602,71.108849)">
-    <rect
-       style="color:#000000;overflow:visible;fill:#020202;fill-opacity:1;stroke-width:0.302368;stop-color:#000000"
-       id="rect864-3-6"
-       width="90.534157"
-       height="90.534164"
-       x="59.112602"
-       y="-71.108849"
-       ry="4.9242864" />
+     transform="translate(203.20288,135.36481)">
+    <ellipse
+       style="color:#000000;overflow:visible;fill:#e21111;fill-opacity:1;stroke-width:0.67795;stop-color:#000000"
+       id="path22039"
+       cx="-158.24371"
+       cy="-90.075241"
+       rx="44.653698"
+       ry="45.182404" />
   </g>
 </svg>
