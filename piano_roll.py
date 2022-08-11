@@ -186,6 +186,28 @@ class PianoRoll(QQuickPaintedItem):
         self._cursor_y = y
         self.update()
 
+    @pyqtSlot(result=int)
+    def cursor_start_amount(self) -> int:
+        return (
+            int(self._offset) * self._steps_per_screen * self._cursor_x.unit()
+            + self._cursor_x.amount()
+        )
+
+    @pyqtSlot(result=int)
+    def cursor_start_unit(self) -> int:
+        return self._cursor_x.unit()
+
+    @pyqtSlot(result=int)
+    def cursor_end_amount(self) -> int:
+        return (
+            self._cursor_width.amount()
+            + self.cursor_start_amount() * self._cursor_width.unit()
+        )
+
+    @pyqtSlot(result=int)
+    def cursor_end_unit(self) -> int:
+        return self._cursor_x.unit() * self._cursor_width.unit()
+
     # TODO
     def notesPerScreen(self) -> int:
         pass

@@ -366,10 +366,10 @@ Item {
 
             onPadReleased: {
                 let note = pianoRoll.note_offset + pianoRoll.cursor_y;
-                let start_amount = pianoRoll.offset * pianoRoll.stepsPerScreen * pianoRoll.cursor_x_unit + pianoRoll.cursor_x_amount;
-                let start_unit = pianoRoll.cursor_x_unit;
-                let stop_amount = pianoRoll.cursor_width_amount + start_amount * pianoRoll.cursor_width_unit;
-                let stop_unit = pianoRoll.cursor_x_unit * pianoRoll.cursor_width_unit;
+                let start_amount = pianoRoll.cursor_start_amount()
+                let start_unit = pianoRoll.cursor_start_unit()
+                let stop_amount = pianoRoll.cursor_end_amount()
+                let stop_unit = pianoRoll.cursor_end_unit()
 
                 let events = gSequencer.list_events(start_amount, start_unit, stop_amount, stop_unit);
                 for (var i=0; i < events.length; i++) {
@@ -492,8 +492,8 @@ Item {
                 if ((modeKnob.value == 2) && recAnimation.running) { // step record
                     let currentVoice = ~~voiceKnob.value;
                     gSequencer.add_event(currentVoice,
-                                         pianoRoll.offset * pianoRoll.stepsPerScreen * pianoRoll.cursor_x_unit + pianoRoll.cursor_x_amount,
-                                         pianoRoll.cursor_x_unit,
+                                         pianoRoll.cursor_start_amount(),
+                                         pianoRoll.cursor_start_unit(),
                                          {
                                              "event_type": "note_event",
                                              "note": note,
