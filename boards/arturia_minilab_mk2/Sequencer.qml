@@ -491,6 +491,12 @@ Item {
 
                 if ((modeKnob.value == 2) && recAnimation.running) { // step record
                     let currentVoice = ~~voiceKnob.value;
+                    gSequencer.remove_events_in_range(
+                        currentVoice,
+                        pianoRoll.cursor_start_amount(),
+                        pianoRoll.cursor_start_unit(),
+                        pianoRoll.cursor_end_amount(),
+                        pianoRoll.cursor_end_unit());
                     gSequencer.add_event(currentVoice,
                                          pianoRoll.cursor_start_amount(),
                                          pianoRoll.cursor_start_unit(),

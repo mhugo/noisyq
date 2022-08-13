@@ -131,6 +131,9 @@ class ChannelEvent:
     def __repr__(self):
         return "ChannelEvent(channel={},event={})".format(self.channel, self.event)
 
+    def __eq__(self, other):
+        return self.channel == other.channel and self.event == other.event
+
 
 T = TypeVar("T")
 
@@ -161,6 +164,9 @@ class EventList(Generic[T]):
         return self.__events.irange(
             (min_time, None), (max_time, None), inclusive, reverse
         )
+
+    def __repr__(self):
+        return repr(self.__events)
 
 
 class State(Enum):
@@ -333,6 +339,25 @@ class QSequencer(QObject):
         print("event_dict", event_dict.toVariant())
         event = Event.from_dict(event_dict.toVariant())
         self._remove_event(channel, TimeUnit(start_time_amount, start_time_unit), event)
+
+    @pyqtSlot(int, int, int, int, int)
+    def remove_events_in_range(
+        self,
+        channel: int,
+        start_time_amount: int,
+        start_time_unit: int,
+        end_time_amount: int,
+        end_time_unit: int,
+    ):
+        to_remove = []
+        start_time = TimeUnit(start_time_amount, start_time_unit)
+        for event_channel, event_time, event in self.iterate_events(
+            start_time, TimeUnit(end_time_amount, end_time_unit)
+        ):
+            if event_channel == channel:
+                to_remove.append((channel, start_time, event))
+        for channel, start_time, event in to_remove:
+            self._remove_event(channel, start_time, event)
 
     @pyqtProperty(int)
     def nBeats(self) -> int:
