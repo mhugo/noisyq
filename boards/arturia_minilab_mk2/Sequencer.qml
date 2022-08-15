@@ -489,7 +489,7 @@ Item {
                 currentChord.splice(currentChord.indexOf(note), 1);
                 pianoRoll.noteOff(note);
 
-                if ((modeKnob.value == 2) && recAnimation.running) { // step record
+                if ((~~modeKnob.value == 2) && recAnimation.running) { // step record
                     let currentVoice = ~~voiceKnob.value;
                     gSequencer.remove_events_in_range(
                         currentVoice,
