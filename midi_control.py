@@ -73,7 +73,7 @@ class Utils(QObject):
         tmp_file = fo.name
         fo.close()
 
-        subprocess.call(
+        subprocess.run(
             [
                 "ffmpeg",
                 "-i",
@@ -81,7 +81,8 @@ class Utils(QObject):
                 "-filter_complex",
                 "showwavespic=s={}x{}:colors=black".format(output_width, output_height),
                 tmp_file,
-            ]
+            ],
+            capture_output=True,
         )
         return tmp_file
 
