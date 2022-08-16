@@ -318,6 +318,7 @@ Item {
                 rootFolder: "/home/hme/perso/music/samples"
                 folder: "/home/hme/perso/music/samples"
                 nameFilters: ["*.wav", "*.aif", "*.flac"]
+                caseSensitive: false
                 showDirsFirst: true
                 showDotAndDotDot: true
 
