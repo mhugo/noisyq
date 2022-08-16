@@ -28,7 +28,6 @@ class NoteSelection:
 
 class PianoRoll(QQuickPaintedItem):
     def __init__(self, parent=None):
-        print("PianoRoll", parent)
         super().__init__(parent)
         # 1 step = 1 beat = 1 black note
         self._steps_per_screen = 4
@@ -313,12 +312,9 @@ class PianoRoll(QQuickPaintedItem):
         for event in self._sequencer.list_events(
             self._offset.amount(), self._offset.unit(), stop.amount(), stop.unit()
         ):
-            print("channel", self._channel)
             if event["channel"] != self._channel:
                 continue
-            print("event", event)
             note = event["event"]["note"]
-            print("note - note_offset", note - self._note_offset)
             if note - self._note_offset < 0:
                 continue
             if note - self._note_offset >= self._notes_per_screen:

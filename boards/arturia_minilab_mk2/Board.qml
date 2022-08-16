@@ -333,21 +333,35 @@ Text {
                     let knob = knobs.itemAt(knobNumber);
                     let amount = v - 0x40;
                     if (amount > 0) {
-                        for (var i = 0; i < amount; i++)
+                        //for (var i = 0; i < amount; i++)
                             if (knob.hasValue) {
                                 knob.increment(0);
                             } else {
-                                root.knobIncremented(knobNumber);
+                                if (knob.value < 0) {
+                                    knob.value = 0;
+                                }
+                                knob.value += 1;
+                                if (knob.value > 15) {
+                                    knob.value = 0;
+                                    root.knobIncremented(knobNumber);
+                                }
                             }
                         if (knob.hasValue)
                             root.knobMoved(knobNumber, knob.value);
                     }
                     else if (amount < 0) {
-                        for (var i = 0; i < -amount; i++)
+                        //for (var i = 0; i < -amount; i++)
                             if (knob.hasValue) {
                                 knob.decrement(0);
                             } else {
-                                root.knobDecremented(knobNumber);
+                                if (knob.value > 0) {
+                                    knob.value = 0;
+                                }
+                                knob.value -= 1;
+                                if (knob.value < -15) {
+                                    knob.value = 0;
+                                    root.knobDecremented(knobNumber);
+                                }
                             }
                         if (knob.hasValue)
                             root.knobMoved(knobNumber, knob.value);
