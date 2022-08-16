@@ -73,6 +73,21 @@ class Utils(QObject):
         tmp_file = fo.name
         fo.close()
 
+        # first extract the number of frames
+        # if frames < width, width must be changed
+
+        c = subprocess.run(
+            ["ffprobe", "-i", file_name, "-show_streams"],
+            capture_output=True,
+        )
+        n_frames = 0
+        for line in c.stdout.decode("utf-8").split("\n"):
+            if line.startswith("duration_ts"):
+                n_frames = int(line.split("=")[1])
+                break
+        if n_frames and n_frames < output_width:
+            output_width = n_frames
+
         subprocess.run(
             [
                 "ffmpeg",
