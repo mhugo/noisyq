@@ -446,18 +446,32 @@ Item {
         enabled: sequencerDisplay.visible
     }
 
-    property var currentChord: []
+    property var notes: []
+    property var noteStarts: []
+    property real previousNoteOnTs: 0
+    property real previousNoteOffTs: 0
+    readonly property int chordTimeout: 200 // milliseconds
 
     Connections {
         target: board
         enabled: sequencerDisplay.visible
         onNotePressed: {
-            if (currentChord.length == 0) {
-                //noteKnob.value = note;
-                //velocityKnob.value = velocity;
+            if ((~~modeKnob.value == 2) && recAnimation.running) { // step record
+                let ts = Date.now();
+                notes.push(note);
+                if ((previousNoteOnTs != 0) && (ts - previousNoteOnTs > chordTimeout))
+                    pianoRoll.increment_cursor_x();
+                let currentVoice = ~~voiceKnob.value;
+                gSequencer.remove_events_in_range(
+                    currentVoice,
+                    pianoRoll.cursor_start_amount(),
+                    pianoRoll.cursor_start_unit(),
+                    pianoRoll.cursor_end_amount(),
+                    pianoRoll.cursor_end_unit());
+                previousNoteOnTs = ts;
+                previousNoteOffTs = 0;
+            
             }
-            currentChord.push(note);
-            console.log("chord", currentChord);
             pianoRoll.noteOn(note);
         }
         onNoteReleased: {
@@ -486,29 +500,38 @@ Item {
                 }
             }
             else {
-                currentChord.splice(currentChord.indexOf(note), 1);
                 pianoRoll.noteOff(note);
 
                 if ((~~modeKnob.value == 2) && recAnimation.running) { // step record
                     let currentVoice = ~~voiceKnob.value;
-                    gSequencer.remove_events_in_range(
-                        currentVoice,
-                        pianoRoll.cursor_start_amount(),
-                        pianoRoll.cursor_start_unit(),
-                        pianoRoll.cursor_end_amount(),
-                        pianoRoll.cursor_end_unit());
+                    let ts = Date.now();
+                    let idx = notes.indexOf(note);
+                    if ((previousNoteOffTs != 0) && (ts - previousNoteOffTs > chordTimeout))
+                        pianoRoll.increment_cursor_x();
+
+                    let start_amount = noteStarts[idx].amount;
+                    let start_unit = noteStarts[idx].unit;
+                    let end_amount = pianoRoll.cursor_end_amount();
+                    let end_unit = pianoRoll.cursor_end_unit();
+                    let duration_amount = end_amount * start_unit - start_amount * end_unit
+                    let duration_unit = start_unit * end_unit
+                    notes.splice(idx, 1);
+                    noteStarts.splice(idx, 1);
+                    previousNoteOffTs = ts;
+                    previousNoteOnTs = 0;
+
                     gSequencer.add_event(currentVoice,
-                                         pianoRoll.cursor_start_amount(),
-                                         pianoRoll.cursor_start_unit(),
+                                         start_amount,
+                                         start_unit,
                                          {
                                              "event_type": "note_event",
                                              "note": note,
                                              "velocity": 127,
-                                             "duration_amount": cursorWidth.amount,
-                                             "duration_unit": cursorWidth.unit
+                                             "duration_amount": duration_amount,
+                                             "duration_unit": duration_unit
                                          });
-                    // advance step
-                    pianoRoll.increment_cursor_x();
+                    if (notes.length == 0)
+                        pianoRoll.increment_cursor_x();
                 }
             }
 

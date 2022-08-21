@@ -187,10 +187,7 @@ class PianoRoll(QQuickPaintedItem):
 
     @pyqtSlot(result=int)
     def cursor_start_amount(self) -> int:
-        return (
-            int(self._offset) * self._steps_per_screen * self._cursor_x.unit()
-            + self._cursor_x.amount()
-        )
+        return int(self._offset) * self._cursor_x.unit() + self._cursor_x.amount()
 
     @pyqtSlot(result=int)
     def cursor_start_unit(self) -> int:
