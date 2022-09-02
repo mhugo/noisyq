@@ -265,24 +265,23 @@ class PianoRoll(QQuickPaintedItem):
                 x = step * w
                 painter.drawRect(x, 0, w, int(self.height() - 1))
 
-        else:
-            # draw cursor
-            x = self._cursor_x * (self.width() - 1) / self._steps_per_screen
-            w = self._cursor_width * (self.width() - 1) / self._steps_per_screen
+        # draw cursor
+        x = self._cursor_x * (self.width() - 1) / self._steps_per_screen
+        w = self._cursor_width * (self.width() - 1) / self._steps_per_screen
 
-            if self._cursor_x >= 0 and self._cursor_x < self._steps_per_screen:
-                cursor_brush = QBrush(QColor("#808cfaa4"))
-                painter.setBrush(cursor_brush)
-                painter.setPen(no_pen)
-                painter.drawRect(x, 0, w, int(self.height() - 1))
-            if self._cursor_y >= 0 and self._cursor_y < self._notes_per_screen:
-                cursor_pen = QPen(QColor("black"))
-                cursor_pen.setWidth(2)
-                painter.setBrush(no_brush)
-                painter.setPen(cursor_pen)
-                h = (self.height() - 1) / self._notes_per_screen
-                y = (self._notes_per_screen - self._cursor_y - 1) * h
-                painter.drawRect(x, y, w, h)
+        if self._cursor_x >= 0 and self._cursor_x < self._steps_per_screen:
+            cursor_brush = QBrush(QColor("#808cfaa4"))
+            painter.setBrush(cursor_brush)
+            painter.setPen(no_pen)
+            painter.drawRect(x, 0, w, int(self.height() - 1))
+        if self._cursor_y >= 0 and self._cursor_y < self._notes_per_screen:
+            cursor_pen = QPen(QColor("black"))
+            cursor_pen.setWidth(2)
+            painter.setBrush(no_brush)
+            painter.setPen(cursor_pen)
+            h = (self.height() - 1) / self._notes_per_screen
+            y = (self._notes_per_screen - self._cursor_y - 1) * h
+            painter.drawRect(x, y, w, h)
 
         painter.restore()
         # FIXME: add black piano roll when the displayed part is past the end
