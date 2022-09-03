@@ -101,6 +101,17 @@ Text {
         knobs.itemAt(knobNumber).hasValue = hasValue;
     }
 
+    function incrementKnob(knobNumber, amount) {
+        let knob = knobs.itemAt(knobNumber);
+        knob.increment(amount);
+        knobMoved(knobNumber, knob.value);
+    }
+    function decrementKnob(knobNumber, amount) {
+        let knob = knobs.itemAt(knobNumber);
+        knob.decrement(amount);
+        knobMoved(knobNumber, knob.value);
+    }
+
     function padColor(padNumber) {
         let item = pads.itemAt(padNumber);
         if (item === null)

@@ -285,6 +285,7 @@ Item {
             onKeyRight: {
                 xOffset.onIncrement();
             }
+            enabled: !board.isShiftPressed
         }
 
         visible: !board.isShiftPressed
@@ -351,6 +352,17 @@ Item {
             amount = [1, 1, 1, 2, 3, 4][value];
             unit =   [4, 2, 1, 1, 1, 1][value];
             pianoRoll.set_cursor_width(amount, unit);
+        }
+
+        Connections {
+            target: board
+            onKeyLeft: {
+                board.decrementKnob(cursorWidth.mapping.knobNumber, 1);
+            }
+            onKeyRight: {
+                board.incrementKnob(cursorWidth.mapping.knobNumber, 1);
+            }
+            enabled: board.isShiftPressed
         }
 
         visible: board.isShiftPressed;
