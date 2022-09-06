@@ -275,6 +275,10 @@ ScheduledEventWithChannel = Tuple[int, ScheduledEvent]
 
 class QSequencer(QObject):
 
+    """
+    1 step = 1 quarter note
+    """
+
     noteOn = pyqtSignal(int, int, int, arguments=["channel", "note", "velocity"])
     noteOff = pyqtSignal(int, int, arguments=["channel", "note"])
     step = pyqtSignal(int, arguments=["step"])
@@ -292,20 +296,23 @@ class QSequencer(QObject):
         # Second chrono, with fixed interval for UI update
         self.__step_chrono = ChronoMeter()
         self.__step_chrono.setSingleShot(False)
-        # At which interval the step signal is sent
-        self.__step_unit = 4  # quarter note (noire)
+        # Time signature
+        self.steps_per_bar = 4
+        self.step_unit = 4  # quarter note (noire)
+        # Current step
         self.__step_number = 0
         self.__step_chrono.timeout.connect(self._on_step_timeout)
 
-        # Number of beats for the sequence
-        # FIXME: a number of beats independent for each voice == Ableton "clip" ?
-        self.__n_beats = 4
+        # Length, in steps of the sequence
+        self.__n_steps = 8
 
         # Time after pause and before the next note
         self.__remaining_time_after_pause = 0
         self.__scheduled_events: EventList[ScheduledEventWithChannel]
         self.__current_events = None
+        # Number of beats per minute for the quarter note
         self.__bpm = 120
+
         self.__state = State.STOPPED
 
         # Notes that are being played, so that stop can stop them all
@@ -360,13 +367,12 @@ class QSequencer(QObject):
             self._remove_event(channel, start_time, event)
 
     @pyqtProperty(int)
-    def nBeats(self) -> int:
-        return self.__n_beats
+    def n_steps(self) -> int:
+        return self.__n_steps
 
-    @nBeats.setter
-    def nBeats(self, n_beats: int) -> None:
-        print("set n beats", n_beats)
-        self.__n_beats = n_beats
+    @n_steps.setter
+    def n_steps(self, n_steps: int) -> None:
+        self.__n_steps = n_steps
 
     def iterate_events(
         self,
@@ -374,6 +380,9 @@ class QSequencer(QObject):
         stop_time: Optional[TimeUnit] = None,
     ) -> Iterator[Tuple[int, TimeUnit, Event]]:
         # iterate events, by advancing time
+        max_time = TimeUnit(self.__n_steps * self.steps_per_bar, self.step_unit)
+        if stop_time is None or stop_time > max_time:
+            stop_time = max_time
         for event_time, ch_event in self.__events.irange(
             start_time, stop_time, inclusive=[True, False]
         ):

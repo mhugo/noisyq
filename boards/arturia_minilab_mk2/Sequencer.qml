@@ -22,7 +22,7 @@ Item {
 
     function saveState() {
         return {
-            "n_beats": gSequencer.nBeats,
+            "n_beats": gSequencer.n_steps,
             "beats_per_screen": stepsPerScreenKnob.value,
             //"offset": timeOffsetKnob.value,
             "note_offset": pianoRoll.note_offset,
@@ -32,7 +32,7 @@ Item {
     }
 
     function loadState(state) {
-        //nBeatsKnob.value = state.n_beats;
+        //n_stepsKnob.value = state.n_beats;
         stepsPerScreenKnob.value = state.beats_per_screen;
 //        timeOffsetKnob.value = state.offset;
         pianoRoll.note_offset = state.note_offset;
@@ -243,8 +243,8 @@ Item {
         width: 8*unitSize
         policy: ScrollBar.AlwaysOn
         orientation: Qt.Horizontal
-        size: 1.0 / gSequencer.nBeats
-        position: timeOffsetKnob.value / gSequencer.nBeats
+        size: 1.0 / gSequencer.n_steps
+        position: timeOffsetKnob.value / gSequencer.n_steps
     }
 
     PianoRoll {
@@ -331,6 +331,24 @@ Item {
         onValueChanged: {
             pianoRoll.stepsPerScreen = value
         }
+        visible: !board.isShiftPressed;
+    }
+
+    Common.PlacedKnobMapping {
+        id: nStepsKnob
+        mapping.knobNumber: 2
+        mapping.isInteger: true
+        mapping.min: 1
+        mapping.max: 64
+        mapping.value: 8
+        Common.FramedText {
+            legend: "# Steps"
+            text: ~~parent.value
+        }
+        onValueChanged: {
+            gSequencer.n_steps = value
+        }
+        visible: board.isShiftPressed;
     }
 
     Common.PlacedKnobMapping {
@@ -471,6 +489,8 @@ Item {
             if ((~~modeKnob.value == 2) && recAnimation.running) { // step record
                 let ts = Date.now();
                 notes.push(note);
+                noteStarts.push({"amount": pianoRoll.cursor_start_amount(),
+                                 "unit": pianoRoll.cursor_start_unit()});
                 if ((previousNoteOnTs != 0) && (ts - previousNoteOnTs > chordTimeout))
                     pianoRoll.increment_cursor_x();
                 let currentVoice = ~~voiceKnob.value;
@@ -493,7 +513,7 @@ Item {
                     gSequencer.toggle_play_pause(
                         120, //bpm.value,
                         0, 1,
-                        ~~gSequencer.nBeats, 1
+                        ~~gSequencer.n_steps, 1
                     );
                 }
                 else if (note % 12 == 2) {

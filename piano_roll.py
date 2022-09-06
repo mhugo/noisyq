@@ -29,8 +29,7 @@ class NoteSelection:
 class PianoRoll(QQuickPaintedItem):
     def __init__(self, parent=None):
         super().__init__(parent)
-        # 1 step = 1 beat = 1 black note
-        self._steps_per_screen = 4
+        self._steps_per_screen = 8
         self._notes_per_screen = 12
 
         # time offset
@@ -133,11 +132,17 @@ class PianoRoll(QQuickPaintedItem):
 
     @pyqtSlot()
     def increment_cursor_x(self):
-        if self._cursor_x == self._steps_per_screen - self._cursor_width:
-            # TODO test max offset
-            self._offset += 1
-        else:
+        if (
+            self._cursor_x
+            < min(
+                self._sequencer.n_steps - int(self._offset),
+                self._steps_per_screen,
+            )
+            - self._cursor_width
+        ):
             self._cursor_x = self._cursor_x + self._cursor_width
+        elif self._cursor_x + int(self._offset) + 1 < self._sequencer.n_steps:
+            self._offset += 1
         self.update()
 
     @pyqtSlot()
@@ -241,6 +246,13 @@ class PianoRoll(QQuickPaintedItem):
         no_brush = QBrush()
         no_brush.setStyle(Qt.NoBrush)
 
+        # max displayed steps = either the number of steps per screen
+        # or a bit less, if we've reached the total number of steps
+        n_displayed_steps = min(
+            self._sequencer.n_steps - int(self._offset), self._steps_per_screen
+        )
+        max_width = int(n_displayed_steps * (self.width() - 1) / self._steps_per_screen)
+
         painter.setPen(no_pen)
         h = (self.height() - 1) / self._notes_per_screen
         for j in range(self._notes_per_screen + 1):
@@ -252,7 +264,7 @@ class PianoRoll(QQuickPaintedItem):
                 painter.setBrush(light_brush)
             else:
                 painter.setBrush(dark_brush)
-            painter.drawRect(0, y, int(self.width()), int(h))
+            painter.drawRect(0, y, max_width, int(h))
 
         # lit step, if any
         if self._lit_step is not None:
@@ -290,9 +302,9 @@ class PianoRoll(QQuickPaintedItem):
         thick_pen.setWidth(2)
         normal_pen = QPen()
         # vertical lines
-        for i in range(self._steps_per_screen + 1):
+        for i in range(n_displayed_steps + 1):
             x = int(i * (self.width() - 1) / self._steps_per_screen)
-            if int(i - self._offset) % 4 == 0:
+            if int(i + self._offset) % self._sequencer.steps_per_bar == 0:
                 painter.setPen(thick_pen)
             else:
                 painter.setPen(normal_pen)
