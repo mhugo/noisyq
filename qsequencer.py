@@ -517,7 +517,7 @@ class QSequencer(QObject):
         # print("***PLAY")
         assert self.__state == State.STOPPED
         self.__bpm = bpm
-        self.__step_chrono.setInterval(int(60.0 / bpm * 1000 / self.__step_unit))
+        self.__step_chrono.setInterval(int(60.0 / bpm * 1000 / self.step_unit))
 
         # Play
         self.__scheduled_events = list(
