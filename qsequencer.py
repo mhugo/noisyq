@@ -374,6 +374,10 @@ class QSequencer(QObject):
     def n_steps(self, n_steps: int) -> None:
         self.__n_steps = n_steps
 
+    @pyqtProperty(int)
+    def bpm(self) -> int:
+        return self.__bpm
+
     def iterate_events(
         self,
         start_time: Optional[TimeUnit] = None,
@@ -591,10 +595,6 @@ class QSequencer(QObject):
     @pyqtSlot(result=bool)
     def is_playing(self):
         return self.__state == State.PLAYING
-
-    @pyqtProperty(int)
-    def bpm(self):
-        return self.__bpm
 
 
 if __name__ == "__main__":

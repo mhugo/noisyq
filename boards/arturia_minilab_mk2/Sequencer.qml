@@ -317,6 +317,20 @@ Item {
         }
     }
 
+    
+    Common.PlacedKnobMapping {
+        id: bpmKnob
+        mapping.knobNumber: 10
+        mapping.isInteger: true
+        mapping.min: 20
+        mapping.max: 300
+        mapping.value: 120
+        Common.FramedText {
+            legend: "BPM"
+            text: ~~parent.value
+        }
+    }
+
     Common.PlacedKnobMapping {
         id: stepsPerScreenKnob
         mapping.knobNumber: 2
@@ -511,7 +525,7 @@ Item {
                 if (note % 12 == 0) {
                     // First note : play/pause
                     gSequencer.toggle_play_pause(
-                        120, //bpm.value,
+                        bpmKnob.value,
                         0, 1,
                         ~~gSequencer.n_steps, 1
                     );
