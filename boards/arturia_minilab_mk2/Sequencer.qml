@@ -329,6 +329,47 @@ Item {
             legend: "BPM"
             text: ~~parent.value
         }
+        visible: !board.isShiftPressed;
+    }
+
+    Common.PlacedKnobMapping {
+        id: stepUnitKnob
+        mapping.knobNumber: 10
+        mapping.isInteger: true
+
+        readonly property var noteText: [
+            "𝅗",
+            "𝅗𝅥",
+            "𝅘𝅥",
+            "𝅘𝅥𝅮",
+            "𝅘𝅥𝅯",
+            "𝅘𝅥𝅰"
+        ]
+        readonly property var stepUnit: [
+            1,
+            2,
+            4,
+            8,
+            16,
+            32
+        ]
+        mapping.min: 0
+        mapping.max: 5
+        mapping.value: 2
+        Common.FramedText {
+            legend: "Step unit"
+            Text {
+                text: stepUnitKnob.noteText[~~stepUnitKnob.value]
+                font.pixelSize: parent.height / 3
+                font.family: musicFont.name
+                x: (parent.width - width) / 2
+                y: (parent.height - height) / 3
+            }
+        }
+        onValueChanged: {
+            gSequencer.step_unit = stepUnitKnob.stepUnit[value];
+        }
+        visible: board.isShiftPressed;
     }
 
     Common.PlacedKnobMapping {

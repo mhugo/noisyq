@@ -298,7 +298,7 @@ class QSequencer(QObject):
         self.__step_chrono.setSingleShot(False)
         # Time signature
         self.steps_per_bar = 4
-        self.step_unit = 4  # quarter note (noire)
+        self.__step_unit = 4  # quarter note (noire)
         # Current step
         self.__step_number = 0
         self.__step_chrono.timeout.connect(self._on_step_timeout)
@@ -378,13 +378,21 @@ class QSequencer(QObject):
     def bpm(self) -> int:
         return self.__bpm
 
+    @pyqtProperty(int)
+    def step_unit(self) -> int:
+        return self.__step_unit
+
+    @step_unit.setter
+    def step_unit(self, step_unit: int) -> None:
+        self.__step_unit = step_unit
+
     def iterate_events(
         self,
         start_time: Optional[TimeUnit] = None,
         stop_time: Optional[TimeUnit] = None,
     ) -> Iterator[Tuple[int, TimeUnit, Event]]:
         # iterate events, by advancing time
-        max_time = TimeUnit(self.__n_steps * self.steps_per_bar, self.step_unit)
+        max_time = TimeUnit(self.__n_steps * self.steps_per_bar, self.__step_unit)
         if stop_time is None or stop_time > max_time:
             stop_time = max_time
         for event_time, ch_event in self.__events.irange(
@@ -521,7 +529,7 @@ class QSequencer(QObject):
         # print("***PLAY")
         assert self.__state == State.STOPPED
         self.__bpm = bpm
-        self.__step_chrono.setInterval(int(60.0 / bpm * 1000 / self.step_unit))
+        self.__step_chrono.setInterval(int(60.0 / bpm * 1000 / self.__step_unit))
 
         # Play
         self.__scheduled_events = list(

@@ -83,6 +83,10 @@ Item {
         //source: "fonts/MoonGlossDisplayThin.ttf"
         source: "fonts/Oxanium-Regular.ttf"
     }
+    FontLoader {
+        id: musicFont
+        source: "fonts/NotoMusic-Regular.ttf"
+    }
 
     // Simulate knobs and pads activations
     Board {
