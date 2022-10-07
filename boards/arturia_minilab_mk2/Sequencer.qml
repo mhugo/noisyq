@@ -541,25 +541,26 @@ Item {
         target: board
         enabled: sequencerDisplay.visible
         onNotePressed: {
-            if ((~~modeKnob.value == 2) && recAnimation.running) { // step record
-                let ts = Date.now();
-                notes.push(note);
-                noteStarts.push({"amount": pianoRoll.cursor_start_amount(),
-                                 "unit": pianoRoll.cursor_start_unit()});
-                if ((previousNoteOnTs != 0) && (ts - previousNoteOnTs > chordTimeout))
-                    pianoRoll.increment_cursor_x();
-                let currentVoice = ~~voiceKnob.value;
-                gSequencer.remove_events_in_range(
-                    currentVoice,
-                    pianoRoll.cursor_start_amount(),
-                    pianoRoll.cursor_start_unit(),
-                    pianoRoll.cursor_end_amount(),
-                    pianoRoll.cursor_end_unit());
-                previousNoteOnTs = ts;
-                previousNoteOffTs = 0;
-            
+            if (!board.isShiftPressed) {
+                if ((~~modeKnob.value == 2) && recAnimation.running) { // step record
+                    let ts = Date.now();
+                    notes.push(note);
+                    noteStarts.push({"amount": pianoRoll.cursor_start_amount(),
+                                     "unit": pianoRoll.cursor_start_unit()});
+                    if ((previousNoteOnTs != 0) && (ts - previousNoteOnTs > chordTimeout))
+                        pianoRoll.increment_cursor_x();
+                    let currentVoice = ~~voiceKnob.value;
+                    gSequencer.remove_events_in_range(
+                        currentVoice,
+                        pianoRoll.cursor_start_amount(),
+                        pianoRoll.cursor_start_unit(),
+                        pianoRoll.cursor_end_amount(),
+                        pianoRoll.cursor_end_unit());
+                    previousNoteOnTs = ts;
+                    previousNoteOffTs = 0;
+                }
+                pianoRoll.noteOn(note);
             }
-            pianoRoll.noteOn(note);
         }
         onNoteReleased: {
             if (board.isShiftPressed) {
