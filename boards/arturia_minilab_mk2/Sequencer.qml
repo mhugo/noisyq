@@ -235,7 +235,7 @@ Item {
         y: (main.unitSize+main.legendSize) * 2 + unitSize
         height: unitSize
         width: 8 * unitSize
-        color: white
+        color: "white"
 
     }
     ScrollBar {
@@ -315,6 +315,7 @@ Item {
                 yOffset.onIncrement();
             }
         }
+        visible: !board.isShiftPressed;
     }
 
     
@@ -436,6 +437,23 @@ Item {
                 board.incrementKnob(cursorWidth.mapping.knobNumber, 1);
             }
             enabled: board.isShiftPressed
+        }
+
+        visible: board.isShiftPressed;
+    }
+
+    Common.PlacedKnobMapping {
+        id: velocityKnob
+        mapping.knobNumber: 9
+        mapping.isInteger: true
+        mapping.min: 0
+        mapping.max: 127
+        mapping.value: 64
+
+        Common.FramedVuMeter {
+            value: parent.value
+            max: 127.0
+            legend: "Velocity"
         }
 
         visible: board.isShiftPressed;
