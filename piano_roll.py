@@ -312,7 +312,6 @@ class PianoRoll(QQuickPaintedItem):
 
         # notes
         light = QBrush(QColor("#23629e"))  # HSV 209°, 78%, 62%
-        dark = QBrush(QColor("#3492eb"))  # HSV 209°, 78%, 92%
         light_selected = QBrush(QColor("#9e9623"))  # HSV 56°, 78%, 62%
         dark_selected = QBrush(QColor("#ebde34"))  # HSV 56°, 78%, 92%
         painter.setPen(no_pen)
@@ -356,6 +355,11 @@ class PianoRoll(QQuickPaintedItem):
             if note_selected:
                 painter.setBrush(dark_selected)
             else:
-                painter.setBrush(dark)
+                # dark_color = QColor("#3492eb")  # HSV 209°, 78%, 92%
+                # vary saturation w.r.t. velocity
+                c = QColor.fromHsv(
+                    209, int(velocity / 127.0 * 255.0), int(92 / 100.0 * 255.0)
+                )
+                painter.setBrush(QBrush(c))
             b = 4
             painter.drawRect(x + b, y + b, w - b * 2, h - b * 2)

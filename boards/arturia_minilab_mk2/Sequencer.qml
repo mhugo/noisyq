@@ -314,6 +314,7 @@ Item {
             onKeyUp: {
                 yOffset.onIncrement();
             }
+            enabled: !board.isShiftPressed
         }
         visible: !board.isShiftPressed;
     }
@@ -454,6 +455,17 @@ Item {
             value: parent.value
             max: 127.0
             legend: "Velocity"
+        }
+
+        Connections {
+            target: board
+            onKeyDown: {
+                board.decrementKnob(velocityKnob.mapping.knobNumber, 1);
+            }
+            onKeyUp: {
+                board.incrementKnob(velocityKnob.mapping.knobNumber, 1);
+            }
+            enabled: board.isShiftPressed
         }
 
         visible: board.isShiftPressed;
@@ -621,6 +633,7 @@ Item {
                     let end_unit = pianoRoll.cursor_end_unit();
                     let duration_amount = end_amount * start_unit - start_amount * end_unit
                     let duration_unit = start_unit * end_unit
+                    let velocity = velocityKnob.value;
                     notes.splice(idx, 1);
                     noteStarts.splice(idx, 1);
                     previousNoteOffTs = ts;
@@ -632,7 +645,7 @@ Item {
                                          {
                                              "event_type": "note_event",
                                              "note": note,
-                                             "velocity": 127,
+                                             "velocity": velocity,
                                              "duration_amount": duration_amount,
                                              "duration_unit": duration_unit
                                          });
