@@ -5,15 +5,11 @@ from typing import List, Optional
 import xml.etree.ElementTree as ET
 
 import jack
-from PyQt5.QtCore import (
-    pyqtSlot, QObject
-)
+from PyQt5.QtCore import pyqtSlot, QObject, QCoreApplication
 
 
 class JackClient:
-    __slots__ = ["name",
-                 "midi_in",
-                 "audio_out"]
+    __slots__ = ["name", "midi_in", "audio_out"]
 
     def __init__(self, name):
         self.name: str = name
@@ -21,9 +17,9 @@ class JackClient:
         self.audio_out: List[jack.Port] = [None, None]
 
     def __repr__(self):
-        return "<JackClient midi_in: {}, left_out: {}, right_out: {}>".format(self.midi_in,
-                                                                              self.audio_out[0],
-                                                                              self.audio_out[1])
+        return "<JackClient midi_in: {}, left_out: {}, right_out: {}>".format(
+            self.midi_in, self.audio_out[0], self.audio_out[1]
+        )
 
 
 class CarlaHost(QObject):
@@ -59,24 +55,31 @@ class CarlaHost(QObject):
         binary_dir = os.path.join(carla_install_path, "bin")
         self.__host = CarlaHostDLL(
             os.path.join(carla_install_path, "lib/carla/libcarla_standalone2.so"),
-            False  # RTLD_GLOBAL ?
+            False,  # RTLD_GLOBAL ?
         )
         self.__host.set_engine_option(ENGINE_OPTION_PATH_BINARIES, 0, binary_dir)
         # In this mode, each plugin is visible in Jack, no patchbay involved
-        self.__host.set_engine_option(ENGINE_OPTION_PROCESS_MODE, ENGINE_PROCESS_MODE_SINGLE_CLIENT, "")
+        self.__host.set_engine_option(
+            ENGINE_OPTION_PROCESS_MODE, ENGINE_PROCESS_MODE_SINGLE_CLIENT, ""
+        )
 
         # A jack client to look for registered ports
         self.__jack = jack.Client("MIDI control")
 
         # Look for system output
-        out_ports = self.__jack.get_ports(is_audio=True, is_input=True, is_physical=True)
+        out_ports = self.__jack.get_ports(
+            is_audio=True, is_input=True, is_physical=True
+        )
         if len(out_ports) == 2:
             self.__system_audio_out = out_ports
         else:
             raise RuntimeError("Cannot find system output audio ports !")
 
         if not self.__host.engine_init("JACK", "MIDI control host"):
-            print("Engine failed to initialize, possible reasons:\n%s" % self.__host.get_last_error())
+            print(
+                "Engine failed to initialize, possible reasons:\n%s"
+                % self.__host.get_last_error()
+            )
             sys.exit(1)
 
         self.__next_id = 0
@@ -102,37 +105,40 @@ class CarlaHost(QObject):
 
     @pyqtSlot(str, result=str)
     def addInstance(self, lv2_name):
-        from carla_backend import (
-            BINARY_NATIVE,
-            PLUGIN_LV2,
-            PLUGIN_OPTION_USE_CHUNKS
-        )
+        if lv2_name.endswith(".sf2") or lv2_name.endswith(".sfz"):
+            return self.addSoundFont(lv2_name)
+        from carla_backend import BINARY_NATIVE, PLUGIN_LV2, PLUGIN_OPTION_USE_CHUNKS
 
         print(">>> addInstance", lv2_name)
         lv2_id = str(self.__next_id)
         if not self.__host.add_plugin(
-                BINARY_NATIVE,
-                PLUGIN_LV2,
-                "", # filename (?)
-                "", # name
-                lv2_name, # label
-                self.__next_id, #id
-                None, # extraPtr
-                PLUGIN_OPTION_USE_CHUNKS #options
+            BINARY_NATIVE,
+            PLUGIN_LV2,
+            "",  # filename (?)
+            "",  # name
+            lv2_name,  # label
+            self.__next_id,  # id
+            None,  # extraPtr
+            PLUGIN_OPTION_USE_CHUNKS,  # options
         ):
-            print("Failed to load plugin, possible reasons:\n%s" % self.__host.get_last_error())
+            print(
+                "Failed to load plugin, possible reasons:\n%s"
+                % self.__host.get_last_error()
+            )
             return
 
         # on_port_registered should have been called
         # and midi / audio ports for the new plugin collected
         # We can now autoconnect
         for i in range(2):
-            self.__jack.connect(self.__last_jack_client.audio_out[i], self.__system_audio_out[i])
+            self.__jack.connect(
+                self.__last_jack_client.audio_out[i], self.__system_audio_out[i]
+            )
         self.__last_jack_client = None
 
         # DEBUG
         # FIXME: SAMPLV1 does not accept very well state restore when UI is shown !!
-        #self.__host.show_custom_ui(self.__next_id, True)
+        # self.__host.show_custom_ui(self.__next_id, True)
 
         instance = CarlaHost.Instance()
         instance.id = self.__next_id
@@ -152,14 +158,68 @@ class CarlaHost(QObject):
         self.__next_id += 1
         return lv2_id
 
+    @pyqtSlot(str, result=str)
+    def addSoundFont(self, filename: str):
+        from carla_backend import (
+            BINARY_NATIVE,
+            PLUGIN_SF2,
+            PLUGIN_SFZ,
+            PLUGIN_OPTION_SEND_PROGRAM_CHANGES,
+        )
+
+        print(">>> addSoundFont", filename)
+        lv2_id = str(self.__next_id)
+        if not self.__host.add_plugin(
+            BINARY_NATIVE,
+            PLUGIN_SF2 if filename.endswith(".sf2") else PLUGIN_SFZ,
+            filename,
+            "name",  # name
+            "label",  # label
+            self.__next_id,  # id
+            None,  # extraPtr
+            PLUGIN_OPTION_SEND_PROGRAM_CHANGES,  # options
+        ):
+            print(
+                "Failed to load sound font, possible reasons:\n%s"
+                % self.__host.get_last_error()
+            )
+            return
+
+        # on_port_registered should have been called
+        # and midi / audio ports for the new plugin collected
+        # We can now autoconnect
+        assert self.__last_jack_client is not None
+        for i in range(2):
+            self.__jack.connect(
+                self.__last_jack_client.audio_out[i], self.__system_audio_out[i]
+            )
+        self.__last_jack_client = None
+
+        instance = CarlaHost.Instance()
+        instance.id = self.__next_id
+        instance.uri = filename
+
+        # collect parameters id
+        pcount = self.__host.get_parameter_count_info(self.__next_id)
+        for i in range(pcount["ins"]):
+            pinfo = self.__host.get_parameter_info(self.__next_id, i)
+            p = CarlaHost.Parameter()
+            p.id = i
+            p.name = pinfo["symbol"]
+            instance.parameters[p.name] = p
+
+        self.__instances[lv2_id] = instance
+
+        self.__next_id += 1
+
+        return lv2_id
+
     @pyqtSlot(str, str, float)
     def setParameterValue(self, lv2_id, parameter_name, value):
         instance = self.__instances[lv2_id]
         print(">>> setParameterValue", lv2_id, parameter_name, value)
         self.__host.set_parameter_value(
-            instance.id,
-            instance.parameters[parameter_name].id,
-            value
+            instance.id, instance.parameters[parameter_name].id, value
         )
 
     @pyqtSlot(str, str, result=float)
@@ -176,23 +236,13 @@ class CarlaHost(QObject):
     def noteOn(self, lv2_id, note, velocity):
         print(">>> Note ON", lv2_id, note, velocity)
         channel = 0
-        self.__host.send_midi_note(
-            self.__instances[lv2_id].id,
-            channel,
-            note,
-            velocity
-        )
+        self.__host.send_midi_note(self.__instances[lv2_id].id, channel, note, velocity)
 
     @pyqtSlot(str, int)
     def noteOff(self, lv2_id, note):
         print(">>> Note OFF", lv2_id, note)
         channel = 0
-        self.__host.send_midi_note(
-            self.__instances[lv2_id].id,
-            channel,
-            note,
-            0
-        )
+        self.__host.send_midi_note(self.__instances[lv2_id].id, channel, note, 0)
 
     @pyqtSlot(str, result=list)
     def programs(self, lv2_id):
@@ -223,9 +273,14 @@ class CarlaHost(QObject):
     def set_custom_int_data(self, lv2_id, data_type, data_id, data_value):
         import base64
         import struct
+
         id = self.__instances[lv2_id].id
         d = base64.b64encode(struct.pack("i", data_value)).decode("utf-8")
         return self.__host.set_custom_data(id, data_type, data_id, d)
+
+    @pyqtSlot()
+    def idle(self):
+        QCoreApplication.processEvents()
 
     @pyqtSlot(str, result=str)
     @pyqtSlot(str, bool, result=str)
@@ -252,7 +307,7 @@ class CarlaHost(QObject):
             return json.dumps(tree_to_python(tree.getroot()))
         else:
             fi = open(fn, "rb")
-            return fi.read().decode('utf-8')
+            return fi.read().decode("utf-8")
 
     @pyqtSlot(str, str)
     @pyqtSlot(str, str, bool)
@@ -270,6 +325,7 @@ class CarlaHost(QObject):
                 for child in p["children"]:
                     elt.append(python_to_tree(child))
             return elt
+
         if convert_json_to_xml:
             root = python_to_tree(json.loads(state))
             tree = ET.ElementTree(root)
@@ -285,18 +341,18 @@ class CarlaHost(QObject):
         instance = self.__instances[lv2_id]
         id = instance.id
         fn = "/tmp/load_state_tmp"
-        #self.__host.prepare_for_save(id)
+        # self.__host.prepare_for_save(id)
         self.__host.save_plugin_state(id, fn)
         with open(fn, "rb") as fi:
             state = fi.read()
-        #print(state)
+        # print(state)
 
         cdata_map = {}
         for cdata in custom_data:
             cdata_map[cdata["key"]] = cdata
 
         print("***cdata_map", repr(cdata_map))
-        
+
         tree = ET.parse(fn)
         root = tree.getroot()
         data = root[1]
