@@ -510,8 +510,10 @@ class QSequencer(QObject):
             next_ms = int(
                 event_time.amount() * 60 * 1000 / event_time.unit() / self.__bpm
             )
-            # print("start timer", next_ms - e_ms)
-            self.__timer.start(next_ms - e_ms)
+            d = next_ms - e_ms
+            # do not schedule in the past
+            d = d if d >= 0 else 0
+            self.__timer.start(d)
         else:
             # print("***STOP")
             self.__state_change(State.STOPPED)
