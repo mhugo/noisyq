@@ -244,7 +244,7 @@ Item {
         policy: ScrollBar.AlwaysOn
         orientation: Qt.Horizontal
         size: 1.0 / gSequencer.n_steps
-        position: timeOffsetKnob.value / gSequencer.n_steps
+        position: xOffset.value / gSequencer.n_steps
     }
 
     PianoRoll {
