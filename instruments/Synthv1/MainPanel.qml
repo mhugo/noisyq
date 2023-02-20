@@ -25,7 +25,7 @@ Item {
     }
 
     ADSRMapping {
-        startKnobNumber: 4
+        startKnobNumber: 12
         attackParameter: "DCA" + root.synthNumber + "_ATTACK"
         decayParameter: "DCA" + root.synthNumber + "_DECAY"
         sustainParameter: "DCA" + root.synthNumber + "_SUSTAIN"
@@ -35,14 +35,14 @@ Item {
     PlacedKnobMapping {
         legend: "Velocity"
         mapping.parameterName: "DEF" + root.synthNumber + "_VELOCITY"
-        mapping.knobNumber: 14
+        mapping.knobNumber: 5
 
         text: (value * 100).toFixed(0) + "%"
     }
     PlacedKnobMapping {
         legend: "Polyphony"
         mapping.parameterName: "DEF" + root.synthNumber + "_MONO"
-        mapping.knobNumber: 15
+        mapping.knobNumber: 6
         mapping.isInteger: true
         mapping.min: 0
         mapping.max: 2
@@ -63,14 +63,14 @@ Item {
     PlacedKnobMapping {
         legend: "OUT Vol."
         mapping.parameterName: "OUT" + root.synthNumber + "_VOLUME"
-        mapping.knobNumber: 8
+        mapping.knobNumber: 9
 
         text: (value * 100).toFixed(0) + "%"
     }
     PlacedKnobMapping {
         legend: "Width"
         mapping.parameterName: "OUT" + root.synthNumber + "_WIDTH"
-        mapping.knobNumber: 9
+        mapping.knobNumber: 10
         mapping.min: -1
         mapping.max: 1
 
@@ -79,7 +79,7 @@ Item {
     PlacedKnobMapping {
         legend: "Panning"
         mapping.parameterName: "OUT" + root.synthNumber + "_PANNING"
-        mapping.knobNumber: 10
+        mapping.knobNumber: 11
         mapping.min: -1
         mapping.max: 1
 
@@ -88,7 +88,7 @@ Item {
     PlacedKnobMapping {
         legend: "FX Send"
         mapping.parameterName: "OUT" + root.synthNumber + "_FXSEND"
-        mapping.knobNumber: 11
+        mapping.knobNumber: 4
 
         text: (value * 100).toFixed(0) + "%"
     }

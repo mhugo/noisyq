@@ -60,7 +60,7 @@ Item {
 
             PlacedKnobMapping {
                 legend: "Delay"
-                mapping.knobNumber: 4
+                mapping.knobNumber: 12
                 mapping.parameterName: "CHO1_DELAY"
                 Text {
                     x: (unitSize - width) / 2
@@ -70,7 +70,7 @@ Item {
             }
             PlacedKnobMapping {
                 legend: "Feedback"
-                mapping.knobNumber: 5
+                mapping.knobNumber: 13
                 mapping.parameterName: "CHO1_FEEDB"
                 Text {
                     x: (unitSize - width) / 2
@@ -80,7 +80,7 @@ Item {
             }
             PlacedKnobMapping {
                 legend: "Rate"
-                mapping.knobNumber: 6
+                mapping.knobNumber: 14
                 mapping.parameterName: "CHO1_RATE"
                 Text {
                     x: (unitSize - width) / 2
@@ -90,7 +90,7 @@ Item {
             }
             PlacedKnobMapping {
                 legend: "Modulation"
-                mapping.knobNumber: 7
+                mapping.knobNumber: 15
                 mapping.parameterName: "CHO1_MOD"
                 Text {
                     x: (unitSize - width) / 2
@@ -115,7 +115,7 @@ Item {
 
             PlacedKnobMapping {
                 legend: "Delay"
-                mapping.knobNumber: 4
+                mapping.knobNumber: 12
                 mapping.parameterName: "FLA1_DELAY"
                 Text {
                     x: (unitSize - width) / 2
@@ -125,7 +125,7 @@ Item {
             }
             PlacedKnobMapping {
                 legend: "Feedback"
-                mapping.knobNumber: 5
+                mapping.knobNumber: 13
                 mapping.parameterName: "FLA1_FEEDB"
                 Text {
                     x: (unitSize - width) / 2
@@ -135,7 +135,7 @@ Item {
             }
             PlacedKnobMapping {
                 legend: "Rate"
-                mapping.knobNumber: 6
+                mapping.knobNumber: 14
                 mapping.parameterName: "FLA1_DAFT"
                 Text {
                     x: (unitSize - width) / 2
@@ -160,7 +160,7 @@ Item {
 
             PlacedKnobMapping {
                 legend: "Rate"
-                mapping.knobNumber: 4
+                mapping.knobNumber: 12
                 mapping.parameterName: "PHA1_RATE"
                 Text {
                     x: (unitSize - width) / 2
@@ -170,7 +170,7 @@ Item {
             }
             PlacedKnobMapping {
                 legend: "Feedback"
-                mapping.knobNumber: 5
+                mapping.knobNumber: 13
                 mapping.parameterName: "PHA1_FEEDB"
                 Text {
                     x: (unitSize - width) / 2
@@ -180,7 +180,7 @@ Item {
             }
             PlacedKnobMapping {
                 legend: "Daft"
-                mapping.knobNumber: 7
+                mapping.knobNumber: 15
                 mapping.parameterName: "PHA1_DAFT"
                 Text {
                     x: (unitSize - width) / 2
@@ -205,7 +205,7 @@ Item {
 
             PlacedKnobMapping {
                 legend: "Delay"
-                mapping.knobNumber: 4
+                mapping.knobNumber: 12
                 mapping.parameterName: "DEL1_DELAY"
                 Text {
                     x: (unitSize - width) / 2
@@ -223,7 +223,7 @@ Item {
             }
             PlacedKnobMapping {
                 legend: "Feedback"
-                mapping.knobNumber: 5
+                mapping.knobNumber: 13
                 mapping.parameterName: "DEL1_FEEDB"
                 Text {
                     x: (unitSize - width) / 2
@@ -235,7 +235,7 @@ Item {
             PlacedKnobMapping {
                 id: delayBPM
                 legend: "Delay BPM"
-                mapping.knobNumber: 7
+                mapping.knobNumber: 15
                 mapping.parameterName: "DEL1_BPM"
                 mapping.min: 0
                 mapping.max: 360
@@ -267,7 +267,7 @@ Item {
 
             PlacedKnobMapping {
                 legend: "Room"
-                mapping.knobNumber: 4
+                mapping.knobNumber: 12
                 mapping.parameterName: "REV1_ROOM"
                 Text {
                     x: (unitSize - width) / 2
@@ -277,7 +277,7 @@ Item {
             }
             PlacedKnobMapping {
                 legend: "Damp"
-                mapping.knobNumber: 5
+                mapping.knobNumber: 13
                 mapping.parameterName: "REV1_DAMP"
                 Text {
                     x: (unitSize - width) / 2
@@ -287,7 +287,7 @@ Item {
             }
             PlacedKnobMapping {
                 legend: "Feedback"
-                mapping.knobNumber: 6
+                mapping.knobNumber: 14
                 mapping.parameterName: "REV1_FEEDB"
                 Text {
                     x: (unitSize - width) / 2
@@ -297,7 +297,7 @@ Item {
             }
             PlacedKnobMapping {
                 legend: "Width"
-                mapping.knobNumber: 7
+                mapping.knobNumber: 15
                 mapping.parameterName: "REV1_WIDTH"
                 Text {
                     x: (unitSize - width) / 2

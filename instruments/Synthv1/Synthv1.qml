@@ -146,7 +146,6 @@ Item {
 
     function _updatePad() {
         padMenu.updateText(0, ":menu:");
-        padMenu.updateText(7, "Back");
     }
     function _updateInfo() {
         infoScreen.text = "SynthV1 > synth " + (_currentSynthNumber + 1)
@@ -238,10 +237,10 @@ Item {
             return;
         }
         
-        if (padNumber == 7) {
+        /*if (padNumber == 7) {
             // end of editing
             quit();
-        }
+        }*/
     }
 
 }

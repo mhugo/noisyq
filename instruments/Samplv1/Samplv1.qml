@@ -85,7 +85,7 @@ Item {
         }
     }
 
-    Item {
+    /*Item {
         id: debug_grid
         GridLayout {
             columns: 8
@@ -132,7 +132,7 @@ Item {
                 }
             }
         }
-    }
+    }*/
 
     Item {
         id: waveform
@@ -493,7 +493,7 @@ Item {
     }
 
     ADSRMapping {
-        startKnobNumber: 8
+        startKnobNumber: 12
         attackParameter: "DCA1_ATTACK"
         decayParameter: "DCA1_DECAY"
         sustainParameter: "DCA1_SUSTAIN"
@@ -501,10 +501,10 @@ Item {
     }
 
     KnobMapping {
-        x: 4 * unitSize
+        x: 3 * unitSize
         y: unitSize + legendSize
         parameterName: "GEN1_ENVTIME"
-        knobNumber: 12
+        knobNumber: 11
 
         Text {
             x: (unitSize - width) / 2

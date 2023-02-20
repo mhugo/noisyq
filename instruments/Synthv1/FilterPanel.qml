@@ -86,7 +86,7 @@ Item {
     }
 
     ADSRMapping {
-        startKnobNumber: 4
+        startKnobNumber: 12
         attackParameter: "DCF" + root.synthNumber + "_ATTACK"
         decayParameter: "DCF" + root.synthNumber + "_DECAY"
         sustainParameter: "DCF" + root.synthNumber + "_SUSTAIN"
@@ -96,7 +96,7 @@ Item {
     PlacedKnobMapping {
         legend: "Envelope (?)"
         mapping.parameterName: "DCF" + root.synthNumber + "_ENVELOPE"
-        mapping.knobNumber: 15
+        mapping.knobNumber: 4
         mapping.min: -1
         mapping.max: 1
 

@@ -11,7 +11,7 @@ Item {
     PlacedKnobMapping {
         legend: "Wave"
         mapping.parameterName: "LFO" + root.synthNumber + "_SHAPE"
-        mapping.knobNumber: 0
+        mapping.knobNumber: 1
         mapping.isInteger: true
         mapping.min: 0
         mapping.max: 4
@@ -40,7 +40,7 @@ Item {
     PlacedKnobMapping {
         legend: "Width"
         mapping.parameterName: "LFO" + root.synthNumber + "_WIDTH"
-        mapping.knobNumber: 1
+        mapping.knobNumber: 2
 
         Text {
             x: (unitSize - width) / 2
@@ -50,7 +50,7 @@ Item {
     }
 
     ADSRMapping {
-        startKnobNumber: 4
+        startKnobNumber: 12
         attackParameter: "LFO" + root.synthNumber + "_ATTACK"
         decayParameter: "LFO" + root.synthNumber + "_DECAY"
         sustainParameter: "LFO" + root.synthNumber + "_SUSTAIN"
@@ -60,7 +60,7 @@ Item {
     PlacedKnobMapping {
         legend: "BPM"
         mapping.parameterName: "LFO" + root.synthNumber + "_BPM"
-        mapping.knobNumber: 8
+        mapping.knobNumber: 9
         mapping.isInteger: true
         mapping.min: 0
         mapping.max: 360
@@ -75,7 +75,7 @@ Item {
     PlacedKnobMapping {
         legend: "Rate"
         mapping.parameterName: "LFO" + root.synthNumber + "_RATE"
-        mapping.knobNumber: 9
+        mapping.knobNumber: 10
 
         Text {
             x: (unitSize - width) / 2
@@ -92,7 +92,7 @@ Item {
 
     PlacedKnobMapping {
         legend: "Modulation"
-        mapping.knobNumber: 14
+        mapping.knobNumber: 4
         mapping.isInteger: true
         mapping.min: 0
         mapping.max: 7
@@ -145,7 +145,7 @@ Item {
             PlacedKnobMapping {
                 legend: modelData
                 mapping.parameterName: "LFO" + root.synthNumber + "_" + modelData.toUpperCase()
-                mapping.knobNumber: 15
+                mapping.knobNumber: 5
                 mapping.min: -1
                 mapping.max: 1
                 
