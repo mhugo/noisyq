@@ -201,11 +201,10 @@ Item {
             // display the component associated with the current voice in the instrumentStack
             if (voiceInstrument[voiceNumber] !== undefined) {
                 currentIndex = voiceStackLayoutIndex[voiceNumber];
-                instrumentStack.visible = true;
                 _currentVoice = voiceNumber;
             }
             else {
-                instrumentStack.visible = false;
+                currentIndex = 0;
             }
         }
 
@@ -274,11 +273,23 @@ Item {
             enabled: instrumentStack.visible
         }
 
-        // index: 0 - blank with optional text
-        Text {
-            id: textPanel
-            width: unitSize
-            height: unitSize
+        // index: 0 - blank panel
+        Item {
+            id: noInstrument
+            implicitWidth: unitSize * 8
+            implicitHeight: unitSize * 2 + legendSize * 2
+            Rectangle {
+                color: "#ccc"
+                width: unitSize * 7
+                height: unitSize + legendSize
+            }
+            Rectangle {
+                color: "#ccc"
+                x: unitSize
+                y: unitSize + legendSize
+                width: unitSize * 7
+                height: unitSize + legendSize
+            }
         }
     }
 
