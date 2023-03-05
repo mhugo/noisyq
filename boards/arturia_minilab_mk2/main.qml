@@ -515,9 +515,16 @@ Item {
                             }
                             // 2nd click => assignment
                             else {
-                                instrumentStack.assignInstrumentFromIndex(~~assignKnob.value, assignKnob.voice);
+                                let instrIndex = ~~assignKnob.value;
+                                if (instrumentComponents[instrIndex] === undefined) {
+                                    instrumentStack.removeInstrumentAt(assignKnob.voice);
+                                }
+                                else {
+                                    instrumentStack.assignInstrumentFromIndex(instrIndex, assignKnob.voice);
+                                }
                                 assignKnob.visible = false;
                                 voiceKnob.visible = true;
+                                instrumentStack.editInstrument(assignKnob.voice);
                             }
                         }
                     }
