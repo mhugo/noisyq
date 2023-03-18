@@ -68,23 +68,24 @@ Item {
         height: unitSize
         onPaint: {
             var ctx = getContext("2d");
+            var gradient = ctx.createLinearGradient(100, 100, 0, 0);
+            gradient.addColorStop(0, '#1f93c2');
+            gradient.addColorStop(1, '#a5d4e7');
             ctx.reset();
-            ctx.lineWidth = 2.0;
+
+            ctx.fillStyle = '#11536d';
+            ctx.fillRect(0, 0, 4*unitSize, unitSize);
+
+            ctx.fillStyle = gradient;
             ctx.moveTo(0, unitSize);
             ctx.lineTo(unitSize * envAttack.value, 0);
             ctx.lineTo(unitSize * envAttack.value + unitSize * envDecay.value, envSustain.value * unitSize);
             ctx.lineTo(unitSize * envAttack.value + unitSize * envDecay.value + unitSize, envSustain.value * unitSize);
             ctx.lineTo(unitSize * envAttack.value + unitSize * envDecay.value + unitSize + envRelease.value * unitSize, unitSize);
             ctx.lineTo(0, unitSize);
-            ctx.stroke();
-
-            ctx.lineWidth = 1.0;
-            ctx.moveTo(unitSize * envAttack.value, 0);
-            ctx.lineTo(unitSize * envAttack.value, unitSize);
-            ctx.moveTo(unitSize * envAttack.value + unitSize * envDecay.value, envSustain.value * unitSize);
-            ctx.lineTo(unitSize * envAttack.value + unitSize * envDecay.value, unitSize);
-            ctx.moveTo(unitSize * envAttack.value + unitSize * envDecay.value + unitSize, envSustain.value * unitSize);
-            ctx.lineTo(unitSize * envAttack.value + unitSize * envDecay.value + unitSize, unitSize);
+            ctx.fill();
+            ctx.lineWidth = 3.0;
+            ctx.strokeStyle = '#e9f4f9';
             ctx.stroke();
         }
 
