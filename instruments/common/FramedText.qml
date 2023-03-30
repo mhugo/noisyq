@@ -6,6 +6,7 @@ Rectangle {
     property string text: ""
     property string legend: ""
     property real size: main.unitSize
+    property color color: "white"
 
     width: size
     height: size
@@ -19,6 +20,7 @@ Rectangle {
         border.color: "black"
         border.width: 3
         radius: root.size / 10
+        color: root.color
 
         Text {
             text: root.text

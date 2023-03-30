@@ -18,6 +18,8 @@ Item {
     property real min: 0.0
     property real max: enumValues ? enumValues.length - 1: 1.0
 
+    property color color: "white"
+
 
     x: (knobNumber  % 8) * unitSize
     y: (unitSize + legendSize) * (~~(knobNumber / 8))
@@ -30,6 +32,7 @@ Item {
         value: parent.value
         from: parent.min
         to: parent.max
+        color: root.color
         Text {
             x: (unitSize - width) / 2
             y: (unitSize - height) / 2

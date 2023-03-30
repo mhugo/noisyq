@@ -20,6 +20,8 @@ Item {
     property int from: 0 // FIXME ignored
     property int to: 8
 
+    property color color: "white"
+
     ///////////////////
     //
     // Private part
@@ -43,6 +45,7 @@ Item {
         height: unitSize * 0.9
         x: unitSize * 0.05
         y: unitSize * 0.05
+        color: root.color
 
         Repeater {
             model: _steps
@@ -90,6 +93,7 @@ Item {
                 radius: width / 2
                 border.width: _lineWidth
                 border.color: index == value ? "black" : "#aaa"
+                color: root.color
 
                 Rectangle {
                     x: (_outerCircleSize - _innerCircleSize)/2

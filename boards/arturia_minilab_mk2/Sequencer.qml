@@ -53,6 +53,7 @@ Item {
             "Live record",
         ]
         legend: "Mode"
+        color: "#ffaaaa"
     }
 
 /*    Common.PlacedKnobMapping {

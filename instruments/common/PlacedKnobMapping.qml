@@ -19,6 +19,8 @@ Item {
     property alias mapping: knob
     property alias value: knob.value
 
+    property color color: "white"
+
     KnobMapping {
         id: knob
 
@@ -31,5 +33,6 @@ Item {
 
     FramedText {
         id: frame
+        color: root.color
     }
 }

@@ -414,6 +414,8 @@ Item {
 
             legend: "Function"
 
+            color: "#ffaaaa"
+
             Component.onCompleted: {
                 infoScreen.text = enumValues[~~value];
             }
@@ -428,6 +430,8 @@ Item {
             mapping.max: 15
 
             legend: "Voice"
+
+            color: "#ffaaaa"
 
             text: value
 
