@@ -212,6 +212,7 @@ Item {
             let obj = instrumentComponents[instrumentIndex].component.createObject(main, {"visible": false});
             let lv2Id = lv2Host.addInstance(instrumentComponents[instrumentIndex].lv2Url);
             obj.lv2Id = lv2Id;
+            obj.name = instrumentComponents[instrumentIndex].name;
             obj.unitSize = main.unitSize;
             obj.init();
             console.log("lv2id", obj.lv2Id);
@@ -419,8 +420,9 @@ Item {
             Component.onCompleted: {
                 infoScreen.text = enumValues[~~value];
             }
-        }
 
+            visible: !board.isShiftPressed
+        }
         Common.PlacedKnobMapping {
             id: voiceKnob
             mapping.isInteger: true
@@ -507,6 +509,41 @@ Item {
             /////////////////////////////
             Item {
                 id: instrumentEdit
+
+                Common.PlacedDial {
+                    id: subModeKnob
+                    knobNumber: 7
+
+                    enumValues: [
+                        "Edit",
+                        "Presets"
+                    ]
+                    legend: "Sub Function"
+                    color: "#ffaaaa"
+
+                    onValueChanged: {
+                        if (~~value == 0) {
+                            instrumentStack.visible = true;
+                        }
+                        else if (~~value == 1) {
+                            instrumentStack.visible = false;
+                        }
+                    }
+
+                    visible: board.isShiftPressed
+                }
+
+                Common.Presets {
+                    id: presetsControl
+                    visible: ~~subModeKnob.value == 1
+                    onVisibleChanged: {
+                        let instr = instrumentStack.instrumentAt(~~voiceKnob.value);
+                        if (instr) {
+                            presetsControl.lv2Id = instr.instrument.lv2Id;
+                        }
+                    }
+                }
+
                 Connections {
                     target: board
                     onPadReleased : {
@@ -532,7 +569,7 @@ Item {
                             }
                         }
                     }
-                    enabled: modeStackLayout.currentIndex == 0
+                    enabled: parent.visible && ~~subModeKnob.value == 0
                 }
             }
 
