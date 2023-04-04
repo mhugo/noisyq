@@ -362,7 +362,7 @@ class QSequencer(QObject):
             start_time, TimeUnit(end_time_amount, end_time_unit)
         ):
             if event_channel == channel:
-                to_remove.append((channel, start_time, event))
+                to_remove.append((channel, event_time, event))
         for channel, start_time, event in to_remove:
             self._remove_event(channel, start_time, event)
 

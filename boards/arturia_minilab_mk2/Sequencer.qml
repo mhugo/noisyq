@@ -632,8 +632,8 @@ Item {
                     let start_unit = noteStarts[idx].unit;
                     let end_amount = pianoRoll.cursor_end_amount();
                     let end_unit = pianoRoll.cursor_end_unit();
-                    let duration_amount = end_amount * start_unit - start_amount * end_unit
-                    let duration_unit = start_unit * end_unit
+                    let duration_amount = end_amount * start_unit - start_amount * end_unit;
+                    let duration_unit = start_unit * end_unit;
                     let velocity = velocityKnob.value;
                     notes.splice(idx, 1);
                     noteStarts.splice(idx, 1);
