@@ -67,8 +67,6 @@ Item {
                 });
             }
         }
-
-        //console.log("midi receive", midi.receive_message());
     }
 
     FontLoader {
@@ -520,7 +518,8 @@ Item {
 
                     enumValues: [
                         "Edit",
-                        "Presets"
+                        "Presets",
+                        "Volume"
                     ]
                     legend: "Sub Function"
                     color: "#ffaaaa"
@@ -529,7 +528,7 @@ Item {
                         if (~~value == 0) {
                             instrumentStack.visible = true;
                         }
-                        else if (~~value == 1) {
+                        else {
                             instrumentStack.visible = false;
                         }
                     }
@@ -541,9 +540,40 @@ Item {
                     id: presetsControl
                     visible: ~~subModeKnob.value == 1
                     onVisibleChanged: {
+                        if (visible) {
+                            let instr = instrumentStack.instrumentAt(~~voiceKnob.value);
+                            if (instr) {
+                                presetsControl.lv2Id = instr.instrument.lv2Id;
+                            }
+                        }
+                    }
+                }
+
+                Common.PlacedKnobMapping {
+                    id: volume
+                    legend: "Volume"
+                    mapping.isInteger: false
+                    mapping.value: 1.0
+                    mapping.min: 0.0
+                    mapping.max: 1.27
+                    mapping.knobNumber: 1
+
+                    visible: ~~subModeKnob.value == 2
+                    onVisibleChanged: {
+                        if (visible) {
+                            let instr = instrumentStack.instrumentAt(~~voiceKnob.value);
+                            if (instr) {
+                                parent.value = lv2Host.getVolume(instr.instrument.lv2Id);
+                            }
+                        }
+                    }
+
+                    text: (value * 100).toFixed(0)
+
+                    onValueChanged: {
                         let instr = instrumentStack.instrumentAt(~~voiceKnob.value);
                         if (instr) {
-                            presetsControl.lv2Id = instr.instrument.lv2Id;
+                            lv2Host.setVolume(instr.instrument.lv2Id, value);
                         }
                     }
                 }
