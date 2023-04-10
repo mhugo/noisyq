@@ -508,7 +508,12 @@ class QSequencer(QObject):
                 e_ms = self.__chrono.elapsed()
             event_time, self.__current_events = self.__scheduled_events.pop(0)
             next_ms = int(
-                event_time.amount() * 60 * 1000 / event_time.unit() / self.__bpm
+                event_time.amount()
+                * 60
+                * 1000
+                / event_time.unit()
+                / self.__bpm
+                / self.__step_unit
             )
             d = next_ms - e_ms
             # do not schedule in the past
