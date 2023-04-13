@@ -7,14 +7,12 @@ import argparse
 
 api = rtmidi.API_LINUX_ALSA
 
-parser = argparse.ArgumentParser(description='Configure a MIDI controller.')
-parser.add_argument('--alsa', action="store_true",
-                    help='Use ALSA MIDI')
-parser.add_argument('--jack', action="store_true",
-                    help="Use JACK MIDI")
-parser.add_argument('--dev', action="store",
-                    required=True,
-                    help="MIDI device to use (pattern)")
+parser = argparse.ArgumentParser(description="Configure a MIDI controller.")
+parser.add_argument("--alsa", action="store_true", help="Use ALSA MIDI")
+parser.add_argument("--jack", action="store_true", help="Use JACK MIDI")
+parser.add_argument(
+    "--dev", action="store", required=True, help="MIDI device to use (pattern)"
+)
 
 args = parser.parse_args()
 
@@ -74,16 +72,15 @@ class Midi:
         self.__received_message = None
         return msg
 
+
 midi = Midi(api, args.dev)
+
 
 def to_hex(msg):
     return " ".join(["%02x" % c for c in msg])
 
-prefix = [
-    0xF0,
-    0x00, 0x20, 0x6B, # Arturia
-    0x7F, 0x42 #??
-]
+
+prefix = [0xF0, 0x00, 0x20, 0x6B, 0x7F, 0x42]  # Arturia  # ??
 
 # Control ID
 KNOB_1 = 0x30
@@ -123,7 +120,7 @@ knob_id = [
     KNOB_13,
     KNOB_14,
     KNOB_15,
-    KNOB_16
+    KNOB_16,
 ]
 
 PAD_1 = 0x70
@@ -161,7 +158,7 @@ pad_id = [
     PAD_15,
     PAD_16,
     KNOB_1_BUTTON,
-    KNOB_9_BUTTON
+    KNOB_9_BUTTON,
 ]
 
 BTN_OCTAVE_DOWN = 0x10
@@ -188,8 +185,8 @@ OPTION_RELATIVE_2 = 2
 OPTION_RELATIVE_3 = 3
 
 # Options for Mode = Switched (pads)
-OPTION_TOGGLE = 0 # toggle button
-OPTION_GATE = 1 # normal button
+OPTION_TOGGLE = 0  # toggle button
+OPTION_GATE = 1  # normal button
 
 MODE_CONTROL = 1
 # ??? = 2
@@ -226,48 +223,64 @@ COLOR_WHITE = 0x7F
 
 
 def read_control(control, operation):
-    midi.send_message(prefix + [
-        0x01, # read value
-        0x00,
-        operation, # operation
-        control, # knob 1
-        0xF7 # sysex end
-    ])
+    midi.send_message(
+        prefix
+        + [
+            0x01,  # read value
+            0x00,
+            operation,  # operation
+            control,  # knob 1
+            0xF7,  # sysex end
+        ]
+    )
     msg, _ = midi.receive_message()
     return msg[10]
 
 
 def _write_control(control, operation, value):
-    midi.send_message(prefix + [
-        0x02, # write value
-        0x00,
-        operation,
-        control,
-        value,
-        0xF7
-    ])
+    midi.send_message(
+        prefix + [0x02, 0x00, operation, control, value, 0xF7]  # write value
+    )
 
 
 def write_control(control, operation, value):
     for i in range(50):
         _write_control(control, operation, value)
-        time.sleep(0.)
+        time.sleep(0.0)
         actual_value = read_control(control, operation)
         if actual_value == value:
             return
     assert False
 
+
 # CC numbers for knobs
-knob_cc = [7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22]
+knob_cc = [7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22]
 # CC numbers for pads
 pad_cc = [
-    23,24,25,26,27,28,29,30,31, 64,65,66,67,68,69,70,
-    71, # knob 1 switch
-    72, # knob 9 switch
+    23,
+    24,
+    25,
+    26,
+    27,
+    28,
+    29,
+    30,
+    31,
+    64,
+    65,
+    66,
+    67,
+    68,
+    69,
+    70,
+    71,  # knob 1 switch
+    72,  # knob 9 switch
 ]
 
+# modulation => CC 1 ?
+
 assert len(knob_cc) == 16
-    
+
 try:
     # ask sysexid
     midi.send_message([0xF0, 0x7E, 0x7F, 0x06, 0x01, 0xF7])
@@ -286,7 +299,18 @@ try:
         value = read_control(knob_id[i], GET_SET_VALUE)
         value_2 = read_control(knob_id[i], GET_SET_VALUE_2)
         option = read_control(knob_id[i], GET_SET_OPTION)
-        print("Knob", i, "mode", mode, "value", value, "value_2", value_2, "option", option)
+        print(
+            "Knob",
+            i,
+            "mode",
+            mode,
+            "value",
+            value,
+            "value_2",
+            value_2,
+            "option",
+            option,
+        )
 
     # set pads
     for i, pad in enumerate(pad_id):
@@ -301,7 +325,9 @@ try:
         option = read_control(pad, GET_SET_OPTION)
         value = read_control(pad, GET_SET_VALUE)
         value2 = read_control(pad, GET_SET_VALUE_2)
-        print("Pad", i, "mode", mode, "option", option, "value", value, "value2", value2)
+        print(
+            "Pad", i, "mode", mode, "option", option, "value", value, "value2", value2
+        )
 
     # suspicious values
     # control, param, current value
@@ -320,5 +346,3 @@ try:
     print("End")
 except KeyboardInterrupt:
     pass
-
-
