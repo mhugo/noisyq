@@ -103,6 +103,7 @@ KNOB_13 = 0x05
 KNOB_14 = 0x06
 KNOB_15 = 0x07
 KNOB_16 = 0x08
+KNOB_MODULATION = 0x40
 
 knob_id = [
     KNOB_1,
@@ -121,6 +122,7 @@ knob_id = [
     KNOB_14,
     KNOB_15,
     KNOB_16,
+    KNOB_MODULATION,
 ]
 
 PAD_1 = 0x70
@@ -254,7 +256,7 @@ def write_control(control, operation, value):
 
 
 # CC numbers for knobs
-knob_cc = [7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22]
+knob_cc = [7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 1]
 # CC numbers for pads
 pad_cc = [
     23,
@@ -277,28 +279,24 @@ pad_cc = [
     72,  # knob 9 switch
 ]
 
-# modulation => CC 1 ?
-
-assert len(knob_cc) == 16
-
 try:
     # ask sysexid
     midi.send_message([0xF0, 0x7E, 0x7F, 0x06, 0x01, 0xF7])
     msg, ts = midi.receive_message()
 
     # set knobs
-    for i in range(16):
-        write_control(knob_id[i], GET_SET_MODE, MODE_CONTROL)
+    for i, knob in enumerate(knob_id):
+        write_control(knob, GET_SET_MODE, MODE_CONTROL)
         # set CC
-        write_control(knob_id[i], GET_SET_VALUE_2, knob_cc[i])
+        write_control(knob, GET_SET_VALUE_2, knob_cc[i])
         # set relative
-        write_control(knob_id[i], GET_SET_OPTION, OPTION_RELATIVE_1)
+        write_control(knob, GET_SET_OPTION, OPTION_RELATIVE_1)
 
-    for i in range(16):
-        mode = read_control(knob_id[i], GET_SET_MODE)
-        value = read_control(knob_id[i], GET_SET_VALUE)
-        value_2 = read_control(knob_id[i], GET_SET_VALUE_2)
-        option = read_control(knob_id[i], GET_SET_OPTION)
+    for i, knob in enumerate(knob_id):
+        mode = read_control(knob, GET_SET_MODE)
+        value = read_control(knob, GET_SET_VALUE)
+        value_2 = read_control(knob, GET_SET_VALUE_2)
+        option = read_control(knob, GET_SET_OPTION)
         print(
             "Knob",
             i,

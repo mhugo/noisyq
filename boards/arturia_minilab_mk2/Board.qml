@@ -31,7 +31,8 @@ Text {
 
     Repeater {
         id: knobs
-        model: 16
+        model: 17
+        // knob #16 : modulation wheel
         Item {
             property real value: 0
             property bool isInteger: false
@@ -65,6 +66,8 @@ Text {
             }
         }
     }
+
+    readonly property int knobModulationId : 16
 
     Repeater {
         id: pads
@@ -196,6 +199,10 @@ Text {
         else if ((event.nativeScanCode == 24) && (event.modifiers & Qt.ControlModifier)) {
             padPressed(knob9SwitchId);
         }
+        // ^2 => modulation wheel
+        else if (event.nativeScanCode == 49) {
+            selectedKnob = knobModulationId;
+        }
         // 12345...
         else if (event.nativeScanCode >= 10 && event.nativeScanCode < 18) {
             selectedKnob = event.nativeScanCode - 10;
@@ -303,7 +310,8 @@ Text {
                 19: 12,
                 20: 13,
                 21: 14,
-                22: 15
+                22: 15,
+                1: 16 // modulation wheel
             };
             const cc_to_pad = {
                 23: 0,
