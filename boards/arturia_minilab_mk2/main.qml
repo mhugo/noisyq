@@ -412,7 +412,8 @@ Item {
 
             enumValues: [
                 "Instrument",
-                "Sequencer"
+                "Sequencer",
+                "Mixer"
             ]
 
             legend: "Function"
@@ -457,6 +458,9 @@ Item {
                     instrumentStack.editInstrument(~~value);
                 }
             }
+
+            // invisible on mixer panel
+            visible: modeKnob.value != 2
         }
 
         Common.PlacedKnobMapping {
@@ -477,7 +481,6 @@ Item {
 
             onVisibleChanged: {
                 if (visible) {
-                    console.log("set visible", instrumentComponents.length, assignKnob.mapping.knobNumber);
                     assignKnob.mapping.max = instrumentComponents.length;
                     updateInstrType();
                 }
@@ -519,7 +522,6 @@ Item {
                     enumValues: [
                         "Edit",
                         "Presets",
-                        "Volume"
                     ]
                     legend: "Sub Function"
                     color: "#ffaaaa"
@@ -545,35 +547,6 @@ Item {
                             if (instr) {
                                 presetsControl.lv2Id = instr.instrument.lv2Id;
                             }
-                        }
-                    }
-                }
-
-                Common.PlacedKnobMapping {
-                    id: volume
-                    legend: "Volume"
-                    mapping.isInteger: false
-                    mapping.value: 1.0
-                    mapping.min: 0.0
-                    mapping.max: 1.27
-                    mapping.knobNumber: 1
-
-                    visible: ~~subModeKnob.value == 2
-                    onVisibleChanged: {
-                        if (visible) {
-                            let instr = instrumentStack.instrumentAt(~~voiceKnob.value);
-                            if (instr) {
-                                parent.value = lv2Host.getVolume(instr.instrument.lv2Id);
-                            }
-                        }
-                    }
-
-                    text: (value * 100).toFixed(0)
-
-                    onValueChanged: {
-                        let instr = instrumentStack.instrumentAt(~~voiceKnob.value);
-                        if (instr) {
-                            lv2Host.setVolume(instr.instrument.lv2Id, value);
                         }
                     }
                 }
@@ -614,6 +587,108 @@ Item {
             ////////////////////////
             Sequencer {
                 id: sequencerDisplay
+            }
+
+            ////////////////////////
+            //
+            //      Mixer
+            //
+            ////////////////////////
+            Item {
+                id: mixer
+                property int voiceSelected: -1
+                Common.PlacedKnobMapping {
+                    id: volumeKnob
+                    legend: "Volume"
+                    mapping.isInteger: false
+                    mapping.value: 1.0
+                    mapping.min: 0.0
+                    mapping.max: 1.0
+                    mapping.knobNumber: 1
+                    visible: false
+
+                    text: (value * 100).toFixed(0)
+
+                    onValueChanged: {
+                        if (mixer.voiceSelected != -1) {
+                            volumeSliders.itemAt(mixer.voiceSelected).volume = value;
+                        }
+                    }
+                }
+                Common.KnobMapping {
+                    id: volumeWheel
+                    isInteger: false
+                    min: 0.0
+                    max: 1.0
+                    // modulation wheel
+                    knobNumber: 16
+                    parameterDisplay: "modulation wheel"
+                    onValueChanged: {
+                        volumeKnob.value = value;
+                    }
+                }
+                Connections {
+                    target: board
+                    onPadPressed : {
+                        if (padNumber < 8) {
+                            volumeKnob.visible = true;
+                            mixer.voiceSelected = padNumber;
+                            volumeKnob.value = volumeSliders.itemAt(padNumber).volume;
+                            board.setKnobValue(volumeKnob.knobNumber, volumeKnob.value);
+                            volumeWheel.value = volumeSliders.itemAt(padNumber).volume;
+                            board.setKnobValue(volumeWheel.knobNumber, volumeWheel.value);
+                        }
+                    }
+                    onPadReleased : {
+                        if (padNumber < 8) {
+                            mixer.voiceSelected = -1;
+                            volumeKnob.visible = false;
+                        }
+                    }
+                    enabled: parent.visible
+                }
+
+                Repeater {
+                    id: volumeSliders
+                    model: 8
+                    Rectangle {
+                        id: slider
+                        property real volume: 0.0
+                        width: 0.9 * unitSize / 2
+                        height: 0.9 * (unitSize + legendSize)
+                        x: unitSize * index + unitSize * 0.30
+                        y: unitSize + legendSize + unitSize * 0.05
+                        border.color: "black"
+                        border.width: 3
+                        radius: unitSize / 10
+
+                        Rectangle {
+                            id: handle
+                            color: "black"
+                            width: 0.3 * unitSize
+                            height: 0.1 * unitSize
+                            x: (parent.width - width) / 2
+                            y: (1.0 - parent.volume) * (parent.height - height*2) + height/2
+                        }
+
+                        onVisibleChanged: {
+                            if (visible) {
+                                let instr = instrumentStack.instrumentAt(index);
+                                if (instr) {
+                                    slider.volume = lv2Host.getVolume(instr.instrument.lv2Id);
+                                }
+                            }
+                        }
+
+                        onVolumeChanged: {
+                            let instr = instrumentStack.instrumentAt(index);
+                            if (instr) {
+                                lv2Host.setVolume(instr.instrument.lv2Id, volume);
+                            }
+                        }
+                    }
+                }
+
             }
         }
     }
