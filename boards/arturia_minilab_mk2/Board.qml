@@ -29,6 +29,17 @@ Text {
     signal keyLeft()
     signal keyRight()
 
+    enum Color {
+        Black,
+        Red,
+        Green,
+        Yellow,
+        Blue,
+        Purple,
+        Cyan,
+        White
+    }
+
     Repeater {
         id: knobs
         model: 17
@@ -43,12 +54,16 @@ Text {
             // interested in increment and decrement signals
             property bool hasValue: true
 
-            function _delta() {
+            /*function _delta() {
                 let d = max - min;
                 if (isInteger) {
                     return d < 128 ? d / 128 : 1;
                 }
                 return d / 128.0;
+            }*/
+            function _delta() {
+                let d = max - min;
+                return isInteger ? 0.05 : d / 128.0;
             }
 
             function increment(amount) {
@@ -347,7 +362,11 @@ Text {
                 // CC
                 let cc = message[1];
                 let v = message[2];
-                if ((cc in cc_to_knob) && (v != 0x40)) {
+                if (cc == 1) { // modulation wheel
+                    let knob = knobs.itemAt(16);
+                    root.knobMoved(16, v / 127.0 * (knob.max - knob.min) + knob.min);
+                }
+                else if ((cc in cc_to_knob) && (v != 0x40)) {
                     const knobNumber = cc_to_knob[cc];
                     let knob = knobs.itemAt(knobNumber);
                     let amount = v - 0x40;

@@ -22,6 +22,10 @@ class JackClient:
         )
 
 
+# Active parameter, boolean type.
+# Default is 'false'.
+PARAMETER_ACTIVE = -2
+
 # Volume parameter.
 # Range 0.0...1.27; default is 1.0.
 PARAMETER_VOLUME = -4
@@ -246,6 +250,18 @@ class CarlaHost(QObject):
     def setVolume(self, lv2_id, volume):
         instance = self.__instances[lv2_id]
         return self.__host.set_volume(instance.id, volume)
+
+    @pyqtSlot(str, result=bool)
+    def getMuted(self, lv2_id):
+        instance = self.__instances[lv2_id]
+        return not self.__host.get_internal_parameter_value(
+            instance.id, PARAMETER_ACTIVE
+        )
+
+    @pyqtSlot(str, bool)
+    def setMuted(self, lv2_id, muted):
+        instance = self.__instances[lv2_id]
+        return self.__host.set_active(instance.id, not muted)
 
     @pyqtSlot(str, int, int)
     def noteOn(self, lv2_id, note, velocity):

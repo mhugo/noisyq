@@ -115,6 +115,7 @@ class StubHost(QObject):
         self.__next_id = 0
 
         self._volumes = {}
+        self._muted = {}
 
     @pyqtSlot(str, result=str)
     def addInstance(self, lv2_name):
@@ -176,11 +177,19 @@ class StubHost(QObject):
 
     @pyqtSlot(str, result=float)
     def getVolume(self, lv2_id):
-        return self._volumes.get(lv2_id, 0.0)
+        return self._volumes.get(lv2_id, 1.0)
 
     @pyqtSlot(str, float)
     def setVolume(self, lv2_id, volume):
         self._volumes[lv2_id] = volume
+
+    @pyqtSlot(str, result=bool)
+    def getMuted(self, lv2_id):
+        return self._muted.get(lv2_id, False)
+
+    @pyqtSlot(str, bool)
+    def setMuted(self, lv2_id, muted):
+        self._muted[lv2_id] = muted
 
 
 class MidiAPI(Enum):

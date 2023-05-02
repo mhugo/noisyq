@@ -365,7 +365,7 @@ Item {
         target: board
         onPadPressed : {
             if (padNumber < 16)
-                padRep.itemAt(padNumber).color = Pad.Color.Red;
+                padRep.itemAt(padNumber).color = Board.Color.Red;
         }
         onPadReleased : {
             if (padNumber < 16)
@@ -438,7 +438,7 @@ Item {
 
             color: "#ffaaaa"
 
-            text: value
+            text: ~~value
 
             onValueChanged: {
                 updateInstrType();
@@ -604,7 +604,7 @@ Item {
                     mapping.value: 1.0
                     mapping.min: 0.0
                     mapping.max: 1.0
-                    mapping.knobNumber: 1
+                    mapping.knobNumber: 0
                     visible: false
 
                     text: (value * 100).toFixed(0)
@@ -643,32 +643,59 @@ Item {
                         if (padNumber < 8) {
                             mixer.voiceSelected = -1;
                             volumeKnob.visible = false;
+                            // switch voice
+                            voiceKnob.value = padNumber;
+                        }
+                        else if (padNumber == board.knob1SwitchId) {
+                            // mute / unmute
+                            volumeSliders.itemAt(mixer.voiceSelected).muted = !volumeSliders.itemAt(mixer.voiceSelected).muted;
                         }
                     }
                     enabled: parent.visible
                 }
 
                 Repeater {
+                    model: 8
+                    Common.PlacedPadText {
+                        padNumber: index
+                        text: index + 1
+
+                        onVisibleChanged: {
+                            if (visible) {
+                                let instr = instrumentStack.instrumentAt(index);
+                                let muted = (instr === undefined) || lv2Host.getMuted(instr.instrument.lv2Id);
+                                let color = muted ? Board.Color.Red : Board.Color.Black;
+                                board.setPadColor(index, color);
+                                padRep.itemAt(index).color = color;
+                            }
+                        }
+                    }
+                }
+
+                Repeater {
                     id: volumeSliders
                     model: 8
+
                     Rectangle {
                         id: slider
                         property real volume: 0.0
+                        property bool muted: true
                         width: 0.9 * unitSize / 2
                         height: 0.9 * (unitSize + legendSize)
                         x: unitSize * index + unitSize * 0.30
                         y: unitSize + legendSize + unitSize * 0.05
-                        border.color: "black"
+                        border.color: muted ? "grey" : "black"
                         border.width: 3
                         radius: unitSize / 10
 
                         Rectangle {
                             id: handle
-                            color: "black"
-                            width: 0.3 * unitSize
+                            color: parent.muted ? "grey" : "black"
+                            width: 0.32 * unitSize
                             height: 0.1 * unitSize
                             x: (parent.width - width) / 2
                             y: (1.0 - parent.volume) * (parent.height - height*2) + height/2
+                            radius: width / 10
                         }
 
                         onVisibleChanged: {
@@ -676,6 +703,7 @@ Item {
                                 let instr = instrumentStack.instrumentAt(index);
                                 if (instr) {
                                     slider.volume = lv2Host.getVolume(instr.instrument.lv2Id);
+                                    slider.muted = lv2Host.getMuted(instr.instrument.lv2Id);
                                 }
                             }
                         }
@@ -684,6 +712,12 @@ Item {
                             let instr = instrumentStack.instrumentAt(index);
                             if (instr) {
                                 lv2Host.setVolume(instr.instrument.lv2Id, volume);
+                            }
+                        }
+                        onMutedChanged: {
+                            let instr = instrumentStack.instrumentAt(index);
+                            if (instr) {
+                                lv2Host.setMuted(instr.instrument.lv2Id, muted);
                             }
                         }
                     }

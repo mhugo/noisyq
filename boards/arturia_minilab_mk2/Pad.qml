@@ -9,32 +9,33 @@ Item {
     implicitWidth: root.size
     implicitHeight: root.size
 
-    enum Color {
-        Black,
-        Red,
-        Green,
-        Blue,
-        White
-    }
-
-    property string color : Pad.Color.Black
+    property string color : Board.Color.Black
     Rectangle
     {
         width: root.size
         height: root.size
         radius: root.size/10
         color: {
-            if (parent.color == Pad.Color.Red) {
+            if (parent.color == Board.Color.Red) {
                 "#d90243"
             }
-            else if (parent.color == Pad.Color.Green) {
+            else if (parent.color == Board.Color.Green) {
                 "#6fc22b"
             }
-            else if (parent.color == Pad.Color.Blue) {
+            else if (parent.color == Board.Color.Blue) {
                 "#2f9af7"
             }
+            else if (parent.color == Board.Color.Yellow) {
+                "#ffff00"
+            }
+            else if (parent.color == Board.Color.Purple) {
+                "#ba55d3"
+            }
+            else if (parent.color == Board.Color.Cyan) {
+                "#00ffff"
+            }
             else {
-                "white"
+                "#ffffff"
             }
         }
         Image {
