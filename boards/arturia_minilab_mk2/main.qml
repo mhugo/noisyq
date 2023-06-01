@@ -576,7 +576,7 @@ Item {
                             }
                         }
                     }
-                    enabled: parent.visible && ~~subModeKnob.value == 0
+                    enabled: instrumentEdit.visible && ~~subModeKnob.value == 0
                 }
             }
 
@@ -627,11 +627,30 @@ Item {
                         volumeKnob.value = value;
                     }
                 }
+                Common.PlacedKnobMapping {
+                    id: panningKnob
+                    legend: "Panning"
+                    mapping.isInteger: false
+                    mapping.value: 0.0
+                    mapping.min: -1.0
+                    mapping.max: 1.0
+                    mapping.knobNumber: 1
+                    visible: false
+
+                    text: value.toFixed(1)
+
+                    onValueChanged: {
+                        if (mixer.voiceSelected != -1) {
+                            volumeSliders.itemAt(mixer.voiceSelected).panning = value;
+                        }
+                    }
+                }
                 Connections {
                     target: board
                     onPadPressed : {
                         if (padNumber < 8) {
                             volumeKnob.visible = true;
+                            panningKnob.visible = true;
                             mixer.voiceSelected = padNumber;
                             volumeKnob.value = volumeSliders.itemAt(padNumber).volume;
                             board.setKnobValue(volumeKnob.knobNumber, volumeKnob.value);
@@ -643,6 +662,7 @@ Item {
                         if (padNumber < 8) {
                             mixer.voiceSelected = -1;
                             volumeKnob.visible = false;
+                            panningKnob.visible = false;
                             // switch voice
                             voiceKnob.value = padNumber;
                         }
@@ -651,7 +671,7 @@ Item {
                             volumeSliders.itemAt(mixer.voiceSelected).muted = !volumeSliders.itemAt(mixer.voiceSelected).muted;
                         }
                     }
-                    enabled: parent.visible
+                    enabled: mixer.visible
                 }
 
                 Repeater {
@@ -676,26 +696,54 @@ Item {
                     id: volumeSliders
                     model: 8
 
-                    Rectangle {
+                    Item {
                         id: slider
+
                         property real volume: 0.0
                         property bool muted: true
-                        width: 0.9 * unitSize / 2
-                        height: 0.9 * (unitSize + legendSize)
-                        x: unitSize * index + unitSize * 0.30
-                        y: unitSize + legendSize + unitSize * 0.05
-                        border.color: muted ? "grey" : "black"
-                        border.width: 3
-                        radius: unitSize / 10
+                        property real panning: 0.0
+
+                        Item {
+                            width: 0.9 * unitSize / 2
+                            height: 0.9 * legendSize
+                            x: unitSize * index + unitSize * 0.30
+                            y: 2 * unitSize + legendSize + legendSize * 0.5
+
+                            Rectangle {
+                                width: parent.width
+                                height: 3
+                                color: "black"
+                            }
+
+                            Rectangle {
+                                x: parent.parent.panning * parent.width / 2 + parent.width / 2 - width / 2
+                                y: -3
+                                height: 9
+                                width: 6
+                                color: "black"
+                            }
+
+                        }
 
                         Rectangle {
-                            id: handle
-                            color: parent.muted ? "grey" : "black"
-                            width: 0.32 * unitSize
-                            height: 0.1 * unitSize
-                            x: (parent.width - width) / 2
-                            y: (1.0 - parent.volume) * (parent.height - height*2) + height/2
-                            radius: width / 10
+                            width: 0.9 * unitSize / 2
+                            height: 0.9 * unitSize
+                            x: unitSize * index + unitSize * 0.30
+                            y: unitSize + legendSize + unitSize * 0.05
+                            border.color: parent.muted ? "grey" : "black"
+                            border.width: 3
+                            radius: unitSize / 10
+
+                            Rectangle {
+                                id: handle
+                                color: parent.parent.muted ? "grey" : "black"
+                                width: 0.32 * unitSize
+                                height: 0.1 * unitSize
+                                x: (parent.width - width) / 2
+                                y: (1.0 - parent.parent.volume) * (parent.height - height*2) + height/2
+                                radius: width / 10
+                            }
+
                         }
 
                         onVisibleChanged: {
@@ -704,7 +752,15 @@ Item {
                                 if (instr) {
                                     slider.volume = lv2Host.getVolume(instr.instrument.lv2Id);
                                     slider.muted = lv2Host.getMuted(instr.instrument.lv2Id);
+                                    slider.panning = lv2Host.getPanning(instr.instrument.lv2Id);
                                 }
+                            }
+                        }
+
+                        onPanningChanged: {
+                            let instr = instrumentStack.instrumentAt(index);
+                            if (instr) {
+                                lv2Host.setPanning(instr.instrument.lv2Id, panning);
                             }
                         }
 
@@ -722,7 +778,6 @@ Item {
                         }
                     }
                 }
-
             }
         }
     }

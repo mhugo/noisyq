@@ -30,6 +30,18 @@ PARAMETER_ACTIVE = -2
 # Range 0.0...1.27; default is 1.0.
 PARAMETER_VOLUME = -4
 
+# Mono Panning parameter.
+# Range -1.0...1.0; default is 0.0.
+PARAMETER_PANNING = -7
+
+# Stereo Balance-Left parameter.
+# Range -1.0...1.0; default is -1.0.
+PARAMETER_BALANCE_LEFT = -5
+
+# Stereo Balance-Right parameter.
+# Range -1.0...1.0; default is 1.0.
+PARAMETER_BALANCE_RIGHT = -6
+
 
 class CarlaHost(QObject):
     class Instance:
@@ -250,6 +262,24 @@ class CarlaHost(QObject):
     def setVolume(self, lv2_id, volume):
         instance = self.__instances[lv2_id]
         return self.__host.set_volume(instance.id, volume)
+
+    @pyqtSlot(str, result=float)
+    def getPanning(self, lv2_id):
+        instance = self.__instances[lv2_id]
+        left = self.__host.get_internal_parameter_value(
+            instance.id, PARAMETER_BALANCE_LEFT
+        )
+        right = self.__host.get_internal_parameter_value(
+            instance.id, PARAMETER_BALANCE_RIGHT
+        )
+        panning = (right + left) / 2.0
+        return panning
+
+    @pyqtSlot(str, float)
+    def setPanning(self, lv2_id, panning):
+        instance = self.__instances[lv2_id]
+        self.__host.set_balance_left(instance.id, panning)
+        return self.__host.set_balance_right(instance.id, panning)
 
     @pyqtSlot(str, result=bool)
     def getMuted(self, lv2_id):

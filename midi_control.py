@@ -115,6 +115,7 @@ class StubHost(QObject):
         self.__next_id = 0
 
         self._volumes = {}
+        self._pannings = {}
         self._muted = {}
 
     @pyqtSlot(str, result=str)
@@ -190,6 +191,14 @@ class StubHost(QObject):
     @pyqtSlot(str, bool)
     def setMuted(self, lv2_id, muted):
         self._muted[lv2_id] = muted
+
+    @pyqtSlot(str, result=float)
+    def getPanning(self, lv2_id):
+        return self._pannings.get(lv2_id, 0.0)
+
+    @pyqtSlot(str, float)
+    def setPanning(self, lv2_id, panning):
+        self._pannings[lv2_id] = panning
 
 
 class MidiAPI(Enum):
