@@ -4,8 +4,11 @@ import QtQuick.Controls 2.5
 Text {
     id: root
 
+    readonly property int doubleTapMaxTimeMs: 250
+
     signal padPressed(int padNumber)
     signal padReleased(int padNumber)
+    signal padDoubleTapped(int padNumber)
     signal knobMoved(int knobNumber, real amount)
     signal knobIncremented(int knobNumber)
     signal knobDecremented(int knobNumber)
@@ -428,5 +431,18 @@ Text {
                 }
             }
         }
+    }
+
+    // double tap logic
+    property var padLastPressedTime: ({})
+    onPadPressed : {
+        let t = new Date();
+        if (padNumber in padLastPressedTime) {
+            let msDiff = t - padLastPressedTime[padNumber];
+            if (msDiff < doubleTapMaxTimeMs) {
+                root.padDoubleTapped(padNumber);
+            }
+        }
+        padLastPressedTime[padNumber] = t;
     }
 }
