@@ -703,11 +703,14 @@ Item {
                         property bool muted: true
                         property real panning: 0.0
 
+                        y: 2 * (unitSize + legendSize) + 2 * unitSize
+
                         Item {
+                            // the panning horizontal slider
                             width: 0.9 * unitSize / 2
                             height: 0.9 * legendSize
                             x: unitSize * index + unitSize * 0.30
-                            y: 2 * unitSize + legendSize + legendSize * 0.5
+                            y: 2 * unitSize + legendSize * 0.5
 
                             Rectangle {
                                 width: parent.width
@@ -725,11 +728,12 @@ Item {
 
                         }
 
+                        // the main volume vertical slider
                         Rectangle {
                             width: 0.9 * unitSize / 2
-                            height: 0.9 * unitSize
+                            height: 1.9 * unitSize
                             x: unitSize * index + unitSize * 0.30
-                            y: unitSize + legendSize + unitSize * 0.05
+                            y: unitSize * 0.05
                             border.color: parent.muted ? "grey" : "black"
                             border.width: 3
                             radius: unitSize / 10
