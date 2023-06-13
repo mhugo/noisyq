@@ -1,7 +1,7 @@
 import json
 import os
 import sys
-from typing import List, Optional
+from typing import Dict, List, Optional
 import xml.etree.ElementTree as ET
 
 import jack
@@ -111,6 +111,9 @@ class CarlaHost(QObject):
 
         # name -> Instance
         self.__instances = {}
+
+        self.__solo: Optional[str] = None
+        self.__mute_state: Dict[str, bool] = {}
 
     def on_port_register(self, port, register):
         client_name, port_name = port.shortname.split(":")
@@ -292,6 +295,35 @@ class CarlaHost(QObject):
     def setMuted(self, lv2_id, muted):
         instance = self.__instances[lv2_id]
         return self.__host.set_active(instance.id, not muted)
+
+    @pyqtSlot(str, result=bool)
+    def isSolo(self, lv2_id):
+        return self.__solo == lv2_id
+
+    @pyqtSlot(str)
+    def setSolo(self, lv2_id):
+        print("setSolo", lv2_id)
+        if self.__solo is None:
+            # save mute states
+            self.__mute_state = {}
+            for id, instance in self.__instances.items():
+                self.__mute_state[id] = not self.__host.get_internal_parameter_value(
+                    instance.id, PARAMETER_ACTIVE
+                )
+
+        self.__solo = lv2_id
+
+        # mute everything except the solo voice
+        for id, instance in self.__instances.items():
+            print("set_active", instance.id, id, id == lv2_id)
+            self.__host.set_active(instance.id, id == lv2_id)
+
+    @pyqtSlot(str)
+    def unsetSolo(self, lv2_id):
+        # restore mute states
+        for lv2_id, muted in self.__mute_state.items():
+            self.setMuted(lv2_id, muted)
+        self.__solo = None
 
     @pyqtSlot(str, int, int)
     def noteOn(self, lv2_id, note, velocity):

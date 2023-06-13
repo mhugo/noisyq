@@ -597,6 +597,13 @@ Item {
             Item {
                 id: mixer
                 property int voiceSelected: -1
+
+                function refresh() {
+                    visible = false;
+                    Utils.processEvents();
+                    visible = true;
+                }
+
                 Common.PlacedKnobMapping {
                     id: volumeKnob
                     legend: "Volume"
@@ -669,6 +676,20 @@ Item {
                         else if (padNumber == board.knob1SwitchId) {
                             // mute / unmute
                             volumeSliders.itemAt(mixer.voiceSelected).muted = !volumeSliders.itemAt(mixer.voiceSelected).muted;
+                            mixer.refresh();
+                        }
+                    }
+
+                    onPadDoubleTapped: {
+                        if (padNumber < 8) {
+                            let instr = instrumentStack.instrumentAt(padNumber);
+                            if (lv2Host.isSolo(instr.instrument.lv2Id)) {
+                                lv2Host.unsetSolo(instr.instrument.lv2Id);
+                            }
+                            else {
+                                lv2Host.setSolo(instr.instrument.lv2Id);
+                            }
+                            mixer.refresh();
                         }
                     }
                     enabled: mixer.visible
@@ -684,12 +705,19 @@ Item {
                             if (visible) {
                                 let instr = instrumentStack.instrumentAt(index);
                                 let muted = (instr === undefined) || lv2Host.getMuted(instr.instrument.lv2Id);
-                                let color = muted ? Board.Color.Red : Board.Color.Black;
+                                let solo = (instr !== undefined) && lv2Host.isSolo(instr.instrument.lv2Id);
+                                let color = muted ? Board.Color.Red : (solo ? Board.Color.Purple : Board.Color.Black);
                                 board.setPadColor(index, color);
                                 padRep.itemAt(index).color = color;
                             }
                         }
                     }
+                }
+
+                Text {
+                    y: unitSize + legendSize
+                    x: unitSize
+                    text: "Knob 1 click: mute/unmute voice\nDouble tap: solo/unsolo voice"
                 }
 
                 Repeater {

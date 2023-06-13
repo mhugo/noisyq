@@ -3,7 +3,7 @@ from enum import Enum
 import os
 import sys
 
-from PyQt5.QtCore import QUrl, pyqtSignal, pyqtSlot, QObject, QVariant
+from PyQt5.QtCore import QUrl, pyqtSignal, pyqtSlot, QObject, QVariant, QCoreApplication
 from PyQt5.QtWidgets import QApplication
 from PyQt5.QtQuick import QQuickView
 from PyQt5.QtQml import QQmlEngine, qmlRegisterSingletonType, qmlRegisterType
@@ -48,6 +48,10 @@ class Utils(QObject):
     @pyqtSlot(QObject, result=list)
     def findChildren(self, item):
         return item.findChildren(QObject)
+
+    @pyqtSlot()
+    def processEvents(self):
+        QCoreApplication.processEvents()
 
     @pyqtSlot(str, int, int, result=str)
     def getAudioWaveformImage(self, file_name, output_width, output_height):
