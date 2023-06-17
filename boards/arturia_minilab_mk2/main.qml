@@ -438,7 +438,7 @@ Item {
 
             color: "#ffaaaa"
 
-            text: ~~value
+            text: ~~value + 1
 
             onValueChanged: {
                 updateInstrType();
