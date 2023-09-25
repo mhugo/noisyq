@@ -473,10 +473,10 @@ Item {
     }
 
     Item {
-        // Pads for select mode
-        visible: modeKnob.value == 0
-
         Common.PlacedPadText {
+            // Pads for select mode
+            visible: ~~modeKnob.value == 0
+
             padNumber: 0
             text: "SLCT"
 
@@ -493,6 +493,25 @@ Item {
                     if (event.channel == voiceKnob.value && event.event.event_type == "note_event" && event.event.note == note)
                         pianoRoll.toggleNoteSelection(event.channel, event.time_amount, event.time_unit, note);
                 }
+                pianoRoll.update();
+            }
+        }
+
+        Common.PlacedPadText {
+            // Pads for record mode
+            visible: ~~modeKnob.value == 2
+
+            padNumber: 7
+            text: "ERASE"
+
+            onPadReleased: {
+                let currentVoice = ~~voiceKnob.value;
+                gSequencer.remove_events_in_range(
+                        currentVoice,
+                        pianoRoll.cursor_start_amount(),
+                        pianoRoll.cursor_start_unit(),
+                        pianoRoll.cursor_end_amount(),
+                        pianoRoll.cursor_end_unit());
                 pianoRoll.update();
             }
         }
