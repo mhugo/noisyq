@@ -22,11 +22,16 @@ Item {
 
     function saveState() {
         return {
-            "n_beats": gSequencer.n_steps,
-            "beats_per_screen": stepsPerScreenKnob.value,
+            "n_beats": ~~gSequencer.n_steps,
+            "beats_per_screen": ~~stepsPerScreenKnob.value,
             //"offset": timeOffsetKnob.value,
-            "note_offset": pianoRoll.note_offset,
-            //"bpm": bpm.value,
+            "note_offset": ~~pianoRoll.note_offset,
+            "bpm": ~~bpmKnob.value,
+            "step_unit": ~~stepUnitKnob.value,
+            "steps_per_screen": ~~stepsPerScreenKnob.value,
+            "n_steps": ~~nStepsKnob.value,
+            "cursor_width": ~~cursorWidth.value,
+            "velocity": ~~velocityKnob.value,
             "steps": gSequencer.list_events()
         };
     }
@@ -36,7 +41,12 @@ Item {
         stepsPerScreenKnob.value = state.beats_per_screen;
 //        timeOffsetKnob.value = state.offset;
         pianoRoll.note_offset = state.note_offset;
-        //bpm.value = state.bpm;
+        bpmKnob.value = state.bpm;
+        stepUnitKnob.value = state.step_unit;
+        stepsPerScreenKnob.value = state.steps_per_screen;
+        nStepsKnob.value = state.n_steps;
+        cursorWidth.value = state.cursor_width;
+        velocityKnob.value = state.velocity;
         for (var i = 0; i < state.steps.length; i++) {
             var e = state.steps[i];
             gSequencer.add_event(e.channel, e.time_amount, e.time_unit, e.event);
@@ -425,8 +435,8 @@ Item {
         }
 
         onValueChanged: {
-            amount = [1, 1, 1, 2, 3, 4][value];
-            unit =   [4, 2, 1, 1, 1, 1][value];
+            amount = [1, 1, 1, 2, 3, 4][~~value];
+            unit =   [4, 2, 1, 1, 1, 1][~~value];
             pianoRoll.set_cursor_width(amount, unit);
         }
 
