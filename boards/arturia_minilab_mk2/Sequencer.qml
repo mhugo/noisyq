@@ -679,6 +679,9 @@ Item {
                                              "duration_amount": duration_amount,
                                              "duration_unit": duration_unit
                                          });
+                    if ((pianoRoll.note_offset <= note - 12) || (pianoRoll.note_offset >= note)) {
+                        pianoRoll.note_offset = note
+                    }
                     if (notes.length == 0)
                         pianoRoll.increment_cursor_x();
                 }
