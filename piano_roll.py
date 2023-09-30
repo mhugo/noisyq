@@ -1,13 +1,19 @@
 from dataclasses import dataclass
 
 from PyQt5.QtCore import pyqtProperty, pyqtSlot, QSize, Qt, QVariant, QObject
-from PyQt5.QtGui import QColor, QPen, QPainter, QBrush
+from PyQt5.QtGui import QColor, QPen, QPainter, QBrush, QFont
 from PyQt5.QtQuick import QQuickPaintedItem
 
 from typing import Dict, Optional, Set
 
 from time_unit import TimeUnit
 from qsequencer import QSequencer
+
+
+def midi_note_name(note: int) -> str:
+    name_en = ["C ", "C#", "D ", "D#", "E ", "F ", "F#", "G ", "G#", "A ", "A#", "B "]
+    # name_fr = ["Do", "Do#", "Ré", "Ré#", "Mi", "Fa", "Fa#", "Sol", "Sol#", "La", "La#", "Si"]
+    return "{}{}".format(name_en[note % 12], ((note + 3) // 12) - 1)
 
 
 class NoteSelection:
@@ -237,6 +243,7 @@ class PianoRoll(QQuickPaintedItem):
 
     def paint(self, painter: QPainter) -> None:
         painter.save()
+
         # lines with background
         dark_brush = QBrush(QColor("#aaa"))
         playing_brush = QBrush(QColor("#ccc"))
@@ -246,12 +253,16 @@ class PianoRoll(QQuickPaintedItem):
         no_brush = QBrush()
         no_brush.setStyle(Qt.NoBrush)
 
+        note_labels_width = 30
+        notes_width = self.width() - note_labels_width
+        notes_x = note_labels_width
+
         # max displayed steps = either the number of steps per screen
         # or a bit less, if we've reached the total number of steps
         n_displayed_steps = min(
             self._sequencer.n_steps - int(self._offset), self._steps_per_screen
         )
-        max_width = int(n_displayed_steps * (self.width() - 1) / self._steps_per_screen)
+        max_width = int(n_displayed_steps * notes_width / self._steps_per_screen)
 
         painter.setPen(no_pen)
         h = (self.height() - 1) / self._notes_per_screen
@@ -264,7 +275,22 @@ class PianoRoll(QQuickPaintedItem):
                 painter.setBrush(light_brush)
             else:
                 painter.setBrush(dark_brush)
-            painter.drawRect(0, y, max_width, int(h))
+            # draw horizontal lines
+            painter.drawRect(notes_x, y, max_width, int(h))
+            # draw note labels
+            painter.drawRect(0, y, note_labels_width, int(h))
+
+        black_pen = QPen()
+        painter.setPen(black_pen)
+        font = QFont("courier")
+        font.setPixelSize(h - 2)
+        font.setWeight(QFont.Bold)
+        painter.setFont(font)
+        for j in range(self._notes_per_screen + 1):
+            y = int((self._notes_per_screen - j - 1) * h)
+            note = j + self._note_offset
+            # draw note labels
+            painter.drawText(0, y + h - 2, midi_note_name(note))
 
         # lit step, if any
         if self._lit_step is not None:
@@ -273,13 +299,13 @@ class PianoRoll(QQuickPaintedItem):
                 play_brush = QBrush(QColor("#80fafabb"))
                 painter.setBrush(play_brush)
                 painter.setPen(no_pen)
-                w = (self.width() - 1) / self._steps_per_screen
-                x = step * w
+                w = notes_width / self._steps_per_screen
+                x = step * w + notes_x
                 painter.drawRect(x, 0, w, int(self.height() - 1))
 
         # draw cursor
-        x = self._cursor_x * (self.width() - 1) / self._steps_per_screen
-        w = self._cursor_width * (self.width() - 1) / self._steps_per_screen
+        x = self._cursor_x * notes_width / self._steps_per_screen + notes_x
+        w = self._cursor_width * notes_width / self._steps_per_screen
 
         if self._cursor_x >= 0 and self._cursor_x < self._steps_per_screen:
             cursor_brush = QBrush(QColor("#808cfaa4"))
@@ -303,7 +329,7 @@ class PianoRoll(QQuickPaintedItem):
         normal_pen = QPen()
         # vertical lines
         for i in range(n_displayed_steps + 1):
-            x = int(i * (self.width() - 1) / self._steps_per_screen)
+            x = int(i * notes_width / self._steps_per_screen) + notes_x
             if int(i + self._offset) % self._sequencer.steps_per_bar == 0:
                 painter.setPen(thick_pen)
             else:
@@ -332,11 +358,10 @@ class PianoRoll(QQuickPaintedItem):
                 event["event"]["duration_amount"], event["event"]["duration_unit"]
             )
             x = (
-                float(note_time - self._offset)
-                / self._steps_per_screen
-                * (self.width() - 1)
+                float(note_time - self._offset) / self._steps_per_screen * notes_width
+                + notes_x
             )
-            w = float(note_duration) / self._steps_per_screen * (self.width() - 1)
+            w = float(note_duration) / self._steps_per_screen * notes_width
             y = (
                 (self._notes_per_screen - (note - self._note_offset) - 1)
                 / self._notes_per_screen
