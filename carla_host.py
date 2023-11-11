@@ -1,11 +1,13 @@
 import json
 import os
 import sys
-from typing import Dict, List, Optional
+from typing import Any, Dict, List, Optional
 import xml.etree.ElementTree as ET
+from dataclasses import dataclass
+from pathlib import Path
 
 import jack
-from PyQt5.QtCore import pyqtSlot, QObject, QCoreApplication
+from PyQt5.QtCore import pyqtSlot, QObject, QCoreApplication, QVariant
 
 
 class JackClient:
@@ -43,6 +45,81 @@ PARAMETER_BALANCE_LEFT = -5
 PARAMETER_BALANCE_RIGHT = -6
 
 
+@dataclass
+class Preset:
+    name: str
+    parameters: Dict[str, Any]
+
+
+@dataclass
+class PresetBank:
+    name: str
+    presets: Dict[str, Preset]
+
+
+def load_lv2_presets() -> Dict[str, Dict[str, PresetBank]]:
+    import rdflib
+    from rdflib import RDF, RDFS, Namespace
+
+    pset = Namespace("http://lv2plug.in/ns/ext/presets#")
+    lv2 = Namespace("http://lv2plug.in/ns/lv2core#")
+
+    # Reload all LV2 presets from disk
+    lv2_path = Path.home() / ".lv2"
+
+    sub_folders = [f.path for f in os.scandir(lv2_path) if f.is_dir()]
+    g = rdflib.Graph()
+    for sub_folder in sub_folders:
+        manifest = Path(sub_folder) / "manifest.ttl"
+        if not os.path.exists(manifest):
+            continue
+        g.parse(manifest)
+
+    # plugin uri => bank name => PresetBank
+    presets: Dict[str, Dict[str, PresetBank]] = {}
+    for bank in g.subjects(RDF.type, pset.bank):
+        plugin_uri = str(g.value(bank, lv2.appliesTo))
+        bank_name = str(g.value(bank, RDFS.label))
+
+        bank_presets = {}
+        for preset in g.subjects(pset.bank, bank):
+            # load preset definition
+            p = rdflib.Graph()
+            p.parse(g.value(preset, RDFS.seeAlso))
+            preset_name = str(p.value(preset, RDFS.label))
+            ports = p.objects(preset, lv2.port)
+            parameters = {}
+            for port in ports:
+                symbol = str(p.value(port, lv2.symbol))
+                value = p.value(port, pset.value).toPython()
+                parameters[symbol] = value
+            bank_presets[preset_name] = Preset(preset_name, parameters)
+            print("Loaded", plugin_uri, bank_name, preset_name)
+
+        presets.setdefault(plugin_uri, {}).setdefault(
+            bank_name, PresetBank(bank_name, bank_presets)
+        )
+
+    return presets
+
+
+def load_presets():
+    """Load presets from cache if it exists, or load them from disk"""
+    import pickle
+
+    presets_cache_file = Path("presets_cache.bin")
+    if os.path.exists(presets_cache_file):
+        with open(presets_cache_file, "rb") as f:
+            print("** load lv2 presets from cache")
+            return pickle.load(f)
+
+    presets = load_lv2_presets()
+    with open(presets_cache_file, "wb") as fo:
+        pickle.dump(presets, fo)
+
+    return presets
+
+
 class CarlaHost(QObject):
     class Instance:
         def __init__(self):
@@ -51,6 +128,8 @@ class CarlaHost(QObject):
             # name -> Parameter
             self.parameters = {}
 
+            self.presets: Dict[str, PresetBank] = {}
+
     class Parameter:
         def __init__(self):
             self.name = ""
@@ -58,6 +137,8 @@ class CarlaHost(QObject):
 
     def __init__(self, carla_install_path, parent=None):
         super().__init__(parent)
+
+        self.__presets = load_presets()
 
         # initialize Carla
         if carla_install_path is None:
@@ -177,6 +258,7 @@ class CarlaHost(QObject):
         instance = CarlaHost.Instance()
         instance.id = self.__next_id
         instance.uri = lv2_name
+        instance.presets = self.__presets.get(lv2_name, {})
 
         # collect parameters id
         pcount = self.__host.get_parameter_count_info(self.__next_id)
@@ -348,11 +430,42 @@ class CarlaHost(QObject):
         self.__host.send_midi_note(self.__instances[lv2_id].id, channel, note, 0)
 
     @pyqtSlot(str, result=list)
+    def presets(self, lv2_id):
+        presets = self.__instances[lv2_id].presets
+        return [
+            {"bank": bank_name, "presets": list(bank.presets.keys())}
+            for bank_name, bank in presets.items()
+        ]
+
+    @pyqtSlot(str, str, str)
+    def setPreset(self, lv2_id, bank_name, preset_name):
+        print("** set preset", lv2_id, bank_name, preset_name)
+        instance = self.__instances[lv2_id]
+        presets = instance.presets
+        bank = presets.get(bank_name)
+        if not bank:
+            return
+        preset = bank.presets.get(preset_name)
+        if not preset:
+            return
+        for parameter, value in preset.parameters.items():
+            if parameter in instance.parameters:
+                self.__host.set_parameter_value(
+                    instance.id, instance.parameters[parameter].id, value
+                )
+
+    @pyqtSlot(str, result=list)
     def programs(self, lv2_id):
         id = self.__instances[lv2_id].id
+        print("MIDI program count", self.__host.get_midi_program_count(id))
+        print("program count", self.__host.get_program_count(id))
+        for i in range(self.__host.get_program_count(id)):
+            prog = self.__host.get_program_name(id, i)
+            print("prog", prog)
         p = []
         for i in range(self.__host.get_midi_program_count(id)):
             prog = self.__host.get_midi_program_data(id, i)
+            print("midi prog", prog)
             p.append(prog)
         return p
 

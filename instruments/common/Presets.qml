@@ -11,6 +11,7 @@ Item {
 
     onLv2IdChanged: {
         initPrograms(lv2Id)
+        initPresets(lv2Id)
     }
 
     readonly property int legendSize: 0.3 * unitSize
@@ -42,7 +43,7 @@ Item {
 
         onValueChanged: {
             lv2Host.set_program(lv2Id, value);
-            updatePresetControls(value);
+            updateProgramControls(value);
         }
     }
 
@@ -63,7 +64,7 @@ Item {
         onValueChanged: {
             let id = programMap[value].programs[0].id;
             lv2Host.set_program(lv2Id, id);
-            updatePresetControls(id);
+            updateProgramControls(id);
         }
     }
 
@@ -84,7 +85,51 @@ Item {
         onValueChanged: {
             let id = programMap[bankKnob.value].programs[value].id;
             lv2Host.set_program(lv2Id, id);
-            updatePresetControls(id);
+            updateProgramControls(id);
+        }
+    }
+
+    PlacedKnobMapping {
+        id: presetBankKnob
+        mapping.knobNumber: 9
+        mapping.isInteger: true
+        mapping.min: 0
+        mapping.max: 0
+        mapping.value: 0
+
+        FramedText {
+            id: presetBankText
+            legend: "Preset bank"
+            text: ""
+            unitWidth: 3
+        }
+
+        onValueChanged: {
+            let bankId = presetBankKnob.mapping.value;
+            let presetId = presetKnob.mapping.value;
+            updatePresetControls(bankId, presetId);
+        }
+    }
+
+    PlacedKnobMapping {
+        id: presetKnob
+        mapping.knobNumber: 12
+        mapping.isInteger: true
+        mapping.min: 0
+        mapping.max: 0
+        mapping.value: 0
+
+        FramedText {
+            id: presetText
+            legend: "Preset"
+            text: ""
+            unitWidth: 4
+        }
+
+        onValueChanged: {
+            let bankId = presetBankKnob.mapping.value;
+            let presetId = presetKnob.mapping.value;
+            updatePresetControls(bankId, presetId);
         }
     }
 
@@ -112,7 +157,7 @@ Item {
     // FIXME change KnobMapping so that
     // - updating value calls setKnobValue
     // - updating min or max calls setKnobMinMax, etc. ?
-    function updatePresetControls(idx) {
+    function updateProgramControls(idx) {
         idKnob.mapping.value = idx;
         board.setKnobValue(idKnob.mapping.knobNumber, idx);
         let p = programsModel.get(idx);
@@ -143,9 +188,27 @@ Item {
         nameText.text = p.name;
     }
 
+    function updatePresetControls(bankIdx, presetIdx) {
+        presetBankKnob.mapping.value = bankIdx;
+        presetBankText.text = presetMap[bankIdx].bank;
+
+        let presets = presetMap[bankIdx].presets;
+        console.log("presets len", presets.length);
+        presetKnob.mapping.value = presetIdx;
+        presetKnob.mapping.max = presets.length - 1;
+        presetText.text = presets[presetIdx];
+        board.setKnobMinMax(presetKnob.mapping.knobNumber, 0, presets.length - 1);
+
+        lv2Host.setPreset(lv2Id, presetMap[bankIdx].bank, presets[presetIdx]);
+    }
+
     // bank id -> program id -> id
     // e.g. [{"bank": 0, "programs": [{"program": 34, "id": 0}, {"program": 45, "id": 1}]}]
     property var programMap: []
+
+    // preset bank -> presets
+    // e.g. [{"bank": "BANK 1", "presets": ["preset1", "preset2"]}]
+    property var presetMap: []
 
     // Initialize a state, reading from the living LV2 process
     function initPrograms() {
@@ -173,12 +236,24 @@ Item {
             }
 
             programMap[bankIdx].programs.push({"program": program["program"], "id": i});
+            console.log("name", program["name"]);
 
             programsModel.append({"index": i, "name": program["name"], "bank": program["bank"], "program": program["program"]});
         }
         bankKnob.mapping.max = programMap.length - 1;
         board.setKnobMinMax(bankKnob.mapping.knobNumber, 0, programMap.length - 1);
 
-        updatePresetControls(0);
+        updateProgramControls(0);
+    }
+
+    function initPresets()
+    {
+        presetMap = lv2Host.presets(lv2Id);
+        presetBankKnob.mapping.max = presetMap.length - 1;
+        console.log("********** init presets", "bank", presetMap.length);
+        board.setKnobMinMax(presetBankKnob.mapping.knobNumber, 0, presetMap.length - 1);
+        if (presetMap.length) {
+            updatePresetControls(0, 0);
+        }
     }
 }

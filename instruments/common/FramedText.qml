@@ -5,21 +5,22 @@ Rectangle {
     id: root
     property string text: ""
     property string legend: ""
-    property real size: main.unitSize
+    property int unitWidth: 1
+    property int unitHeight: 1
     property color color: "white"
 
-    width: size
-    height: size
+    width: main.unitSize * unitWidth
+    height: main.unitSize * unitHeight
 
     Rectangle {
         id: r
-        width: root.width * 0.9
-        height: root.height * 0.9
-        x: root.size * 0.05
-        y: root.size * 0.05
+        width: root.width - main.unitSize * 0.1
+        height: root.height - main.unitSize * 0.1
+        x: main.unitSize * 0.05
+        y: main.unitSize * 0.05
         border.color: "black"
         border.width: 3
-        radius: root.size / 10
+        radius: main.unitSize / 10
         color: root.color
 
         Text {
