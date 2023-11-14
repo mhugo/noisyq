@@ -439,6 +439,8 @@ class CarlaHost(QObject):
 
     @pyqtSlot(str, str, str)
     def setPreset(self, lv2_id, bank_name, preset_name):
+        import decimal
+
         print("** set preset", lv2_id, bank_name, preset_name)
         instance = self.__instances[lv2_id]
         presets = instance.presets
@@ -448,11 +450,14 @@ class CarlaHost(QObject):
         preset = bank.presets.get(preset_name)
         if not preset:
             return
-        for parameter, value in preset.parameters.items():
-            if parameter in instance.parameters:
-                self.__host.set_parameter_value(
-                    instance.id, instance.parameters[parameter].id, value
-                )
+        for _ in range(2):
+            for parameter, value in preset.parameters.items():
+                if parameter in instance.parameters:
+                    if isinstance(value, decimal.Decimal):
+                        value = float(value)
+                    self.__host.set_parameter_value(
+                        instance.id, instance.parameters[parameter].id, value
+                    )
 
     @pyqtSlot(str, result=list)
     def programs(self, lv2_id):
