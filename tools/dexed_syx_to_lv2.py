@@ -245,7 +245,7 @@ parser.add_argument(
 parser.add_argument(
     "--bank",
     help="LV2 preset bank name",
-    default="Custom",
+    required=True,
 )
 parser.add_argument(
     "--list", help="Only lists preset names found in .syx file", action="store_true"
