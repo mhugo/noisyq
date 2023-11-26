@@ -16,6 +16,8 @@ Item {
 
     property string name: "Piano"
 
+    property bool usePresets: false
+
     // Set by the host
     property int unitSize: 100
 

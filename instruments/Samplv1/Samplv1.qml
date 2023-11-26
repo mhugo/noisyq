@@ -21,6 +21,8 @@ Item {
 
     property string name: "Samplv1"
 
+    property bool usePresets: false
+
     // Set by the host
     property int unitSize: 100
 

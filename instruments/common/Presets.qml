@@ -9,9 +9,34 @@ Item {
 
     property string lv2Id: ""
 
-    onLv2IdChanged: {
-        initPrograms(lv2Id)
-        initPresets(lv2Id)
+    property bool usePresets: false
+
+    property int voice: 0
+
+    // current program or preset for each voice
+    property var selected: ({})
+
+    function update() {
+        if (!usePresets) {
+            initPrograms(lv2Id)
+            idKnob.mapping.value = root.selected[voice]["id"] || 0;
+        } else {
+            initPresets(lv2Id)
+            presetBankKnob.mapping.value = root.selected[voice]["bank"] || 0;
+            presetKnob.mapping.value = root.selected[voice]["preset"] || 0;
+        }
+    }
+
+    function savePreset() {
+        if (!(voice in root.selected)) {
+            root.selected[voice]={};
+        }
+        if (!usePresets) {
+            root.selected[voice]["id"] = ~~(idKnob.mapping.value || 0);
+        } else {
+            root.selected[voice]["bank"] = ~~(presetBankKnob.mapping.value||0);
+            root.selected[voice]["preset"] = ~~(presetBankKnob.mapping.value||0);
+        }
     }
 
     readonly property int legendSize: 0.3 * unitSize
@@ -45,6 +70,8 @@ Item {
             lv2Host.set_program(lv2Id, value);
             updateProgramControls(value);
         }
+
+        visible: !usePresets
     }
 
     PlacedKnobMapping {
@@ -66,6 +93,8 @@ Item {
             lv2Host.set_program(lv2Id, id);
             updateProgramControls(id);
         }
+
+        visible: !usePresets
     }
 
     PlacedKnobMapping {
@@ -87,50 +116,7 @@ Item {
             lv2Host.set_program(lv2Id, id);
             updateProgramControls(id);
         }
-    }
-
-    PlacedKnobMapping {
-        id: presetBankKnob
-        mapping.knobNumber: 9
-        mapping.isInteger: true
-        mapping.min: 0
-        mapping.max: 0
-        mapping.value: 0
-
-        FramedText {
-            id: presetBankText
-            legend: "Preset bank"
-            text: ""
-            unitWidth: 3
-        }
-
-        onValueChanged: {
-            let bankId = presetBankKnob.mapping.value;
-            let presetId = presetKnob.mapping.value;
-            updatePresetControls(bankId, presetId);
-        }
-    }
-
-    PlacedKnobMapping {
-        id: presetKnob
-        mapping.knobNumber: 12
-        mapping.isInteger: true
-        mapping.min: 0
-        mapping.max: 0
-        mapping.value: 0
-
-        FramedText {
-            id: presetText
-            legend: "Preset"
-            text: ""
-            unitWidth: 4
-        }
-
-        onValueChanged: {
-            let bankId = presetBankKnob.mapping.value;
-            let presetId = presetKnob.mapping.value;
-            updatePresetControls(bankId, presetId);
-        }
+        visible: !usePresets
     }
 
     Text {
@@ -152,6 +138,54 @@ Item {
                 y: (parent.height - height) / 2
             }
         }
+        visible: !usePresets
+    }
+
+    PlacedKnobMapping {
+        id: presetBankKnob
+        mapping.knobNumber: 0
+        mapping.isInteger: true
+        mapping.min: 0
+        mapping.max: 0
+        mapping.value: 0
+
+        FramedText {
+            id: presetBankText
+            legend: "Preset bank"
+            text: ""
+            unitWidth: 3
+        }
+
+        onValueChanged: {
+            let bankId = presetBankKnob.mapping.value;
+            let presetId = presetKnob.mapping.value;
+            updatePresetControls(bankId, presetId);
+        }
+
+        visible: usePresets
+    }
+
+    PlacedKnobMapping {
+        id: presetKnob
+        mapping.knobNumber: 3
+        mapping.isInteger: true
+        mapping.min: 0
+        mapping.max: 0
+        mapping.value: 0
+
+        FramedText {
+            id: presetText
+            legend: "Preset"
+            text: ""
+            unitWidth: 4
+        }
+
+        onValueChanged: {
+            let bankId = presetBankKnob.mapping.value;
+            let presetId = presetKnob.mapping.value;
+            updatePresetControls(bankId, presetId);
+        }
+        visible:usePresets
     }
 
     // FIXME change KnobMapping so that

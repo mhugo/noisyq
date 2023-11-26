@@ -5,6 +5,6 @@
     {"name": "E. Piano", "qml": "SoundFont/SoundFont.qml", "url": "/home/hme/perso/music/sfz/rhodes_73.sf2"},
     {"name": "Piano", "qml": "SoundFont/SoundFont.qml", "url": "/home/hme/perso/music/sfz/SlenderSalamander48khz24bit/SlenderSalamanderGrandPiano.sf2"},
     {"name": "Jummbox", "qml": "SoundFont/SoundFont.qml", "url": "/home/hme/perso/music/sfz/jummbox/sf.sf2"},
-    {"name": "Dexed", "qml": "Dexed/Dexed.qml", "url": "https://github.com/asb2m10/dexed"}
+    {"name": "Dexed", "qml": "Dexed/Dexed.qml", "url": "https://github.com/asb2m10/dexed", "usePresets": true}
 ]
 

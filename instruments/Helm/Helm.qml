@@ -25,6 +25,8 @@ Item {
 
     property string name: "Helm"
 
+    property bool usePresets: false
+
     property int unitSize: 100
 
     readonly property int legendSize: 0.3 * unitSize

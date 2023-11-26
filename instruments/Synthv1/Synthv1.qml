@@ -22,6 +22,8 @@ Item {
 
     property string name: "Synthv1"
 
+    property bool usePresets: false
+
     // Set by the host
     property int unitSize: 100
 

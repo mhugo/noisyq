@@ -45,7 +45,8 @@ Item {
                     instrumentComponents.push({
                         "name": instruments[i]["name"],
                         "lv2Url": instruments[i]["url"],
-                        "component": comp
+                        "component": comp,
+                        "usePresets": instruments[i]["usePresets"] || false
                     });
                 }
                 else if (comp.status == Component.Error) {
@@ -211,6 +212,7 @@ Item {
             let lv2Id = lv2Host.addInstance(instrumentComponents[instrumentIndex].lv2Url);
             obj.lv2Id = lv2Id;
             obj.name = instrumentComponents[instrumentIndex].name;
+            obj.usePresets = instrumentComponents[instrumentIndex].usePresets;
             obj.unitSize = main.unitSize;
             obj.init();
             console.log("lv2id", obj.lv2Id);
@@ -541,11 +543,28 @@ Item {
                 Common.Presets {
                     id: presetsControl
                     visible: ~~subModeKnob.value == 1
+
+                    Connections {
+                        target: voiceKnob
+                        onValueChanged: {
+                            presetsControl.updatePresets();
+                        }
+                    }
+
                     onVisibleChanged: {
-                        if (visible) {
-                            let instr = instrumentStack.instrumentAt(~~voiceKnob.value);
+                        presetsControl.updatePresets();
+                    }
+
+                    function updatePresets() {
+                        if (presetsControl.visible) {
+                            presetsControl.savePreset();
+                            let voice = ~~voiceKnob.value;
+                            let instr = instrumentStack.instrumentAt(voice);
                             if (instr) {
+                                presetsControl.usePresets = instr.instrument.usePresets;
+                                presetsControl.voice = voice;
                                 presetsControl.lv2Id = instr.instrument.lv2Id;
+                                presetsControl.update();
                             }
                         }
                     }

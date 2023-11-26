@@ -14,6 +14,8 @@ Item {
     // Set by the host when the instance is created
     property string lv2Id: ""
 
+    property bool usePresets: false
+
     signal quit()
 
     property string name: "Dexed"
@@ -60,7 +62,7 @@ Item {
 
     // Initialize a state, reading from the living LV2 process
     function init() {
-        console.log("synthv1 init");
+        console.log("Dexed init");
 
         let children = Utils.findChildren(root);
         for (var i = 0; i < children.length; i++) {
