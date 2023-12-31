@@ -21,6 +21,8 @@ The probable real reason of why this project exists is to convince myself that I
 
 The project has been designed with the only MIDI controller I own: a [MiniLab mk II](https://www.arturia.com/products/hybrid-synths/minilab-mkii/overview).
 
+![MiniLab mk II](screenshots/mk2_black.jpg)
+
 I initially thought the project could be made generic enough so that it could be adapted to different MIDI controllers. After all, one can assume most of them share some piano keys, and something like 8 knobs and 8 pads. But designing for genericity is too premature.
 
 It is also currently written on a PC running GNU/Linux, but could possibly be adapted to other platforms.
@@ -49,7 +51,14 @@ Unless stated differently, terms of the [General Public License v3](https://www.
 
 ## Screenshots
 
-TODO
+![Samplv1 mapping](screenshots/samplv1.jpg)
+
+![Synthv1 mapping](screenshots/synthv1.jpg)
+
+![Sequencer](screenshots/sequencer.jpg)
+
+![Mixer](screenshots/mixer.jpg)
+
 
 
 
