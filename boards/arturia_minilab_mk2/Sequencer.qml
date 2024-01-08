@@ -10,7 +10,6 @@ import "../../instruments/common" as Common
 // Step sequencer
 // 16 steps are visible
 // within 2 rows of 8 steps
-
 Item {
     id: sequencerDisplay
 
@@ -49,7 +48,7 @@ Item {
         velocityKnob.value = state.velocity;
         for (var i = 0; i < state.steps.length; i++) {
             var e = state.steps[i];
-            gSequencer.add_event(e.channel, e.time_amount, e.time_unit, e.event);
+            gSequencer.add_event(e.channel, e.time, e.event);
         }
     }
 
@@ -437,7 +436,8 @@ Item {
         onValueChanged: {
             amount = [1, 1, 1, 2, 3, 4][~~value];
             unit =   [4, 2, 1, 1, 1, 1][~~value];
-            pianoRoll.set_cursor_width(amount, unit);
+            //pianoRoll.set_cursor_width(amount, unit);
+            pianoRoll.set_cursor_width(amount * 256 / unit);
         }
 
         Connections {
@@ -492,12 +492,10 @@ Item {
 
             onPadReleased: {
                 let note = pianoRoll.note_offset + pianoRoll.cursor_y;
-                let start_amount = pianoRoll.cursor_start_amount()
-                let start_unit = pianoRoll.cursor_start_unit()
-                let stop_amount = pianoRoll.cursor_end_amount()
-                let stop_unit = pianoRoll.cursor_end_unit()
+                let start = pianoRoll.cursor_start()
+                let stop = pianoRoll.cursor_end()
 
-                let events = gSequencer.list_events(start_amount, start_unit, stop_amount, stop_unit);
+                let events = gSequencer.list_events(start, stop);
                 for (var i=0; i < events.length; i++) {
                     let event = events[i];
                     if (event.channel == voiceKnob.value && event.event.event_type == "note_event" && event.event.note == note)
@@ -517,11 +515,9 @@ Item {
             onPadReleased: {
                 let currentVoice = ~~voiceKnob.value;
                 gSequencer.remove_events_in_range(
-                        currentVoice,
-                        pianoRoll.cursor_start_amount(),
-                        pianoRoll.cursor_start_unit(),
-                        pianoRoll.cursor_end_amount(),
-                        pianoRoll.cursor_end_unit());
+                    currentVoice,
+                    pianoRoll.cursor_start(),
+                    pianoRoll.cursor_end());
                 pianoRoll.update();
             }
         }
@@ -605,17 +601,14 @@ Item {
                 if ((~~modeKnob.value == 2) && recAnimation.running) { // step record
                     let ts = Date.now();
                     notes.push(note);
-                    noteStarts.push({"amount": pianoRoll.cursor_start_amount(),
-                                     "unit": pianoRoll.cursor_start_unit()});
+                    noteStarts.push({"time": pianoRoll.cursor_start()});
                     if ((previousNoteOnTs != 0) && (ts - previousNoteOnTs > chordTimeout))
                         pianoRoll.increment_cursor_x();
                     let currentVoice = ~~voiceKnob.value;
                     gSequencer.remove_events_in_range(
                         currentVoice,
-                        pianoRoll.cursor_start_amount(),
-                        pianoRoll.cursor_start_unit(),
-                        pianoRoll.cursor_end_amount(),
-                        pianoRoll.cursor_end_unit());
+                        pianoRoll.cursor_start(),
+                        pianoRoll.cursor_end());
                     previousNoteOnTs = ts;
                     previousNoteOffTs = 0;
                 }
@@ -628,8 +621,8 @@ Item {
                     // First note : play/pause
                     gSequencer.toggle_play_pause(
                         bpmKnob.value,
-                        0, 1,
-                        ~~gSequencer.n_steps, 1
+                        0,
+                        ~~gSequencer.n_steps * 256
                     );
                 }
                 else if (note % 12 == 2) {
@@ -657,12 +650,9 @@ Item {
                     if ((previousNoteOffTs != 0) && (ts - previousNoteOffTs > chordTimeout))
                         pianoRoll.increment_cursor_x();
 
-                    let start_amount = noteStarts[idx].amount;
-                    let start_unit = noteStarts[idx].unit;
-                    let end_amount = pianoRoll.cursor_end_amount();
-                    let end_unit = pianoRoll.cursor_end_unit();
-                    let duration_amount = end_amount * start_unit - start_amount * end_unit;
-                    let duration_unit = start_unit * end_unit;
+                    let start = noteStarts[idx].time;
+                    let end = pianoRoll.cursor_end();
+                    let duration = end - start;
                     let velocity = velocityKnob.value;
                     notes.splice(idx, 1);
                     noteStarts.splice(idx, 1);
@@ -670,14 +660,12 @@ Item {
                     previousNoteOnTs = 0;
 
                     gSequencer.add_event(currentVoice,
-                                         start_amount,
-                                         start_unit,
+                                         start,
                                          {
                                              "event_type": "note_event",
                                              "note": note,
                                              "velocity": velocity,
-                                             "duration_amount": duration_amount,
-                                             "duration_unit": duration_unit
+                                             "duration": duration,
                                          });
                     if ((pianoRoll.note_offset <= note - 12) || (pianoRoll.note_offset >= note)) {
                         pianoRoll.note_offset = note

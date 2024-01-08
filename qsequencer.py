@@ -14,7 +14,11 @@ from PyQt5.QtCore import (
 from PyQt5.QtWidgets import QApplication
 from PyQt5.QtQml import QJSValue, QJSEngine
 from sortedcontainers import SortedList  # type: ignore
-from time_unit import TimeUnit, TimeSubUnit
+
+TimeUnit = int
+
+# smallest time: 1/256
+TIME_UNIT = 256
 
 
 class ScheduledEvent:
@@ -77,7 +81,7 @@ class Event:
             return NoteEvent(
                 d["note"],
                 d["velocity"],
-                TimeUnit(d["duration_amount"], d["duration_unit"]),
+                TimeUnit(d["duration"]),
             )
         return Event()
 
@@ -109,8 +113,7 @@ class NoteEvent(Event):
             "event_type": "note_event",
             "note": self.note,
             "velocity": self.velocity,
-            "duration_amount": self.duration.amount(),
-            "duration_unit": self.duration.unit(),
+            "duration": self.duration,
         }
 
 
@@ -325,41 +328,36 @@ class QSequencer(QObject):
     def _add_event(self, channel: int, start_time: TimeUnit, event: Event) -> None:
         self.__events.add_event(ChannelEvent(channel, event), start_time)
 
-    @pyqtSlot(int, int, int, QVariant)
+    @pyqtSlot(int, int, QVariant)
     def add_event(
         self,
         channel: int,
-        start_time_amount,
-        start_time_unit: TimeSubUnit,
+        start_time: int,
         event_dict: QJSValue,
     ) -> None:
         event = Event.from_dict(event_dict.toVariant())
-        self._add_event(channel, TimeUnit(start_time_amount, start_time_unit), event)
+        self._add_event(channel, TimeUnit(start_time), event)
 
     def _remove_event(self, channel: int, start_time: TimeUnit, event: Event) -> None:
         self.__events.remove_event(ChannelEvent(channel, event), start_time)
 
-    @pyqtSlot(int, int, int, QVariant)
-    def remove_event(
-        self, channel: int, start_time_amount, start_time_unit: TimeSubUnit, event_dict
-    ) -> None:
+    @pyqtSlot(int, int, QVariant)
+    def remove_event(self, channel: int, start_time: int, event_dict) -> None:
         print("event_dict", event_dict.toVariant())
         event = Event.from_dict(event_dict.toVariant())
-        self._remove_event(channel, TimeUnit(start_time_amount, start_time_unit), event)
+        self._remove_event(channel, TimeUnit(start_time), event)
 
-    @pyqtSlot(int, int, int, int, int)
+    @pyqtSlot(int, int, int)
     def remove_events_in_range(
         self,
         channel: int,
-        start_time_amount: int,
-        start_time_unit: int,
-        end_time_amount: int,
-        end_time_unit: int,
+        start_time: int,
+        end_time: int,
     ):
         to_remove = []
-        start_time = TimeUnit(start_time_amount, start_time_unit)
+        start_time = TimeUnit(start_time)
         for event_channel, event_time, event in self.iterate_events(
-            start_time, TimeUnit(end_time_amount, end_time_unit)
+            start_time, TimeUnit(end_time)
         ):
             if event_channel == channel:
                 to_remove.append((channel, event_time, event))
@@ -392,7 +390,9 @@ class QSequencer(QObject):
         stop_time: Optional[TimeUnit] = None,
     ) -> Iterator[Tuple[int, TimeUnit, Event]]:
         # iterate events, by advancing time
-        max_time = TimeUnit(self.__n_steps * self.steps_per_bar, self.__step_unit)
+        max_time = TimeUnit(
+            self.__n_steps * self.steps_per_bar * TIME_UNIT / self.__step_unit
+        )
         if stop_time is None or stop_time > max_time:
             stop_time = max_time
         for event_time, ch_event in self.__events.irange(
@@ -424,50 +424,37 @@ class QSequencer(QObject):
             for channel in range(16):
                 yield stop_time, (channel, StopEvent(stop_time))
 
-    @pyqtSlot(int, int, int, int, result=list)
+    @pyqtSlot(int, int, result=list)
     @pyqtSlot(result=list)
     def list_events(
         self,
         start_time: Optional[int] = None,
-        start_time_unit: Optional[TimeSubUnit] = None,
         stop_time: Optional[int] = None,
-        stop_time_unit: Optional[TimeSubUnit] = None,
     ):
-        start = (
-            TimeUnit(start_time, start_time_unit)
-            if start_time is not None and start_time_unit is not None
-            else None
-        )
-        stop = (
-            TimeUnit(stop_time, stop_time_unit)
-            if stop_time is not None and stop_time_unit is not None
-            else None
-        )
+        start = TimeUnit(start_time) if start_time is not None else None
+        stop = TimeUnit(stop_time) if stop_time is not None else None
         return [
             {
                 "channel": channel,
-                "time_amount": event_time.amount(),
-                "time_unit": event_time.unit(),
+                "time": event_time,
                 "event": event.to_dict(),
             }
             for channel, event_time, event in self.iterate_events(start, stop)
         ]
 
-    @pyqtSlot(int, int, int, result=QVariant)
-    def get_event(self, channel: int, time_amount: int, time_unit: TimeSubUnit):
+    @pyqtSlot(int, int, result=QVariant)
+    def get_event(self, channel: int, time: int):
         # FIXME get_events ??
-        for e_channel, event_time, event in self.iterate_events(
-            TimeUnit(time_amount, time_unit)
-        ):
-            if channel == e_channel and event_time == TimeUnit(time_amount, time_unit):
+        for e_channel, event_time, event in self.iterate_events(TimeUnit(time)):
+            if channel == e_channel and event_time == TimeUnit(time):
                 return event.to_dict()
 
         return None
 
-    @pyqtSlot(int, int, int, QVariant)
-    def set_event(self, channel: int, time_amount: int, time_unit: TimeSubUnit, event):
+    @pyqtSlot(int, int, QVariant)
+    def set_event(self, channel: int, time: int, event):
         # FIXME set_events ??
-        for evt in self.__events.get(TimeUnit(time_amount, time_unit), []):
+        for evt in self.__events.get(TimeUnit(time_amount), []):
             if evt.channel == channel:
                 evt.event = Event.from_dict(event.toVariant())
                 break
@@ -508,12 +495,7 @@ class QSequencer(QObject):
                 e_ms = self.__chrono.elapsed()
             event_time, self.__current_events = self.__scheduled_events.pop(0)
             next_ms = int(
-                event_time.amount()
-                * 60
-                * 1000
-                / event_time.unit()
-                / self.__bpm
-                / self.__step_unit
+                event_time * 60 * 1000 / TIME_UNIT / self.__bpm  # / self.__step_unit
             )
             d = next_ms - e_ms
             # do not schedule in the past
@@ -528,21 +510,19 @@ class QSequencer(QObject):
     def play(
         self,
         bpm: int,
-        start_time_amount: int,
-        start_time_unit: TimeSubUnit,
-        stop_time_amount: int,
-        stop_time_unit: TimeSubUnit,
+        start_time: int,
+        stop_time: int,
     ):
         # print("***PLAY")
         assert self.__state == State.STOPPED
         self.__bpm = bpm
-        self.__step_chrono.setInterval(int(60.0 / bpm * 1000 / self.__step_unit))
+        self.__step_chrono.setInterval(int(60.0 / bpm * 1000))
 
         # Play
         self.__scheduled_events = list(
             self.iterate_scheduled_events(
-                TimeUnit(start_time_amount, start_time_unit),
-                TimeUnit(stop_time_amount, stop_time_unit),
+                TimeUnit(start_time),
+                TimeUnit(stop_time),
                 add_stop_event=True,
             )
         )
@@ -590,17 +570,13 @@ class QSequencer(QObject):
             channel, note = self.__sustained_notes.pop()
             self.noteOff.emit(channel, note)
 
-    @pyqtSlot(int, int, int, int, int)
-    def toggle_play_pause(
-        self, bpm, start_time_amount, start_time_unit, stop_time_amount, stop_time_unit
-    ):
+    @pyqtSlot(int, int, int)
+    def toggle_play_pause(self, bpm, start_time, stop_time):
         if self.__state == State.STOPPED:
             self.play(
                 bpm,
-                start_time_amount,
-                start_time_unit,
-                stop_time_amount,
-                stop_time_unit,
+                start_time,
+                stop_time,
             )
         elif self.__state == State.PLAYING:
             self.pause()
@@ -634,8 +610,7 @@ if __name__ == "__main__":
                 "event_type": "note_event",
                 "note": 60,
                 "velocity": 120,
-                "duration_amount": 1,
-                "duration_unit": 1,
+                "duration": 256,
             },
         ),
     )

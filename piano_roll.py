@@ -6,8 +6,10 @@ from PyQt5.QtQuick import QQuickPaintedItem
 
 from typing import Dict, Optional, Set
 
-from time_unit import TimeUnit
 from qsequencer import QSequencer
+
+TimeUnit = int
+TIME_UNIT = 256
 
 
 def midi_note_name(note: int) -> str:
@@ -98,7 +100,7 @@ class PianoRoll(QQuickPaintedItem):
 
     @offset.setter
     def offset(self, off: int):
-        self._offset = TimeUnit(off, 1)
+        self._offset = TimeUnit(off * TIME_UNIT)
         self.update()
 
     @pyqtProperty(int)
@@ -115,12 +117,8 @@ class PianoRoll(QQuickPaintedItem):
         return self._cursor_x
 
     @pyqtProperty(int)
-    def cursor_x_amount(self):
-        return self._cursor_x.amount()
-
-    @pyqtProperty(int)
-    def cursor_x_unit(self):
-        return self._cursor_x.unit()
+    def cursor_x(self):
+        return self._cursor_x
 
     @cursor_x.setter
     def cursor_x(self, x: int):
@@ -141,21 +139,24 @@ class PianoRoll(QQuickPaintedItem):
         if (
             self._cursor_x
             < min(
-                self._sequencer.n_steps - int(self._offset),
-                self._steps_per_screen,
+                self._sequencer.n_steps * TIME_UNIT - self._offset,
+                self._steps_per_screen * TIME_UNIT,
             )
             - self._cursor_width
         ):
             self._cursor_x = self._cursor_x + self._cursor_width
-        elif self._cursor_x + int(self._offset) + 1 < self._sequencer.n_steps:
-            self._offset += 1
+        elif (
+            self._cursor_x + self._offset + TIME_UNIT
+            < self._sequencer.n_steps * TIME_UNIT
+        ):
+            self._offset += TIME_UNIT
         self.update()
 
     @pyqtSlot()
     def decrement_cursor_x(self):
         if self._cursor_x == 0:
             if self._offset > 0:
-                self._offset -= 1
+                self._offset -= TIME_UNIT
         else:
             self._cursor_x -= self._cursor_width
         self.update()
@@ -179,16 +180,12 @@ class PianoRoll(QQuickPaintedItem):
         self.update()
 
     @pyqtProperty(int)
-    def cursor_width_amount(self):
-        return self._cursor_width.amount()
+    def cursor_width(self):
+        return self._cursor_width
 
-    @pyqtProperty(int)
-    def cursor_width_unit(self):
-        return self._cursor_width.unit()
-
-    @pyqtSlot(int, int)
-    def set_cursor_width(self, amount, unit):
-        self._cursor_width = TimeUnit(amount, unit)
+    @pyqtSlot(int)
+    def set_cursor_width(self, amount):
+        self._cursor_width = TimeUnit(amount)
         self.update()
 
     @cursor_y.setter
@@ -197,35 +194,20 @@ class PianoRoll(QQuickPaintedItem):
         self.update()
 
     @pyqtSlot(result=int)
-    def cursor_start_amount(self) -> int:
-        return int(self._offset) * self._cursor_x.unit() + self._cursor_x.amount()
+    def cursor_start(self) -> int:
+        return self._offset + self._cursor_x
 
     @pyqtSlot(result=int)
-    def cursor_start_unit(self) -> int:
-        return self._cursor_x.unit()
-
-    @pyqtSlot(result=int)
-    def cursor_end_amount(self) -> int:
-        return (
-            self._cursor_width.amount() * self.cursor_start_unit()
-            + self.cursor_start_amount() * self._cursor_width.unit()
-        )
-
-    @pyqtSlot(result=int)
-    def cursor_end_unit(self) -> int:
-        return self.cursor_start_unit() * self._cursor_width.unit()
+    def cursor_end(self) -> int:
+        return self.cursor_start() + self._cursor_width
 
     # TODO
     def notesPerScreen(self) -> int:
         pass
 
-    @pyqtSlot(int, int, int, int)
-    def toggleNoteSelection(
-        self, voice: int, time_amount: int, time_unit: int, note: int
-    ):
-        self._selected_notes.toggle_selection(
-            voice, TimeUnit(time_amount, time_unit), note
-        )
+    @pyqtSlot(int, int, int)
+    def toggleNoteSelection(self, voice: int, time_amount: int, note: int):
+        self._selected_notes.toggle_selection(voice, TimeUnit(time_amount), note)
 
     @pyqtSlot(int)
     def noteOn(self, note: int):
@@ -260,7 +242,8 @@ class PianoRoll(QQuickPaintedItem):
         # max displayed steps = either the number of steps per screen
         # or a bit less, if we've reached the total number of steps
         n_displayed_steps = min(
-            self._sequencer.n_steps - int(self._offset), self._steps_per_screen
+            self._sequencer.n_steps - int(self._offset / TIME_UNIT),
+            self._steps_per_screen,
         )
         max_width = int(n_displayed_steps * notes_width / self._steps_per_screen)
 
@@ -294,7 +277,7 @@ class PianoRoll(QQuickPaintedItem):
 
         # lit step, if any
         if self._lit_step is not None:
-            step = int(self._lit_step - self._offset)
+            step = int(self._lit_step - self._offset / TIME_UNIT)
             if step >= 0 and step < self._steps_per_screen:
                 play_brush = QBrush(QColor("#80fafabb"))
                 painter.setBrush(play_brush)
@@ -304,10 +287,10 @@ class PianoRoll(QQuickPaintedItem):
                 painter.drawRect(x, 0, w, int(self.height() - 1))
 
         # draw cursor
-        x = self._cursor_x * notes_width / self._steps_per_screen + notes_x
-        w = self._cursor_width * notes_width / self._steps_per_screen
+        x = self._cursor_x * notes_width / TIME_UNIT / self._steps_per_screen + notes_x
+        w = self._cursor_width * notes_width / TIME_UNIT / self._steps_per_screen
 
-        if self._cursor_x >= 0 and self._cursor_x < self._steps_per_screen:
+        if self._cursor_x >= 0 and self._cursor_x < self._steps_per_screen * TIME_UNIT:
             cursor_brush = QBrush(QColor("#808cfaa4"))
             painter.setBrush(cursor_brush)
             painter.setPen(no_pen)
@@ -330,7 +313,7 @@ class PianoRoll(QQuickPaintedItem):
         # vertical lines
         for i in range(n_displayed_steps + 1):
             x = int(i * notes_width / self._steps_per_screen) + notes_x
-            if int(i + self._offset) % self._sequencer.steps_per_bar == 0:
+            if int((i + self._offset) / TIME_UNIT) % self._sequencer.steps_per_bar == 0:
                 painter.setPen(thick_pen)
             else:
                 painter.setPen(normal_pen)
@@ -341,10 +324,8 @@ class PianoRoll(QQuickPaintedItem):
         light_selected = QBrush(QColor("#9e9623"))  # HSV 56°, 78%, 62%
         dark_selected = QBrush(QColor("#ebde34"))  # HSV 56°, 78%, 92%
         painter.setPen(no_pen)
-        stop = self._offset + self._steps_per_screen
-        for event in self._sequencer.list_events(
-            self._offset.amount(), self._offset.unit(), stop.amount(), stop.unit()
-        ):
+        stop = self._offset + self._steps_per_screen * TIME_UNIT
+        for event in self._sequencer.list_events(self._offset, stop):
             if event["channel"] != self._channel:
                 continue
             note = event["event"]["note"]
@@ -353,15 +334,12 @@ class PianoRoll(QQuickPaintedItem):
             if note - self._note_offset >= self._notes_per_screen:
                 continue
             velocity = event["event"]["velocity"]
-            note_time = TimeUnit(event["time_amount"], event["time_unit"])
-            note_duration = TimeUnit(
-                event["event"]["duration_amount"], event["event"]["duration_unit"]
-            )
+            note_time = TimeUnit(event["time"])
+            note_duration = TimeUnit(event["event"]["duration"])
             x = (
-                float(note_time - self._offset) / self._steps_per_screen * notes_width
-                + notes_x
-            )
-            w = float(note_duration) / self._steps_per_screen * notes_width
+                (note_time - self._offset) / TIME_UNIT
+            ) / self._steps_per_screen * notes_width + notes_x
+            w = float(note_duration / TIME_UNIT) / self._steps_per_screen * notes_width
             y = (
                 (self._notes_per_screen - (note - self._note_offset) - 1)
                 / self._notes_per_screen
