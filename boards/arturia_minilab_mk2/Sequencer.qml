@@ -491,6 +491,33 @@ Item {
         visible: board.isShiftPressed;
     }
 
+    Common.PlacedNoValueKnob {
+        id: loopKnob
+        knobNumber: 6
+
+        property bool looped: true
+
+        Common.FramedText {
+            Image {
+                id: loopImage
+                source: "loop.png"
+                width: unitSize / 2
+                height: unitSize / 2
+                x: (unitSize - width) / 2
+                y: (unitSize - height) / 2
+            }
+        }
+
+        function onIncrement() {
+            loopImage.source = "loop.png";
+            looped = true;
+        }
+        function onDecrement() {
+            loopImage.source = "no_loop.png";
+            looped = false;
+        }
+    }
+
     Item {
         Common.PlacedPadText {
             // Pads for select mode
@@ -631,7 +658,8 @@ Item {
                     gSequencer.toggle_play_pause(
                         bpmKnob.value,
                         0,
-                        ~~gSequencer.n_steps
+                        ~~gSequencer.n_steps,
+                        loopKnob.looped
                     );
                 }
                 else if (note % 12 == 2) {

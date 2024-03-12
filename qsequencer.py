@@ -320,6 +320,8 @@ class QSequencer(QObject):
         # Number of beats per minute for the quarter note
         self.__bpm = 120
 
+        self.__looped = None
+
         self.__state = State.STOPPED
 
         # Notes that are being played, so that stop can stop them all
@@ -382,16 +384,6 @@ class QSequencer(QObject):
     @pyqtProperty(int)
     def bpm(self) -> int:
         return self.__bpm
-
-    """
-    @pyqtProperty(int)
-    def step_unit(self) -> int:
-        return self.__step_unit
-
-    @step_unit.setter
-    def step_unit(self, step_unit: int) -> None:
-        self.__step_unit = step_unit
-    """
 
     @pyqtSlot(int, int)
     def setTimeSignature(self, number_of_notes, unit):
@@ -528,16 +520,12 @@ class QSequencer(QObject):
             self.__chrono.stop()
             self.__step_chrono.stop()
 
-    def play(
-        self,
-        bpm: int,
-        start_time: int,
-        stop_time: int,
-    ):
+    def play(self, bpm: int, start_time: int, stop_time: int, is_looped: bool):
         # print("***PLAY", start_time, stop_time)
         assert self.__state == State.STOPPED
         self.__bpm = bpm
         self.__step_chrono.setInterval(int(60.0 / bpm * 1000))
+        self.__looped = (bpm, start_time, stop_time)
 
         # Play
         self.__scheduled_events = list(
@@ -586,19 +574,21 @@ class QSequencer(QObject):
         self.__step_chrono.stop()
         self.__step_number = 0
         self.__state_change(State.STOPPED)
+        if self.__looped:
+            bpm, start_time, stop_time = self.__looped
+            # recurse on play, but without actual recursion
+            QTimer.singleShot(0, lambda: self.play(bpm, start_time, stop_time, True))
+            return
+
         # Send note off to notes currently playing !
         while len(self.__sustained_notes):
             channel, note = self.__sustained_notes.pop()
             self.noteOff.emit(channel, note)
 
-    @pyqtSlot(int, int, int)
-    def toggle_play_pause(self, bpm, start_time, stop_time):
+    @pyqtSlot(int, int, int, bool)
+    def toggle_play_pause(self, bpm, start_time, stop_time, is_looped):
         if self.__state == State.STOPPED:
-            self.play(
-                bpm,
-                start_time,
-                stop_time,
-            )
+            self.play(bpm, start_time, stop_time, is_looped)
         elif self.__state == State.PLAYING:
             self.pause()
         elif self.__state == State.PAUSED:
