@@ -285,6 +285,9 @@ class QSequencer(QObject):
     noteOn = pyqtSignal(int, int, int, arguments=["channel", "note", "velocity"])
     noteOff = pyqtSignal(int, int, arguments=["channel", "note"])
     step = pyqtSignal(int, arguments=["step"])
+    time_signature_set = pyqtSignal(
+        int, int, arguments=["number_of_notes", "note_unit"]
+    )
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -300,14 +303,15 @@ class QSequencer(QObject):
         self.__step_chrono = ChronoMeter()
         self.__step_chrono.setSingleShot(False)
         # Time signature
-        self.steps_per_bar = 4
-        self.__step_unit = 4  # quarter note (noire)
+        # self.steps_per_bar = 4
+        # self.__step_unit = 4  # quarter note (noire)
+        self.__time_signature = (4, 4)
         # Current step
         self.__step_number = 0
         self.__step_chrono.timeout.connect(self._on_step_timeout)
 
-        # Length, in steps of the sequence
-        self.__n_steps = 8
+        # Length, in bars
+        self.__n_bars = 2
 
         # Time after pause and before the next note
         self.__remaining_time_after_pause = 0
@@ -343,7 +347,6 @@ class QSequencer(QObject):
 
     @pyqtSlot(int, int, QVariant)
     def remove_event(self, channel: int, start_time: int, event_dict) -> None:
-        print("event_dict", event_dict.toVariant())
         event = Event.from_dict(event_dict.toVariant())
         self._remove_event(channel, TimeUnit(start_time), event)
 
@@ -365,17 +368,22 @@ class QSequencer(QObject):
             self._remove_event(channel, start_time, event)
 
     @pyqtProperty(int)
-    def n_steps(self) -> int:
-        return self.__n_steps
+    def n_bars(self) -> int:
+        return self.__n_bars
 
-    @n_steps.setter
-    def n_steps(self, n_steps: int) -> None:
-        self.__n_steps = n_steps
+    @pyqtProperty(int)
+    def n_steps(self) -> int:
+        return self.__n_bars * self.__time_signature[0] * 256 / self.__time_signature[1]
+
+    @n_bars.setter
+    def n_bars(self, n_bars: int) -> None:
+        self.__n_bars = n_bars
 
     @pyqtProperty(int)
     def bpm(self) -> int:
         return self.__bpm
 
+    """
     @pyqtProperty(int)
     def step_unit(self) -> int:
         return self.__step_unit
@@ -383,6 +391,15 @@ class QSequencer(QObject):
     @step_unit.setter
     def step_unit(self, step_unit: int) -> None:
         self.__step_unit = step_unit
+    """
+
+    @pyqtSlot(int, int)
+    def setTimeSignature(self, number_of_notes, unit):
+        self.__time_signature = (number_of_notes, unit)
+        self.time_signature_set.emit(number_of_notes, unit)
+
+    def time_signature(self) -> Tuple[int]:
+        return self.__time_signature
 
     def iterate_events(
         self,
@@ -390,8 +407,14 @@ class QSequencer(QObject):
         stop_time: Optional[TimeUnit] = None,
     ) -> Iterator[Tuple[int, TimeUnit, Event]]:
         # iterate events, by advancing time
+        # max_time = TimeUnit(
+        #    self.__n_steps * self.steps_per_bar * TIME_UNIT / self.__step_unit
+        # )
         max_time = TimeUnit(
-            self.__n_steps * self.steps_per_bar * TIME_UNIT / self.__step_unit
+            self.__n_bars
+            * self.__time_signature[0]
+            * TIME_UNIT
+            / self.__time_signature[1]
         )
         if stop_time is None or stop_time > max_time:
             stop_time = max_time
@@ -494,9 +517,7 @@ class QSequencer(QObject):
             else:
                 e_ms = self.__chrono.elapsed()
             event_time, self.__current_events = self.__scheduled_events.pop(0)
-            next_ms = int(
-                event_time * 60 * 1000 / TIME_UNIT / self.__bpm  # / self.__step_unit
-            )
+            next_ms = int(event_time * 60 * 1000 / TIME_UNIT / self.__bpm * 4)
             d = next_ms - e_ms
             # do not schedule in the past
             d = d if d >= 0 else 0
@@ -513,7 +534,7 @@ class QSequencer(QObject):
         start_time: int,
         stop_time: int,
     ):
-        # print("***PLAY")
+        # print("***PLAY", start_time, stop_time)
         assert self.__state == State.STOPPED
         self.__bpm = bpm
         self.__step_chrono.setInterval(int(60.0 / bpm * 1000))

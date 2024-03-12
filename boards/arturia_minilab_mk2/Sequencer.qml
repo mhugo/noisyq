@@ -22,13 +22,12 @@ Item {
     function saveState() {
         return {
             "n_beats": ~~gSequencer.n_steps,
-            "beats_per_screen": ~~stepsPerScreenKnob.value,
             //"offset": timeOffsetKnob.value,
             "note_offset": ~~pianoRoll.note_offset,
             "bpm": ~~bpmKnob.value,
-            "step_unit": ~~stepUnitKnob.value,
-            "steps_per_screen": ~~stepsPerScreenKnob.value,
-            "n_steps": ~~nStepsKnob.value,
+            "time_signature": ~~timeSignatureKnob.value,
+            "bars_per_screen": ~~barsPerScreenKnob.value,
+            "n_bars": ~~nBarsKnob.value,
             "cursor_width": ~~cursorWidth.value,
             "velocity": ~~velocityKnob.value,
             "steps": gSequencer.list_events()
@@ -37,13 +36,12 @@ Item {
 
     function loadState(state) {
         //n_stepsKnob.value = state.n_beats;
-        stepsPerScreenKnob.value = state.beats_per_screen;
 //        timeOffsetKnob.value = state.offset;
         pianoRoll.note_offset = state.note_offset;
         bpmKnob.value = state.bpm;
-        stepUnitKnob.value = state.step_unit;
-        stepsPerScreenKnob.value = state.steps_per_screen;
-        nStepsKnob.value = state.n_steps;
+        timeSignatureKnob.value = state.time_signature;
+        barsPerScreenKnob.value = state.bars_per_screen;
+        nBarsKnob.value = state.n_bars;
         cursorWidth.value = state.cursor_width;
         velocityKnob.value = state.velocity;
         for (var i = 0; i < state.steps.length; i++) {
@@ -266,7 +264,7 @@ Item {
         sequencer: gSequencer
         channel: ~~voiceKnob.value
 
-        stepsPerScreen: 8
+        barsPerScreen: 2
     }
 
     // Common pads for all modes
@@ -345,75 +343,86 @@ Item {
     }
 
     Common.PlacedKnobMapping {
-        id: stepUnitKnob
+        id: timeSignatureKnob
         mapping.knobNumber: 10
         mapping.isInteger: true
 
-        readonly property var noteText: [
-            "𝅗",
-            "𝅗𝅥",
-            "𝅘𝅥",
-            "𝅘𝅥𝅮",
-            "𝅘𝅥𝅯",
-            "𝅘𝅥𝅰"
-        ]
-        readonly property var stepUnit: [
-            1,
+        /*
+        readonly property var numberOfNotes: [
             2,
+            3,
             4,
+            2,
+            6,
+            9,
+            12
+        ]
+        readonly property var unit: [
+            4,
+            4,
+            4,
+            2,
             8,
-            16,
-            32
+            8,
+            8
+        ]*/
+        readonly property var numberOfNotes: [
+            4,
+            4
+        ]
+        readonly property var unit: [
+            4,
+            8
         ]
         mapping.min: 0
-        mapping.max: 5
-        mapping.value: 2
+        mapping.max: 1
+        mapping.value: 0
         Common.FramedText {
-            legend: "Step unit"
+            legend: "Time sig."
             Text {
-                text: stepUnitKnob.noteText[~~stepUnitKnob.value]
-                font.pixelSize: parent.height / 3
-                font.family: musicFont.name
+                text: timeSignatureKnob.numberOfNotes[~~timeSignatureKnob.value] + "/" + timeSignatureKnob.unit[~~timeSignatureKnob.value]
                 x: (parent.width - width) / 2
                 y: (parent.height - height) / 3
             }
         }
         onValueChanged: {
-            gSequencer.step_unit = stepUnitKnob.stepUnit[value];
+            gSequencer.setTimeSignature(timeSignatureKnob.numberOfNotes[~~value], timeSignatureKnob.unit[~~value]);
         }
         visible: board.isShiftPressed;
     }
 
     Common.PlacedKnobMapping {
-        id: stepsPerScreenKnob
+        id: barsPerScreenKnob
         mapping.knobNumber: 2
         mapping.isInteger: true
         mapping.min: 1
         mapping.max: 64
-        mapping.value: 4
+        mapping.value: 2
         Common.FramedText {
-            legend: "Steps / screen"
+            legend: "Bars / screen"
             text: ~~parent.value
         }
         onValueChanged: {
-            pianoRoll.stepsPerScreen = value
+            pianoRoll.barsPerScreen = value
         }
         visible: !board.isShiftPressed;
     }
 
     Common.PlacedKnobMapping {
-        id: nStepsKnob
+        id: nBarsKnob
         mapping.knobNumber: 2
         mapping.isInteger: true
         mapping.min: 1
         mapping.max: 64
-        mapping.value: 8
+        mapping.value: 2
         Common.FramedText {
-            legend: "# Steps"
+            legend: "# Bars"
             text: ~~parent.value
         }
         onValueChanged: {
-            gSequencer.n_steps = value
+            gSequencer.n_bars = ~~value
+            pianoRoll.update()
+            
         }
         visible: board.isShiftPressed;
     }
@@ -622,7 +631,7 @@ Item {
                     gSequencer.toggle_play_pause(
                         bpmKnob.value,
                         0,
-                        ~~gSequencer.n_steps * 256
+                        ~~gSequencer.n_steps
                     );
                 }
                 else if (note % 12 == 2) {
