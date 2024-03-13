@@ -443,8 +443,8 @@ Item {
         }
 
         onValueChanged: {
-            amount = [1, 1, 1, 2, 3, 4][~~value];
-            unit =   [4, 2, 1, 1, 1, 1][~~value];
+            amount = [1,  1,  1, 1, 1, 2, 3, 4][~~value];
+            unit =   [32, 16, 8, 4, 2, 1, 1, 1][~~value];
             //pianoRoll.set_cursor_width(amount, unit);
             pianoRoll.set_cursor_width(amount * 256 / unit);
         }
