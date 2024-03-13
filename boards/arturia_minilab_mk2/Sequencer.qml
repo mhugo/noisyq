@@ -664,7 +664,7 @@ Item {
                 }
                 else if (note % 12 == 2) {
                     // Second note : stop
-                    gSequencer.stop();
+                    gSequencer.stop(false);
                     step = 0;
                     if (oldStep > -1) {
                         notes.itemAt(oldStep % 16).isPlaying = false;

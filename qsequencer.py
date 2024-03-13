@@ -497,7 +497,7 @@ class QSequencer(QObject):
                 self.noteOff.emit(channel, event.note)
             elif isinstance(event, StopEvent):
                 # print("!!!STOP!!!")
-                self.stop()
+                self.stop(auto_stop=True)
             else:
                 raise TypeError("Unknown event type!")
 
@@ -525,7 +525,10 @@ class QSequencer(QObject):
         assert self.__state == State.STOPPED
         self.__bpm = bpm
         self.__step_chrono.setInterval(int(60.0 / bpm * 1000))
-        self.__looped = (bpm, start_time, stop_time)
+        if is_looped:
+            self.__looped = (bpm, start_time, stop_time)
+        else:
+            self.__looped = None
 
         # Play
         self.__scheduled_events = list(
@@ -565,8 +568,10 @@ class QSequencer(QObject):
         self.__state_change(State.PLAYING)
         self.step.emit(self.__step_number)
 
-    @pyqtSlot()
-    def stop(self):
+    @pyqtSlot(bool)
+    def stop(self, auto_stop=False):
+        """auto_stop: True if stop() is called automatcally at the end of a pattern
+        False if stop() is called "manually" from the UI"""
         # print("***STOP")
         self.__timer.stop()
         self.__remaining_time_after_pause = 0
@@ -574,7 +579,7 @@ class QSequencer(QObject):
         self.__step_chrono.stop()
         self.__step_number = 0
         self.__state_change(State.STOPPED)
-        if self.__looped:
+        if self.__looped and auto_stop:
             bpm, start_time, stop_time = self.__looped
             # recurse on play, but without actual recursion
             QTimer.singleShot(0, lambda: self.play(bpm, start_time, stop_time, True))
