@@ -1,7 +1,9 @@
 import argparse
 from enum import Enum
+import importlib
 import os
 import sys
+import time
 
 from PyQt5.QtCore import QUrl, pyqtSignal, pyqtSlot, QObject, QVariant, QCoreApplication
 from PyQt5.QtWidgets import QApplication
@@ -10,7 +12,6 @@ from PyQt5.QtQml import QQmlEngine, qmlRegisterSingletonType, qmlRegisterType
 
 from qsequencer import QSequencer
 from piano_roll import PianoRoll
-
 
 import rtmidi
 
@@ -218,27 +219,28 @@ class Midi(QObject):
         self.__midi_in = rtmidi.MidiIn(api, name="Midi control in")
         self.__midi_out = rtmidi.MidiOut(api, name="Midi control out")
 
-        if dev_pattern:
-            port_in_idx = 0
-            port_out_idx = 0
-            for i, port in enumerate(self.__midi_in.get_ports()):
-                if dev_pattern.lower() in port.lower():
-                    port_in_idx = i
-                    break
+        port_in_idx = None
+        port_out_idx = None
+        for i, port in enumerate(self.__midi_in.get_ports()):
+            if dev_pattern.lower() in port.lower():
+                port_in_idx = i
+                break
 
-            for i, port in enumerate(self.__midi_out.get_ports()):
-                if dev_pattern.lower() in port.lower():
-                    port_out_idx = i
-                    break
+        for i, port in enumerate(self.__midi_out.get_ports()):
+            if dev_pattern.lower() in port.lower():
+                port_out_idx = i
+                break
 
+        if port_in_idx is None:
+            print(f"Cannot find MIDI device {dev_pattern}, MIDI in disabled")
+            self.__port_in = self.__midi_in.open_virtual_port("Midi Control in")
+            self.__port_out = self.__midi_out.open_virtual_port("Midi Control out")
+        else:
             print("Midi in:", self.__midi_in.get_port_name(port_in_idx))
             print("Midi out:", self.__midi_out.get_port_name(port_out_idx))
 
             self.__port_in = self.__midi_in.open_port(port_in_idx)
             self.__port_out = self.__midi_out.open_port(port_out_idx)
-        else:
-            self.__port_in = self.__midi_in.open_virtual_port("Midi Control in")
-            self.__port_out = self.__midi_out.open_virtual_port("Midi Control out")
 
         self.__port_in.ignore_types(sysex=False)
         self.__port_in.set_callback(self.__on_midi_msg)
@@ -274,9 +276,23 @@ class Midi(QObject):
         return msg
 
 
+def wait_for_midi_device(device_name: str, api=rtmidi.API_LINUX_ALSA):
+    midi = rtmidi.MidiIn(api)
+    while True:
+        for port in midi.get_ports():
+            if device_name.lower() in port.lower():
+                return True
+        print(f"Device '{device_name}' is not plugged yet, waiting ...")
+        time.sleep(2)
+
+
 parser = argparse.ArgumentParser(description="MIDI-controlled audio station.")
 parser.add_argument("--host-stub", action="store_true", help="Stub LV2 host")
-parser.add_argument("--dev", action="store", help="MIDI device to use (pattern)")
+parser.add_argument(
+    "--init-dev",
+    action="store_true",
+    help="The MIDI device will be detected and configured at startup if set",
+)
 
 args = parser.parse_args()
 
@@ -297,14 +313,25 @@ view.setResizeMode(QQuickView.SizeViewToRootObject)
 
 view.rootContext().setContextProperty("lv2Host", lv2Host)
 
-midi = Midi(rtmidi.API_LINUX_ALSA, args.dev)
+current_path = os.path.abspath(os.path.dirname(__file__))
+board_dir = "boards/arturia_minilab_mk2"
+
+configure_gear_module = os.path.join(board_dir, "configure_gear").replace("/", ".")
+board_configure_gear = importlib.import_module(configure_gear_module)
+if args.init_dev:
+    wait_for_midi_device(board_configure_gear.USB_DEVICE_NAME)
+
+midi = Midi(rtmidi.API_LINUX_ALSA, board_configure_gear.USB_DEVICE_NAME)
+
+if args.init_dev:
+    board_configure_gear.configure_gear(midi)
+
 view.rootContext().setContextProperty("midi", midi)
 
 sequencer = QSequencer()
 view.rootContext().setContextProperty("gSequencer", sequencer)
 
-current_path = os.path.abspath(os.path.dirname(__file__))
-qml_file = os.path.join(current_path, "boards/arturia_minilab_mk2/main.qml")
+qml_file = os.path.join(current_path, board_dir, "main.qml")
 view.setSource(QUrl.fromLocalFile(qml_file))
 view.engine().quit.connect(app.quit)
 view.show()
