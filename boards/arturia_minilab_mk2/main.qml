@@ -149,15 +149,19 @@ Item {
                 if (instr.saveState !== undefined) {
                     instrState = instr.saveState();
                 }
+                let mixerState = {"volume": lv2Host.getVolume(instr.lv2Id),
+                         "muted": lv2Host.getMuted(instr.lv2Id),
+                         "panning": lv2Host.getPanning(instr.lv2Id)};
                 voiceStates.push({
                     "voice": voice,
                     "instrument": instrumentComponents[voiceInstrument[voice].index].name,
-                    "state": instrState
+                    "state": instrState,
+                    "mixer": mixerState
                 });
             }
             return {
                 "voices": voiceStates,
-                "voiceStackLayoutIndex": voiceStackLayoutIndex
+                "voiceStackLayoutIndex": voiceStackLayoutIndex,
             };
         }
 
@@ -168,9 +172,17 @@ Item {
 
             let voiceStates = state["voices"];
             for (var i = 0; i < voiceStates.length; i++) {
-                let obj = instrumentStack.assignInstrument(voiceStates[i].instrument, voiceStates[i].voice);
+                let instr = voiceStates[i].instrument;
+                let obj = instrumentStack.assignInstrument(instr, voiceStates[i].voice);
                 if (obj) {
                     obj.loadState(voiceStates[i].state);
+
+                    let mixerState = voiceStates[i].mixer;
+                    if (mixerState) {
+                        lv2Host.setVolume(obj.lv2Id, mixerState.volume);
+                        lv2Host.setMuted(obj.lv2Id, mixerState.muted);
+                        lv2Host.setPanning(obj.lv2Id, mixerState.panning);
+                    }
                 }
             }
             voiceKnob.updateInstrType();
