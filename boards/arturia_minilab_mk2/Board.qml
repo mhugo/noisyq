@@ -57,6 +57,13 @@ Text {
             // interested in increment and decrement signals
             property bool hasValue: true
 
+            // For integer properties, incrementing / decrementing them for each small increment / decrement
+            // of the knob value is changing too quickly
+            // We could increment by a small decimal value, but not all VST correctly supports that.
+            // Instead, we introduce here an internal ("proxy") value that is changed when the knob moves;
+            // but the real value sent to the VST is always an integer
+            property real internalValue: 0.0
+
             /*function _delta() {
                 let d = max - min;
                 if (isInteger) {
@@ -70,16 +77,37 @@ Text {
             }
 
             function increment(amount) {
-                console.log("inc, amount", amount);
-                value = value + (amount ? amount : _delta());
-                if (value > max) {
-                    value = max;
+                if (isInteger) {
+                    internalValue = internalValue + (amount ? amount : _delta());
+                    if (internalValue > max) {
+                        internalValue = max;
+                    }
+                    if (Math.abs(value - internalValue) >= 1.0) {
+                        value = Math.floor(internalValue);
+                    }
+                }
+                else {
+                    value = value + (amount ? amount : _delta());
+                    if (value > max) {
+                        value = max;
+                    }
                 }
             }
             function decrement(amount) {
-                value = value - (amount ? amount : _delta());
-                if (value < min) {
-                    value = min;
+                if (isInteger) {
+                    internalValue = internalValue - (amount ? amount : _delta());
+                    if (internalValue < min) {
+                        internalValue = min;
+                    }
+                    if (Math.abs(value - internalValue) >= 1.0) {
+                        value = Math.floor(internalValue);
+                    }
+                }
+                else {
+                    value = value - (amount ? amount : _delta());
+                    if (value < min) {
+                        value = min;
+                    }
                 }
             }
         }
