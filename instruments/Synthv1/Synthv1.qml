@@ -58,8 +58,9 @@ Item {
         for (var i = 0; i < children.length; i++) {
             let child = children[i];
             if (child.parameterName != undefined) {
-                if (child.parameterName in state.parameters) {
+                if (child.parameterName && child.parameterName in state.parameters) {
                     child.value = state.parameters[child.parameterName];
+                    lv2Host.setParameterValue(lv2Id, child.parameterName, child.value);
                     continue;
                 }
             }
